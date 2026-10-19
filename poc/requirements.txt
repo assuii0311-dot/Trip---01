@@ -1,0 +1,8 @@
+# PoC 가상환경 패키지. 설치: <venv>/bin/pip install -r poc/requirements.txt
+requests
+pandas
+lxml
+osmium        # OSM 추출본(pbf) 처리. B 단계
+duckdb        # Overture, Foursquare parquet 원격 필터링. C 단계
+pyarrow       # duckdb 결과 처리. C 단계
+# pyvalhalla  # 로컬 경로 엔진. E 단계에서 설치 (휠 37.5MB)
