@@ -6,8 +6,11 @@ wikidata_collect.py의 한 번에 묶는 쿼리는 7만 건 규모에서 시간 
 3) 다른 클래스 파일에 없는 QID만 200개씩 묶어 라벨(es, en, ko)과 Wikivoyage 링크를 받는다.
 큰 종류(1만 건 초과)는 자치주(P131 상위) 대신 위도 띠로 나눈다.
 
-실행: python -I poc/wikidata_heritage.py <데이터 디렉터리>
+실행: python -I poc/wikidata_heritage.py <데이터 디렉터리> [--no-labels]
+--no-labels: 3) 라벨 조회를 건너뛴다(큰 묶음 조회가 시간 초과를 반복할 때). 진행 상황은 즉시 출력된다.
 """
+import functools
+print = functools.partial(print, flush=True)  # 백그라운드 로그에 즉시 기록
 import json
 import pathlib
 import sys
@@ -44,6 +47,7 @@ def q_labels(qids):
 
 def main():
     d = pathlib.Path(sys.argv[1])
+    no_labels = "--no-labels" in sys.argv
     c = Client()
     t0 = time.time()
     known = set()
@@ -59,7 +63,7 @@ def main():
         got = 0
         for band in bands:
             try:
-                rows = c.query(q_items(h, band))
+                rows = c.query(q_items(h, band), retries=3)
             except Exception as e:
                 print(f"    {h} (밴드 {band}) 실패 {type(e).__name__}", file=sys.stderr)
                 continue
@@ -70,12 +74,12 @@ def main():
                     r["designations"].append(h)
             got += len(rows)
         print(f"  {h} 기대 {n} 수신 {got} ({round(time.time()-t0)}초, 호출 {c.calls}, 429 {c.r429})")
-    need = [q for q in items if q not in known]
+    need = [] if no_labels else [q for q in items if q not in known]
     print(f"  고유 항목 {len(items)}건, 라벨 조회 필요 {len(need)}건 (묶음 {-(-len(need)//200)}회)")
     for i in range(0, len(need), 200):
         chunk = need[i:i + 200]
         try:
-            rows = c.query(q_labels(chunk))
+            rows = c.query(q_labels(chunk), retries=2)
         except Exception as e:
             print(f"    라벨 묶음 {i} 실패 {type(e).__name__}", file=sys.stderr)
             continue
