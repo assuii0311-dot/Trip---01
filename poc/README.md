@@ -20,3 +20,8 @@
 | 파일 | 단계 | 내용 |
 |---|---|---|
 | check_sources.py | A | 후보 소스 접속과 크기 확인. 본문은 읽지 않는다 |
+| wikidata_collect.py | B | Wikidata SPARQL 분할 조회. counts(건수), collect(수집), collect-one(단일 클래스) 모드 |
+| wikidata_heritage.py | B | 문화유산 지정(P1435) 항목을 지정 종류와 위도 띠로 쪼개어 조회하고 라벨은 묶음 조회 |
+| wikidata_coverage.py | B | Wikidata 수집 결과를 합쳐 중복 제거 후 필드 커버리지와 지자체 인구 분포 집계 |
+| wikivoyage_parse.py | B | Wikivoyage 덤프에서 국가 하위 문서와 목록 추출. 영문과 스페인어 템플릿 설정 포함 |
+| osm_extract.py | B | OSM 추출본에서 여행 관련 장소 추출과 필드 커버리지 집계 |
