@@ -16,7 +16,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from wikidata_collect import Client, val  # noqa: E402
 
 print = functools.partial(print, flush=True)
-BATCH = 50
+BATCH = 100
 
 
 def q_batch(qids):
