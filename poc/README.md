@@ -30,5 +30,6 @@
 | crossval_sitelinks_report.py | C | 사이트링크 결과로 언어별 커버리지(P-03, P-08, P-10)와 D 단계 층별 도시 수 집계 |
 | pageviews_extract.py | C | 월간 페이지뷰 덤프에서 대상 문서의 en, es, ko 조회수 추출 (P-17) |
 | sample_review.py | D | 고정 난수로 층별 도시와 장소 표본을 뽑고 검수표 docs/02-review-sample.md 생성 |
+| review_gmaps.py | D | 표본을 구글맵에서 이름 검색해 명칭, 좌표(플러스 코드 해독), 분류, 영업시간의 1차 판정 생성 (D-018). 허용 주소 형식만 사용, 장소당 1회 |
 
 `poc/results/`에는 커밋하는 요약 수치 JSON을 둔다.

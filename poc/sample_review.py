@@ -49,8 +49,12 @@ def group_of(cand):
             return "자연"
         if o["key"] == "shop":
             return "상점"
+        if o["key"] == "place":
+            return "기타"
         if o["key"] == "historic" or (o["key"] == "tourism" and o["value"] in SIGHT_TOURISM) or (o["key"] == "amenity" and o["value"] in SIGHT_AMENITY) or w or v:
             return "볼거리"
+        return "기타"
+    if w and (w["cls"] & MUNI_CLS):
         return "기타"
     if v:
         return {"eat": "식당", "drink": "식당", "sleep": "숙박", "buy": "상점"}.get(v["type"], "볼거리")
@@ -60,7 +64,13 @@ def group_of(cand):
 
 
 def gmaps(lat, lon):
-    return f"https://www.google.com/maps/search/?api=1&query={lat:.5f},{lon:.5f}"
+    """좌표 핀. google.com의 robots.txt가 허용하는 /maps?q= 형식."""
+    return f"https://www.google.com/maps?q={lat:.5f},{lon:.5f}&hl=en"
+
+
+def gmaps_name(name, city):
+    from urllib.parse import quote_plus
+    return f"https://www.google.com/maps?q={quote_plus(f'{name}, {city}')}&hl=en"
 
 
 def main():
@@ -281,7 +291,7 @@ def main():
     L = []
     L.append("# 2단계 D 단계 품질 검수표\n")
     L.append("- 작성일: 2026-10-20. 고정 난수(seed 20261020)로 층마다 도시 2곳, 도시마다 장소 6곳을 뽑았다. 도시 중심 3km 안의 후보에서 뽑았다.")
-    L.append("- 검수 방법: 각 장소의 구글맵 링크를 열어 확인하고 검수 항목에 O(맞음), X(틀림), ?(모름)를 적는다. 틀린 경우 비고에 무엇이 틀렸는지 한 줄 적는다.")
+    L.append("- 검수 방법: '이름으로 찾기'로 구글맵에서 명칭을 검색하고 '좌표 핀'과 같은 곳인지 본다. 검수 항목에 O(맞음), X(틀림), ?(모름)를 적는다. 틀린 경우 비고에 무엇이 틀렸는지 한 줄 적는다. D-018에 따라 1차 판정은 클로드가 자동 조회로 채우고 사용자는 ?와 X만 확인한다.")
     L.append("- 검수 항목: 명칭(현지어 표기가 실제 명칭인가), 좌표(지도 위치가 그 장소인가), 분류(유형이 맞는가), 영업시간(있으면 맞는가), 설명 출처(링크된 문서가 그 장소인가), 상태(교차검증 판정이 맞는가).")
     L.append("- 결과 기록: 검수가 끝나면 이 파일을 그대로 수정하거나 답장으로 주시면 `docs/02-review-results.md`에 정리한다.\n")
     n_city = 0
@@ -299,7 +309,7 @@ def main():
             o, w, x = p["osm"], p["wd"], p["wv"]
             title = (o and o["name"]) or (w and (w["label_es"] or w["label_en"])) or (x and x["name"]) or "(이름 없음)"
             L.append(f"### {n_city}-{i}. {title}  ·  {p['group']}  ·  {p['status']}")
-            L.append(f"- 좌표: {p['lat']:.5f}, {p['lon']:.5f} [구글맵]({p['gmaps']})" + (" (Wikivoyage 좌표 없음, 도시 중심)" if p["no_coord"] else ""))
+            L.append(f"- 좌표: {p['lat']:.5f}, {p['lon']:.5f} [이름으로 찾기]({gmaps_name(title, c['name_es'] or '')}) · [좌표 핀]({p['gmaps']})" + (" (Wikivoyage 좌표 없음, 도시 중심)" if p["no_coord"] else ""))
             if o:
                 L.append(f"- OSM: 명칭 {o['name'] or '없음'}" + (f" / en {o['name_en']}" if o['name_en'] else "") + f", 분류 {o['cat']}, 영업시간 {o['opening_hours'] or '없음'}, 요금 {o['fee'] or o['charge'] or '없음'}" + (f", 웹 {o['website']}" if o['website'] else ""))
             else:

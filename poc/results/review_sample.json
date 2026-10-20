@@ -11,7 +11,7 @@
    "pop": "143526",
    "lat": 40.45,
    "lon": -3.483055555,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=40.45000,-3.48306",
+   "gmaps": "https://www.google.com/maps?q=40.45000,-3.48306&hl=en",
    "wv_page": null,
    "understand_len": 0,
    "wiki": {
@@ -28,48 +28,53 @@
    "candidates": 647,
    "candidates_by_group": {
     "자연": 61,
-    "기타": 37,
-    "볼거리": 80,
+    "기타": 39,
     "식당": 327,
+    "볼거리": 78,
     "상점": 127,
     "숙박": 15
    },
    "places": [
     {
-     "key": "w28440413",
+     "key": "w149467449",
      "group": "볼거리",
      "status": "일치",
-     "lat": 40.454766,
-     "lon": -3.479777,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.45477,-3.47978",
+     "lat": 40.456736,
+     "lon": -3.476737,
+     "gmaps": "https://www.google.com/maps?q=40.45674,-3.47674&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Torrejón de Ardoz",
+      "name": "Museo de la Ciudad",
       "name_en": null,
-      "cat": "public_transport=station",
-      "opening_hours": null,
+      "cat": "tourism=museum",
+      "opening_hours": "Mo-Tu off; We-Su 10:00-14:00,17:00-20:00; Jun-Sep: We-Su 11:00-14:00,18:00-21:00; Aug off",
       "fee": null,
       "charge": null,
       "website": null,
-      "wikidata": null
+      "wikidata": "Q6034222"
      },
      "wd": {
-      "qid": "Q509020",
-      "label_es": "Torrejón de Ardoz",
-      "label_en": "Torrejón de Ardoz",
+      "qid": "Q6034222",
+      "label_es": "Museo de la Ciudad de Torrejón de Ardoz",
+      "label_en": "Museo de la Ciudad de Torrejón de Ardoz",
       "label_ko": null,
       "cls": [
-       "철도역"
+       "박물관"
       ],
-      "how": "geo+name",
+      "how": "key",
       "enwiki": null,
-      "eswiki": null,
+      "eswiki": "Museo de la Ciudad de Torrejón de Ardoz",
       "kowiki": null,
       "desc_en": null,
       "desc_ko": null
      },
      "wv": null,
-     "views": null
+     "views": {
+      "qid": "Q6034222",
+      "en": 0,
+      "es": 8,
+      "ko": 0
+     }
     },
     {
      "key": "w41768457",
@@ -77,7 +82,7 @@
      "status": "단일 출처",
      "lat": 40.458732,
      "lon": -3.467737,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.45873,-3.46774",
+     "gmaps": "https://www.google.com/maps?q=40.45873,-3.46774&hl=en",
      "no_coord": false,
      "osm": {
       "name": "La Iglesia de Jesucristo de los Santos de los Últimos Días",
@@ -99,7 +104,7 @@
      "status": "단일 출처",
      "lat": 40.449838,
      "lon": -3.510747,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.44984,-3.51075",
+     "gmaps": "https://www.google.com/maps?q=40.44984,-3.51075&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Naciones",
@@ -121,7 +126,7 @@
      "status": "단일 출처",
      "lat": 40.461906,
      "lon": -3.480476,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.46191,-3.48048",
+     "gmaps": "https://www.google.com/maps?q=40.46191,-3.48048&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Las Cábilas",
@@ -143,7 +148,7 @@
      "status": "단일 출처",
      "lat": 40.457206,
      "lon": -3.472303,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.45721,-3.47230",
+     "gmaps": "https://www.google.com/maps?q=40.45721,-3.47230&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Hostal Golden Torrejón",
@@ -165,7 +170,7 @@
      "status": "일치",
      "lat": 40.465153,
      "lon": -3.468744,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.46515,-3.46874",
+     "gmaps": "https://www.google.com/maps?q=40.46515,-3.46874&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Parque de las Veredillas",
@@ -206,7 +211,7 @@
    "pop": "175425",
    "lat": 43.466666666,
    "lon": -3.8,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=43.46667,-3.80000",
+   "gmaps": "https://www.google.com/maps?q=43.46667,-3.80000&hl=en",
    "wv_page": "Santander",
    "understand_len": 1934,
    "wiki": {
@@ -223,40 +228,40 @@
    "candidates": 1846,
    "candidates_by_group": {
     "식당": 634,
-    "기타": 147,
-    "볼거리": 300,
+    "기타": 149,
+    "볼거리": 298,
     "자연": 75,
     "숙박": 89,
     "상점": 601
    },
    "places": [
     {
-     "key": "n6624626125",
+     "key": "n7041570021",
      "group": "볼거리",
      "status": "일치",
-     "lat": 43.461176,
-     "lon": -3.804526,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.46118,-3.80453",
+     "lat": 43.466262,
+     "lon": -3.77993,
+     "gmaps": "https://www.google.com/maps?q=43.46626,-3.77993&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Monumento a José María de Pereda",
+      "name": "Humilladero de la Virgen del Mar",
       "name_en": null,
-      "cat": "historic=memorial",
+      "cat": "historic=wayside_shrine",
       "opening_hours": null,
       "fee": null,
       "charge": null,
       "website": null,
-      "wikidata": "Q58467094"
+      "wikidata": null
      },
      "wd": {
-      "qid": "Q58467094",
-      "label_es": "Monumento a Jose María Pereda",
+      "qid": "Q58467272",
+      "label_es": "Fuente y humilladero Virgen del Mar",
       "label_en": null,
       "label_ko": null,
       "cls": [
        "기념물"
       ],
-      "how": "key",
+      "how": "geo+name",
       "enwiki": null,
       "eswiki": null,
       "kowiki": null,
@@ -272,7 +277,7 @@
      "status": "단일 출처",
      "lat": 43.470428,
      "lon": -3.770748,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.47043,-3.77075",
+     "gmaps": "https://www.google.com/maps?q=43.47043,-3.77075&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Burbuja de salvamento",
@@ -294,7 +299,7 @@
      "status": "일치",
      "lat": 43.46002,
      "lon": -3.804336,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.46002,-3.80434",
+     "gmaps": "https://www.google.com/maps?q=43.46002,-3.80434&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Café Centro Botín",
@@ -342,7 +347,7 @@
      "status": "단일 출처",
      "lat": 43.471684,
      "lon": -3.783683,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.47168,-3.78368",
+     "gmaps": "https://www.google.com/maps?q=43.47168,-3.78368&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Restaurante del Hotel Hoyuela",
@@ -364,7 +369,7 @@
      "status": "일치",
      "lat": 43.474575,
      "lon": -3.786781,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.47458,-3.78678",
+     "gmaps": "https://www.google.com/maps?q=43.47458,-3.78678&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Boutique Las Brisas",
@@ -393,7 +398,7 @@
      "status": "일치",
      "lat": 43.467671,
      "lon": -3.772363,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.46767,-3.77236",
+     "gmaps": "https://www.google.com/maps?q=43.46767,-3.77236&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Playa de la Magdalena",
@@ -439,7 +444,7 @@
    "pop": "73031",
    "lat": 39.68,
    "lon": -0.278333333,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=39.68000,-0.27833",
+   "gmaps": "https://www.google.com/maps?q=39.68000,-0.27833&hl=en",
    "wv_page": "Sagunto",
    "understand_len": 2375,
    "wiki": {
@@ -456,9 +461,9 @@
    "candidates": 317,
    "candidates_by_group": {
     "자연": 13,
-    "기타": 45,
+    "기타": 47,
     "식당": 66,
-    "볼거리": 158,
+    "볼거리": 156,
     "상점": 29,
     "숙박": 6
    },
@@ -469,7 +474,7 @@
      "status": "일치",
      "lat": 39.683302,
      "lon": -0.307522,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.68330,-0.30752",
+     "gmaps": "https://www.google.com/maps?q=39.68330,-0.30752&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Castell de Petrés",
@@ -506,37 +511,44 @@
      }
     },
     {
-     "key": "wv:Platja del Port",
+     "key": "wd:Q118954325",
      "group": "볼거리",
      "status": "단일 출처",
-     "lat": 39.6588,
-     "lon": -0.2097,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.65880,-0.20970",
+     "lat": 39.68101794,
+     "lon": -0.282444909,
+     "gmaps": "https://www.google.com/maps?q=39.68102,-0.28244&hl=en",
      "no_coord": false,
      "osm": null,
-     "wd": null,
-     "wv": {
-      "name": "Platja del Port",
-      "type": "marker",
-      "has_hours": false,
-      "has_price": false,
-      "content_len": 0,
-      "booking_text": false
+     "wd": {
+      "qid": "Q118954325",
+      "label_es": "plaza del Distrito",
+      "label_en": null,
+      "label_ko": null,
+      "cls": [
+       "광장"
+      ],
+      "how": null,
+      "enwiki": null,
+      "eswiki": null,
+      "kowiki": null,
+      "desc_en": null,
+      "desc_ko": null
      },
+     "wv": null,
      "views": null
     },
     {
-     "key": "w566703686",
+     "key": "n6868038785",
      "group": "식당",
      "status": "일치",
-     "lat": 39.681228,
-     "lon": -0.277537,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.68123,-0.27754",
+     "lat": 39.678921,
+     "lon": -0.278431,
+     "gmaps": "https://www.google.com/maps?q=39.67892,-0.27843&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Mercat de Sagunt",
+      "name": "Temple de Diana",
       "name_en": null,
-      "cat": "amenity=marketplace",
+      "cat": "amenity=restaurant",
       "opening_hours": null,
       "fee": null,
       "charge": null,
@@ -545,28 +557,28 @@
      },
      "wd": null,
      "wv": {
-      "name": "Mercadillo de Sagunto",
-      "type": "buy",
-      "has_hours": true,
-      "has_price": false,
-      "content_len": 85,
+      "name": "Temple de Diana",
+      "type": "see",
+      "has_hours": false,
+      "has_price": true,
+      "content_len": 125,
       "booking_text": false
      },
      "views": null
     },
     {
-     "key": "n12400639271",
+     "key": "n7307412971",
      "group": "식당",
      "status": "단일 출처",
-     "lat": 39.673989,
-     "lon": -0.248966,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.67399,-0.24897",
+     "lat": 39.686447,
+     "lon": -0.278803,
+     "gmaps": "https://www.google.com/maps?q=39.68645,-0.27880&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Sushi Take",
+      "name": "Bar Restaurante El Llorer",
       "name_en": null,
       "cat": "amenity=restaurant",
-      "opening_hours": null,
+      "opening_hours": "Mo 08:00-16:00; Tu 08:00-23:30; We,Th 08:00-00:00; Fr 08:00-01:30; Sa 09:00-16:00,18:30-01:30; Su 09:00-16:00,18:30-00:30",
       "fee": null,
       "charge": null,
       "website": null,
@@ -577,49 +589,44 @@
      "views": null
     },
     {
-     "key": "wv:Hotel l'Estacio",
+     "key": "wv:Sensity Vent de Mar",
      "group": "숙박",
      "status": "단일 출처",
-     "lat": 39.67711,
-     "lon": -0.27098,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.67711,-0.27098",
+     "lat": 39.6669,
+     "lon": -0.21181,
+     "gmaps": "https://www.google.com/maps?q=39.66690,-0.21181&hl=en",
      "no_coord": false,
      "osm": null,
      "wd": null,
      "wv": {
-      "name": "Hotel l'Estacio",
+      "name": "Sensity Vent de Mar",
       "type": "sleep",
       "has_hours": false,
       "has_price": true,
-      "content_len": 15,
+      "content_len": 115,
       "booking_text": false
      },
      "views": null
     },
     {
-     "key": "wd:Q23982881",
+     "key": "n12537479440",
      "group": "자연",
      "status": "단일 출처",
-     "lat": 39.683333333,
-     "lon": -0.3,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=39.68333,-0.30000",
+     "lat": 39.692676,
+     "lon": -0.308494,
+     "gmaps": "https://www.google.com/maps?q=39.69268,-0.30849&hl=en",
      "no_coord": false,
-     "osm": null,
-     "wd": {
-      "qid": "Q23982881",
-      "label_es": "Montaña de Ponera",
-      "label_en": "Montaña de Ponera",
-      "label_ko": null,
-      "cls": [
-       "산"
-      ],
-      "how": null,
-      "enwiki": null,
-      "eswiki": null,
-      "kowiki": null,
-      "desc_en": null,
-      "desc_ko": null
+     "osm": {
+      "name": "Alt de la Ponera",
+      "name_en": null,
+      "cat": "natural=peak",
+      "opening_hours": null,
+      "fee": null,
+      "charge": null,
+      "website": null,
+      "wikidata": null
      },
+     "wd": null,
      "wv": null,
      "views": null
     }
@@ -634,7 +641,7 @@
    "pop": "1053",
    "lat": 42.3375,
    "lon": 3.204166666,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=42.33750,3.20417",
+   "gmaps": "https://www.google.com/maps?q=42.33750,3.20417&hl=en",
    "wv_page": "El Port de la Selva",
    "understand_len": 719,
    "wiki": {
@@ -651,85 +658,88 @@
    "candidates": 187,
    "candidates_by_group": {
     "자연": 38,
-    "볼거리": 93,
+    "볼거리": 91,
+    "기타": 24,
     "식당": 20,
-    "기타": 22,
     "숙박": 13,
     "상점": 1
    },
    "places": [
     {
-     "key": "wd:Q124257649",
+     "key": "w157018688",
      "group": "볼거리",
      "status": "일치",
-     "lat": 42.350334551,
-     "lon": 3.184437334,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.35033,3.18444",
+     "lat": 42.325642,
+     "lon": 3.230049,
+     "gmaps": "https://www.google.com/maps?q=42.32564,3.23005&hl=en",
      "no_coord": false,
-     "osm": null,
+     "osm": {
+      "name": "Sant Baldiri de Taballera",
+      "name_en": null,
+      "cat": "amenity=place_of_worship",
+      "opening_hours": null,
+      "fee": null,
+      "charge": null,
+      "website": null,
+      "wikidata": null
+     },
      "wd": {
-      "qid": "Q124257649",
+      "qid": "Q18006648",
       "label_es": null,
-      "label_en": "Platja d'en Balleu",
+      "label_en": "Sant Baldiri de Tavellera",
       "label_ko": null,
       "cls": [
-       "해변"
+       "문화유산 지정",
+       "교회 건물",
+       "수도원"
       ],
-      "how": null,
+      "how": "geo+name",
       "enwiki": null,
       "eswiki": null,
       "kowiki": null,
-      "desc_en": "Beach in el Port de la Selva, Costa Brava, Catalonia, Spain",
+      "desc_en": "church building in El Port de la Selva, Costa Brava, Catalonia, Spain",
       "desc_ko": null
      },
      "wv": {
-      "name": "Platja d'en Balleu",
-      "type": "do",
+      "name": "Sant Baldiri de Tavellera church",
+      "type": "see",
       "has_hours": false,
       "has_price": false,
-      "content_len": 181,
+      "content_len": 440,
       "booking_text": false
      },
      "views": null
     },
     {
-     "key": "wd:Q47166273",
+     "key": "wv:Sant Salvador de Verdera castle ruins",
      "group": "볼거리",
      "status": "단일 출처",
-     "lat": 42.334545,
-     "lon": 3.213592,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.33454,3.21359",
-     "no_coord": false,
+     "lat": 42.3375,
+     "lon": 3.204166666,
+     "gmaps": "https://www.google.com/maps?q=42.33750,3.20417&hl=en",
+     "no_coord": true,
      "osm": null,
-     "wd": {
-      "qid": "Q47166273",
-      "label_es": null,
-      "label_en": "Pont del Rec del Fuster",
-      "label_ko": null,
-      "cls": [
-       "문화유산 지정",
-       "다리"
-      ],
-      "how": null,
-      "enwiki": null,
-      "eswiki": null,
-      "kowiki": null,
-      "desc_en": null,
-      "desc_ko": null
+     "wd": null,
+     "wv": {
+      "name": "Sant Salvador de Verdera castle ruins",
+      "type": "see",
+      "has_hours": false,
+      "has_price": false,
+      "content_len": 514,
+      "booking_text": false
      },
-     "wv": null,
      "views": null
     },
     {
-     "key": "n4023238590",
+     "key": "n6090219812",
      "group": "식당",
      "status": "일치",
-     "lat": 42.33462,
-     "lon": 3.197017,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.33462,3.19702",
+     "lat": 42.337743,
+     "lon": 3.204183,
+     "gmaps": "https://www.google.com/maps?q=42.33774,3.20418&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Hostal l'Arola",
+      "name": "La Tina",
       "name_en": null,
       "cat": "amenity=restaurant",
       "opening_hours": null,
@@ -738,36 +748,29 @@
       "website": null,
       "wikidata": null
      },
-     "wd": {
-      "qid": "Q123995538",
-      "label_es": null,
-      "label_en": "Platja de l'Erola",
-      "label_ko": null,
-      "cls": [
-       "해변"
-      ],
-      "how": "geo+name",
-      "enwiki": null,
-      "eswiki": null,
-      "kowiki": null,
-      "desc_en": "Beach in el Port de la Selva, Costa Brava, Catalonia, Spain",
-      "desc_ko": null
+     "wd": null,
+     "wv": {
+      "name": "La Tina",
+      "type": "eat",
+      "has_hours": false,
+      "has_price": false,
+      "content_len": 0,
+      "booking_text": false
      },
-     "wv": null,
      "views": null
     },
     {
-     "key": "n2116054412",
+     "key": "n14137288860",
      "group": "식당",
      "status": "단일 출처",
-     "lat": 42.338564,
-     "lon": 3.203681,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.33856,3.20368",
+     "lat": 42.336374,
+     "lon": 3.203054,
+     "gmaps": "https://www.google.com/maps?q=42.33637,3.20305&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Brisa",
+      "name": "Xiri Platja",
       "name_en": null,
-      "cat": "amenity=restaurant",
+      "cat": "amenity=bar",
       "opening_hours": null,
       "fee": null,
       "charge": null,
@@ -779,70 +782,56 @@
      "views": null
     },
     {
-     "key": "n4023238473",
+     "key": "n1424481766",
      "group": "숙박",
      "status": "일치",
-     "lat": 42.334656,
-     "lon": 3.196886,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.33466,3.19689",
+     "lat": 42.33612,
+     "lon": 3.204089,
+     "gmaps": "https://www.google.com/maps?q=42.33612,3.20409&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Hostal l'Arola",
+      "name": "Porto Cristo",
       "name_en": null,
-      "cat": "tourism=motel",
+      "cat": "tourism=hotel",
       "opening_hours": null,
       "fee": null,
       "charge": null,
-      "website": null,
+      "website": "https://hotelportdelaselva.com/hotel-spa-porto-cristo/",
       "wikidata": null
      },
-     "wd": {
-      "qid": "Q123995538",
-      "label_es": null,
-      "label_en": "Platja de l'Erola",
-      "label_ko": null,
-      "cls": [
-       "해변"
-      ],
-      "how": "geo+name",
-      "enwiki": null,
-      "eswiki": null,
-      "kowiki": null,
-      "desc_en": "Beach in el Port de la Selva, Costa Brava, Catalonia, Spain",
-      "desc_ko": null
-     },
+     "wd": null,
      "wv": {
-      "name": "Platja de l'Erola",
-      "type": "do",
+      "name": "Porto Cristo",
+      "type": "sleep",
       "has_hours": false,
       "has_price": false,
-      "content_len": 268,
+      "content_len": 0,
       "booking_text": false
      },
      "views": null
     },
     {
-     "key": "n4959709290",
+     "key": "n4959709294",
      "group": "자연",
      "status": "일치",
-     "lat": 42.346821,
-     "lon": 3.230523,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=42.34682,3.23052",
+     "lat": 42.324791,
+     "lon": 3.218796,
+     "gmaps": "https://www.google.com/maps?q=42.32479,3.21880&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Turó d'en Llaures",
+      "name": "el Torrelló",
       "name_en": null,
       "cat": "natural=peak",
       "opening_hours": null,
       "fee": null,
       "charge": null,
       "website": null,
-      "wikidata": "Q11953771"
+      "wikidata": "Q11918611"
      },
      "wd": {
-      "qid": "Q11953771",
+      "qid": "Q11918611",
       "label_es": null,
-      "label_en": "Turó dels Llaures",
+      "label_en": "El Torrelló",
       "label_ko": null,
       "cls": [
        "산"
@@ -868,7 +857,7 @@
    "pop": "7851",
    "lat": 43.146787,
    "lon": -1.5171681,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=43.14679,-1.51717",
+   "gmaps": "https://www.google.com/maps?q=43.14679,-1.51717&hl=en",
    "wv_page": null,
    "understand_len": 0,
    "wiki": {
@@ -893,57 +882,57 @@
    },
    "places": [
     {
-     "key": "w562566251",
+     "key": "w562566259",
      "group": "볼거리",
      "status": "일치",
-     "lat": 43.149425,
-     "lon": -1.512691,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.14943,-1.51269",
+     "lat": 43.148793,
+     "lon": -1.510517,
+     "gmaps": "https://www.google.com/maps?q=43.14879,-1.51052&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Santa Kruz eliza",
+      "name": "Jarola jauregia",
       "name_en": null,
-      "cat": "amenity=place_of_worship",
+      "cat": "historic=manor",
       "opening_hours": null,
       "fee": null,
       "charge": null,
       "website": null,
-      "wikidata": "Q20492694"
+      "wikidata": null
      },
      "wd": {
-      "qid": "Q20492694",
+      "qid": "Q110193389",
       "label_es": null,
-      "label_en": null,
+      "label_en": "Jaurola Palace",
       "label_ko": null,
       "cls": [
-       "교회 건물"
+       "궁전"
       ],
-      "how": "key",
+      "how": "geo+name",
       "enwiki": null,
       "eswiki": null,
       "kowiki": null,
-      "desc_en": "church building in Spain",
+      "desc_en": null,
       "desc_ko": null
      },
      "wv": null,
      "views": null
     },
     {
-     "key": "w455763906",
+     "key": "w562566374",
      "group": "볼거리",
      "status": "단일 출처",
-     "lat": 43.145436,
-     "lon": -1.516414,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.14544,-1.51641",
+     "lat": 43.161689,
+     "lon": -1.494921,
+     "gmaps": "https://www.google.com/maps?q=43.16169,-1.49492&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Santiago eliza",
+      "name": "Bergarako Jauregia",
       "name_en": null,
-      "cat": "amenity=place_of_worship",
+      "cat": "historic=manor",
       "opening_hours": null,
       "fee": null,
       "charge": null,
-      "website": null,
+      "website": "https://www.castillosnet.org/espana/informacion.php?ref=NA-CAS-059",
       "wikidata": null
      },
      "wd": null,
@@ -951,15 +940,37 @@
      "views": null
     },
     {
-     "key": "n1676799823",
+     "key": "n7574890420",
      "group": "식당",
      "status": "단일 출처",
-     "lat": 43.138478,
-     "lon": -1.526113,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.13848,-1.52611",
+     "lat": 43.142006,
+     "lon": -1.524536,
+     "gmaps": "https://www.google.com/maps?q=43.14201,-1.52454&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Kortarixar",
+      "name": "Hiru Ostatua",
+      "name_en": null,
+      "cat": "amenity=cafe",
+      "opening_hours": null,
+      "fee": null,
+      "charge": null,
+      "website": "https://www.hiruostatua.com/",
+      "wikidata": null
+     },
+     "wd": null,
+     "wv": null,
+     "views": null
+    },
+    {
+     "key": "n3452361851",
+     "group": "식당",
+     "status": "단일 출처",
+     "lat": 43.145852,
+     "lon": -1.539765,
+     "gmaps": "https://www.google.com/maps?q=43.14585,-1.53977&hl=en",
+     "no_coord": false,
+     "osm": {
+      "name": "Hiru Iturri",
       "name_en": null,
       "cat": "amenity=restaurant",
       "opening_hours": null,
@@ -973,43 +984,21 @@
      "views": null
     },
     {
-     "key": "n605058353",
-     "group": "식당",
-     "status": "단일 출처",
-     "lat": 43.145697,
-     "lon": -1.518168,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.14570,-1.51817",
-     "no_coord": false,
-     "osm": {
-      "name": "Intza",
-      "name_en": null,
-      "cat": "amenity=bar",
-      "opening_hours": null,
-      "fee": null,
-      "charge": null,
-      "website": null,
-      "wikidata": null
-     },
-     "wd": null,
-     "wv": null,
-     "views": null
-    },
-    {
-     "key": "n2405952433",
+     "key": "n605056231",
      "group": "숙박",
      "status": "단일 출처",
-     "lat": 43.138532,
-     "lon": -1.52601,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.13853,-1.52601",
+     "lat": 43.14557,
+     "lon": -1.519339,
+     "gmaps": "https://www.google.com/maps?q=43.14557,-1.51934&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Kortarixar",
+      "name": "Trinkete Antxitonea",
       "name_en": null,
-      "cat": "tourism=hostel",
+      "cat": "tourism=hotel",
       "opening_hours": null,
       "fee": null,
       "charge": null,
-      "website": null,
+      "website": "https://www.antxitonea.com/",
       "wikidata": null
      },
      "wd": null,
@@ -1022,7 +1011,7 @@
      "status": "일치",
      "lat": 43.144853,
      "lon": -1.487181,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=43.14485,-1.48718",
+     "gmaps": "https://www.google.com/maps?q=43.14485,-1.48718&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Autrin",
@@ -1063,7 +1052,7 @@
    "pop": "222",
    "lat": 41.9425,
    "lon": -2.575,
-   "gmaps": "https://www.google.com/maps/search/?api=1&query=41.94250,-2.57500",
+   "gmaps": "https://www.google.com/maps?q=41.94250,-2.57500&hl=en",
    "wv_page": null,
    "understand_len": 0,
    "wiki": {
@@ -1079,53 +1068,34 @@
    },
    "candidates": 21,
    "candidates_by_group": {
-    "볼거리": 10,
-    "기타": 2,
+    "기타": 5,
+    "볼거리": 7,
     "식당": 4,
     "숙박": 3,
     "자연": 2
    },
    "places": [
     {
-     "key": "n312750149",
+     "key": "n1243223576",
      "group": "볼거리",
-     "status": "일치",
-     "lat": 41.916291,
-     "lon": -2.566465,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.91629,-2.56646",
+     "status": "단일 출처",
+     "lat": 41.934689,
+     "lon": -2.557667,
+     "gmaps": "https://www.google.com/maps?q=41.93469,-2.55767&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Villar del Ala",
+      "name": "Castilfrío",
       "name_en": null,
-      "cat": "place=village",
+      "cat": "historic=ruins",
       "opening_hours": null,
       "fee": null,
       "charge": null,
       "website": null,
-      "wikidata": "Q832757"
+      "wikidata": null
      },
-     "wd": {
-      "qid": "Q832757",
-      "label_es": "Villar del Ala",
-      "label_en": "Villar del Ala",
-      "label_ko": null,
-      "cls": [
-       "지자체"
-      ],
-      "how": "key",
-      "enwiki": "Villar del Ala",
-      "eswiki": "Villar del Ala",
-      "kowiki": null,
-      "desc_en": "municipality of Spain",
-      "desc_ko": null
-     },
+     "wd": null,
      "wv": null,
-     "views": {
-      "qid": "Q832757",
-      "en": 13,
-      "es": 118,
-      "ko": 0
-     }
+     "views": null
     },
     {
      "key": "w364384946",
@@ -1133,7 +1103,7 @@
      "status": "단일 출처",
      "lat": 41.949395,
      "lon": -2.600134,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.94940,-2.60013",
+     "gmaps": "https://www.google.com/maps?q=41.94940,-2.60013&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Ermita de San José",
@@ -1150,34 +1120,12 @@
      "views": null
     },
     {
-     "key": "n6125817086",
-     "group": "식당",
-     "status": "단일 출처",
-     "lat": 41.948426,
-     "lon": -2.600506,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.94843,-2.60051",
-     "no_coord": false,
-     "osm": {
-      "name": "La Casona",
-      "name_en": null,
-      "cat": "amenity=restaurant",
-      "opening_hours": null,
-      "fee": null,
-      "charge": null,
-      "website": null,
-      "wikidata": null
-     },
-     "wd": null,
-     "wv": null,
-     "views": null
-    },
-    {
      "key": "n8314720527",
      "group": "식당",
      "status": "단일 출처",
      "lat": 41.938898,
      "lon": -2.569698,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.93890,-2.56970",
+     "gmaps": "https://www.google.com/maps?q=41.93890,-2.56970&hl=en",
      "no_coord": false,
      "osm": {
       "name": "Restaurante Villabamba",
@@ -1194,21 +1142,43 @@
      "views": null
     },
     {
-     "key": "w511924973",
-     "group": "숙박",
+     "key": "n3352054537",
+     "group": "식당",
      "status": "단일 출처",
-     "lat": 41.946493,
-     "lon": -2.590362,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.94649,-2.59036",
+     "lat": 41.939737,
+     "lon": -2.574734,
+     "gmaps": "https://www.google.com/maps?q=41.93974,-2.57473&hl=en",
      "no_coord": false,
      "osm": {
-      "name": "Camping Entrerrobles",
+      "name": "Pololo",
       "name_en": null,
-      "cat": "tourism=camp_site",
+      "cat": "amenity=bar",
       "opening_hours": null,
       "fee": null,
       "charge": null,
-      "website": "https://campingentrerrobles.com/",
+      "website": null,
+      "wikidata": null
+     },
+     "wd": null,
+     "wv": null,
+     "views": null
+    },
+    {
+     "key": "n3352054538",
+     "group": "숙박",
+     "status": "단일 출처",
+     "lat": 41.941942,
+     "lon": -2.572962,
+     "gmaps": "https://www.google.com/maps?q=41.94194,-2.57296&hl=en",
+     "no_coord": false,
+     "osm": {
+      "name": "Hostal Cebollera",
+      "name_en": null,
+      "cat": "tourism=hotel",
+      "opening_hours": null,
+      "fee": null,
+      "charge": null,
+      "website": null,
       "wikidata": null
      },
      "wd": null,
@@ -1221,7 +1191,7 @@
      "status": "단일 출처",
      "lat": 41.942702,
      "lon": -2.575116,
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.94270,-2.57512",
+     "gmaps": "https://www.google.com/maps?q=41.94270,-2.57512&hl=en",
      "no_coord": false,
      "osm": {
       "name": "la Pista",
@@ -1250,7 +1220,7 @@
      "es": 1109,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.40596,-3.68876"
+     "gmaps": "https://www.google.com/maps?q=40.40596,-3.68876&hl=en"
     },
     {
      "name": "iglesia de la Santa Cruz",
@@ -1258,7 +1228,7 @@
      "es": 561,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41453,-3.70525"
+     "gmaps": "https://www.google.com/maps?q=40.41453,-3.70525&hl=en"
     },
     {
      "name": "Hotel Palace",
@@ -1266,7 +1236,7 @@
      "es": 676,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41510,-3.69511"
+     "gmaps": "https://www.google.com/maps?q=40.41510,-3.69511&hl=en"
     },
     {
      "name": "Museo de Historia de Madrid",
@@ -1274,7 +1244,7 @@
      "es": 597,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42583,-3.70083"
+     "gmaps": "https://www.google.com/maps?q=40.42583,-3.70083&hl=en"
     },
     {
      "name": "Palacio de Zurbano",
@@ -1282,7 +1252,7 @@
      "es": 967,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42808,-3.69389"
+     "gmaps": "https://www.google.com/maps?q=40.42808,-3.69389&hl=en"
     },
     {
      "name": "Parque del Retiro",
@@ -1290,7 +1260,7 @@
      "es": 5685,
      "share": 0.97,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41500,-3.68389"
+     "gmaps": "https://www.google.com/maps?q=40.41500,-3.68389&hl=en"
     },
     {
      "name": "Casa de las Siete Chimeneas",
@@ -1298,7 +1268,7 @@
      "es": 1061,
      "share": 0.95,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42020,-3.69666"
+     "gmaps": "https://www.google.com/maps?q=40.42020,-3.69666&hl=en"
     },
     {
      "name": "Ermita de la Virgen del Puerto",
@@ -1306,7 +1276,7 @@
      "es": 511,
      "share": 0.94,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41551,-3.72127"
+     "gmaps": "https://www.google.com/maps?q=40.41551,-3.72127&hl=en"
     },
     {
      "name": "iglesia de Santa Bárbara",
@@ -1314,7 +1284,7 @@
      "es": 1337,
      "share": 0.92,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42446,-3.69384"
+     "gmaps": "https://www.google.com/maps?q=40.42446,-3.69384&hl=en"
     },
     {
      "name": "iglesia de San Martín",
@@ -1322,7 +1292,7 @@
      "es": 472,
      "share": 0.91,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42125,-3.70458"
+     "gmaps": "https://www.google.com/maps?q=40.42125,-3.70458&hl=en"
     }
    ],
    "bottom": [
@@ -1332,7 +1302,7 @@
      "es": 275,
      "share": 0.32,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41806,-3.71389"
+     "gmaps": "https://www.google.com/maps?q=40.41806,-3.71389&hl=en"
     },
     {
      "name": "Sobrino de Botín",
@@ -1340,7 +1310,7 @@
      "es": 1288,
      "share": 0.32,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41421,-3.70809"
+     "gmaps": "https://www.google.com/maps?q=40.41421,-3.70809&hl=en"
     },
     {
      "name": "plaza de España",
@@ -1348,7 +1318,7 @@
      "es": 678,
      "share": 0.34,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.42339,-3.71223"
+     "gmaps": "https://www.google.com/maps?q=40.42339,-3.71223&hl=en"
     },
     {
      "name": "Museo Nacional Centro de Arte Reina Sofía",
@@ -1356,7 +1326,7 @@
      "es": 3276,
      "share": 0.37,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.40857,-3.69400"
+     "gmaps": "https://www.google.com/maps?q=40.40857,-3.69400&hl=en"
     },
     {
      "name": "Museo del Prado",
@@ -1364,7 +1334,7 @@
      "es": 8710,
      "share": 0.38,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41389,-3.69222"
+     "gmaps": "https://www.google.com/maps?q=40.41389,-3.69222&hl=en"
     },
     {
      "name": "Museo Nacional Thyssen-Bornemisza",
@@ -1372,7 +1342,7 @@
      "es": 3360,
      "share": 0.39,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41604,-3.69493"
+     "gmaps": "https://www.google.com/maps?q=40.41604,-3.69493&hl=en"
     },
     {
      "name": "Palacio Real de Madrid",
@@ -1380,7 +1350,7 @@
      "es": 10723,
      "share": 0.42,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41795,-3.71431"
+     "gmaps": "https://www.google.com/maps?q=40.41795,-3.71431&hl=en"
     },
     {
      "name": "plaza de Cibeles",
@@ -1388,7 +1358,7 @@
      "es": 2353,
      "share": 0.43,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41917,-3.69306"
+     "gmaps": "https://www.google.com/maps?q=40.41917,-3.69306&hl=en"
     },
     {
      "name": "Puerta del Sol",
@@ -1396,7 +1366,7 @@
      "es": 4317,
      "share": 0.43,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41694,-3.70361"
+     "gmaps": "https://www.google.com/maps?q=40.41694,-3.70361&hl=en"
     },
     {
      "name": "Horcher (Madrid)",
@@ -1404,7 +1374,7 @@
      "es": 262,
      "share": 0.44,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=40.41871,-3.68894"
+     "gmaps": "https://www.google.com/maps?q=40.41871,-3.68894&hl=en"
     }
    ]
   },
@@ -1417,7 +1387,7 @@
      "es": 2071,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.39088,2.17747"
+     "gmaps": "https://www.google.com/maps?q=41.39088,2.17747&hl=en"
     },
     {
      "name": "Casa Milá",
@@ -1425,7 +1395,7 @@
      "es": 4734,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.39528,2.16167"
+     "gmaps": "https://www.google.com/maps?q=41.39528,2.16167&hl=en"
     },
     {
      "name": "Casa Comalat",
@@ -1433,7 +1403,7 @@
      "es": 864,
      "share": 1.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.39705,2.16070"
+     "gmaps": "https://www.google.com/maps?q=41.39705,2.16070&hl=en"
     },
     {
      "name": "Fossar de les Moreres",
@@ -1441,7 +1411,7 @@
      "es": 3258,
      "share": 0.8,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38368,2.18243"
+     "gmaps": "https://www.google.com/maps?q=41.38368,2.18243&hl=en"
     },
     {
      "name": "Palacio Real Mayor de Barcelona",
@@ -1449,7 +1419,7 @@
      "es": 2113,
      "share": 0.75,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38416,2.17757"
+     "gmaps": "https://www.google.com/maps?q=41.38416,2.17757&hl=en"
     },
     {
      "name": "Palacio de Albéniz",
@@ -1457,7 +1427,7 @@
      "es": 884,
      "share": 0.74,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.36746,2.15596"
+     "gmaps": "https://www.google.com/maps?q=41.36746,2.15596&hl=en"
     },
     {
      "name": "Palacio de la Virreina",
@@ -1465,7 +1435,7 @@
      "es": 409,
      "share": 0.72,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38236,2.17159"
+     "gmaps": "https://www.google.com/maps?q=41.38236,2.17159&hl=en"
     },
     {
      "name": "basílica de la Merced",
@@ -1473,7 +1443,7 @@
      "es": 1024,
      "share": 0.68,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.37952,2.17958"
+     "gmaps": "https://www.google.com/maps?q=41.37952,2.17958&hl=en"
     },
     {
      "name": "Barcelona-Estación de Francia",
@@ -1481,7 +1451,7 @@
      "es": 881,
      "share": 0.68,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38400,2.18600"
+     "gmaps": "https://www.google.com/maps?q=41.38400,2.18600&hl=en"
     },
     {
      "name": "Casa de les Punxes",
@@ -1489,7 +1459,7 @@
      "es": 1392,
      "share": 0.68,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.39798,2.16378"
+     "gmaps": "https://www.google.com/maps?q=41.39798,2.16378&hl=en"
     }
    ],
    "bottom": [
@@ -1499,7 +1469,7 @@
      "es": 0,
      "share": 0.0,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38777,2.15321"
+     "gmaps": "https://www.google.com/maps?q=41.38777,2.15321&hl=en"
     },
     {
      "name": "Templo Expiatorio de la Sagrada Familia",
@@ -1507,7 +1477,7 @@
      "es": 22345,
      "share": 0.12,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.40369,2.17433"
+     "gmaps": "https://www.google.com/maps?q=41.40369,2.17433&hl=en"
     },
     {
      "name": "Museo Picasso de Barcelona",
@@ -1515,7 +1485,7 @@
      "es": 547,
      "share": 0.15,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38522,2.18089"
+     "gmaps": "https://www.google.com/maps?q=41.38522,2.18089&hl=en"
     },
     {
      "name": "Catedral de Santa Eulalia de Barcelona",
@@ -1523,7 +1493,7 @@
      "es": 3069,
      "share": 0.22,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38389,2.17639"
+     "gmaps": "https://www.google.com/maps?q=41.38389,2.17639&hl=en"
     },
     {
      "name": "La Rambla",
@@ -1531,7 +1501,7 @@
      "es": 1875,
      "share": 0.22,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.38139,2.17306"
+     "gmaps": "https://www.google.com/maps?q=41.38139,2.17306&hl=en"
     },
     {
      "name": "Pabellón alemán, Barcelona",
@@ -1539,7 +1509,7 @@
      "es": 1782,
      "share": 0.26,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.37056,2.15000"
+     "gmaps": "https://www.google.com/maps?q=41.37056,2.15000&hl=en"
     },
     {
      "name": "Estadio Olímpico Lluís Companys",
@@ -1547,7 +1517,7 @@
      "es": 10661,
      "share": 0.26,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.36472,2.15556"
+     "gmaps": "https://www.google.com/maps?q=41.36472,2.15556&hl=en"
     },
     {
      "name": "Casa Batlló",
@@ -1555,7 +1525,7 @@
      "es": 6386,
      "share": 0.27,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.39158,2.16492"
+     "gmaps": "https://www.google.com/maps?q=41.39158,2.16492&hl=en"
     },
     {
      "name": "Fundación Joan Miró",
@@ -1563,7 +1533,7 @@
      "es": 388,
      "share": 0.27,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.36861,2.16000"
+     "gmaps": "https://www.google.com/maps?q=41.36861,2.16000&hl=en"
     },
     {
      "name": "Monumento a Colón",
@@ -1571,7 +1541,7 @@
      "es": 1235,
      "share": 0.31,
      "group": "볼거리",
-     "gmaps": "https://www.google.com/maps/search/?api=1&query=41.37580,2.17776"
+     "gmaps": "https://www.google.com/maps?q=41.37580,2.17776&hl=en"
     }
    ]
   }
