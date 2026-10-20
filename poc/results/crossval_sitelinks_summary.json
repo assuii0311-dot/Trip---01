@@ -1,0 +1,149 @@
+{
+ "coverage_by_set": [
+  {
+   "set": "지자체",
+   "targets": 8414,
+   "looked_up": 8414,
+   "enwiki": 96.8,
+   "eswiki": 99.0,
+   "kowiki": 4.0,
+   "wv_en": 4.4,
+   "label_es": 99.5,
+   "label_en": 98.5,
+   "label_ko": 4.6,
+   "desc_es": 99.4,
+   "desc_en": 98.4,
+   "desc_ko": 0.8
+  },
+  {
+   "set": "Wikivoyage 목록 QID",
+   "targets": 2180,
+   "looked_up": 2180,
+   "enwiki": 50.6,
+   "eswiki": 75.5,
+   "kowiki": 11.9,
+   "wv_en": 15.1,
+   "label_es": 84.9,
+   "label_en": 98.4,
+   "label_ko": 12.7,
+   "desc_es": 77.8,
+   "desc_en": 94.1,
+   "desc_ko": 3.7
+  },
+  {
+   "set": "OSM∩Wikidata",
+   "targets": 32640,
+   "looked_up": 32640,
+   "enwiki": 27.2,
+   "eswiki": 50.7,
+   "kowiki": 1.2,
+   "wv_en": 0.9,
+   "label_es": 66.6,
+   "label_en": 83.6,
+   "label_ko": 1.3,
+   "desc_es": 69.9,
+   "desc_en": 79.9,
+   "desc_ko": 0.4
+  },
+  {
+   "set": "OSM∩문화유산 전용",
+   "targets": 4400,
+   "looked_up": 4400,
+   "enwiki": 9.8,
+   "eswiki": 39.2,
+   "kowiki": 0.6,
+   "wv_en": 0.1,
+   "label_es": 77.2,
+   "label_en": 94.1,
+   "label_ko": 0.7,
+   "desc_es": 68.5,
+   "desc_en": 78.5,
+   "desc_ko": 1.0
+  }
+ ],
+ "municipality_tiers": {
+  "인구 상위 50": {
+   "set": "인구 상위 50",
+   "targets": 50,
+   "looked_up": 50,
+   "enwiki": 100.0,
+   "eswiki": 100.0,
+   "kowiki": 98.0,
+   "wv_en": 90.0,
+   "label_es": 98.0,
+   "label_en": 98.0,
+   "label_ko": 100.0,
+   "desc_es": 100.0,
+   "desc_en": 100.0,
+   "desc_ko": 36.0
+  },
+  "상위 51~200": {
+   "set": "상위 51~200",
+   "targets": 150,
+   "looked_up": 150,
+   "enwiki": 100.0,
+   "eswiki": 100.0,
+   "kowiki": 61.3,
+   "wv_en": 54.0,
+   "label_es": 100.0,
+   "label_en": 99.3,
+   "label_ko": 64.7,
+   "desc_es": 100.0,
+   "desc_en": 100.0,
+   "desc_ko": 12.7
+  },
+  "상위 201~500": {
+   "set": "상위 201~500",
+   "targets": 300,
+   "looked_up": 300,
+   "enwiki": 99.3,
+   "eswiki": 100.0,
+   "kowiki": 17.7,
+   "wv_en": 20.0,
+   "label_es": 99.7,
+   "label_en": 99.0,
+   "label_ko": 21.3,
+   "desc_es": 100.0,
+   "desc_en": 100.0,
+   "desc_ko": 2.3
+  }
+ },
+ "wv_city_pages": 432,
+ "wv_city_mapped_to_municipality": 359,
+ "strata_counts": {
+  "기타(2만~10만, 가이드 미약)": 466,
+  "데이터 빈약 소도시": 7652,
+  "중소 관광 도시": 229,
+  "대도시": 67
+ },
+ "strata_examples": {
+  "기타(2만~10만, 가이드 미약)": [
+   "Q11915290",
+   "Cartaya",
+   "Aldaya",
+   "San Andrés del Rabanedo",
+   "Axpe Marzana"
+  ],
+  "데이터 빈약 소도시": [
+   "Villanueva del Duque",
+   "Huécija",
+   "Palacios de la Valduerna",
+   "Villasbuenas",
+   "Villadiego"
+  ],
+  "중소 관광 도시": [
+   "Alcoy",
+   "El Puig de Santa Maria",
+   "Segorbe",
+   "Murillo de Gállego",
+   "Tosa de Mar"
+  ],
+  "대도시": [
+   "Logroño",
+   "Reus",
+   "Baracaldo",
+   "Sevilla",
+   "León"
+  ]
+ }
+}
