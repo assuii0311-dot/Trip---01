@@ -29,5 +29,6 @@
 | wikidata_sitelinks.py | C | 매칭 대상 QID의 언어별 위키 문서 존재, 라벨, 설명을 50건 묶음으로 조회. 중단 후 재개 가능 |
 | crossval_sitelinks_report.py | C | 사이트링크 결과로 언어별 커버리지(P-03, P-08, P-10)와 D 단계 층별 도시 수 집계 |
 | pageviews_extract.py | C | 월간 페이지뷰 덤프에서 대상 문서의 en, es, ko 조회수 추출 (P-17) |
+| sample_review.py | D | 고정 난수로 층별 도시와 장소 표본을 뽑고 검수표 docs/02-review-sample.md 생성 |
 
 `poc/results/`에는 커밋하는 요약 수치 JSON을 둔다.
