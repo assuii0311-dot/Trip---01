@@ -25,3 +25,9 @@
 | wikidata_coverage.py | B | Wikidata 수집 결과를 합쳐 중복 제거 후 필드 커버리지와 지자체 인구 분포 집계 |
 | wikivoyage_parse.py | B | Wikivoyage 덤프에서 국가 하위 문서와 목록 추출. 영문과 스페인어 템플릿 설정 포함 |
 | osm_extract.py | B | OSM 추출본에서 여행 관련 장소 추출과 필드 커버리지 집계 |
+| crossval_match.py | C | Wikidata, Wikivoyage, OSM을 QID와 좌표·명칭으로 교차 매칭. 일치, 불일치, 단일 출처 판정과 숙박 밀도, 가이드 미수록 장소 |
+| wikidata_sitelinks.py | C | 매칭 대상 QID의 언어별 위키 문서 존재, 라벨, 설명을 50건 묶음으로 조회. 중단 후 재개 가능 |
+| crossval_sitelinks_report.py | C | 사이트링크 결과로 언어별 커버리지(P-03, P-08, P-10)와 D 단계 층별 도시 수 집계 |
+| pageviews_extract.py | C | 월간 페이지뷰 덤프에서 대상 문서의 en, es, ko 조회수 추출 (P-17) |
+
+`poc/results/`에는 커밋하는 요약 수치 JSON을 둔다.

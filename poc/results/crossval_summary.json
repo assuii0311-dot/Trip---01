@@ -1,0 +1,143 @@
+{
+ "computed_at": "2026-10-20 11:52",
+ "seconds": 70,
+ "sizes": {
+  "wikidata": 133362,
+  "osm": 646875,
+  "wikivoyage_listings": 11626
+ },
+ "wikidata_osm": {
+  "key": 32640,
+  "geo_name": 11411,
+  "total": 44051,
+  "pct_of_wikidata": 33.0,
+  "key_dist_m": {
+   "median": 11,
+   "pct_gt_200m": 8.8,
+   "pct_gt_1km": 1.4
+  },
+  "key_name_sim": {
+   "median": 1.0,
+   "pct_lt_0_4": 1.7
+  }
+ },
+ "wikivoyage": {
+  "to_wikidata_key": 2438,
+  "to_wikidata_geo_name": 692,
+  "to_osm_key": 1789,
+  "to_osm_geo_name": 3384,
+  "to_osm_total_pct": 44.5,
+  "key_dist_median_m": 23,
+  "key_dist_pct_gt_200m": 18.3,
+  "single": 5474
+ },
+ "status_wikidata": {
+  "일치": 43382,
+  "단일 출처": 88612,
+  "불일치": 1368
+ },
+ "status_wikidata_tourism_classes": {
+  "일치": 35742,
+  "단일 출처": 87693,
+  "불일치": 912
+ },
+ "conflict_reasons": {
+  "coord>500m": 980,
+  "name<0.4": 388
+ },
+ "osm_single_source": 602132,
+ "osm_single_pct": 93.1,
+ "p17_guide_missing": {
+  "total_candidates": 443917,
+  "missing": 440482,
+  "top": [
+   [
+    "amenity=restaurant",
+    58086,
+    57389
+   ],
+   [
+    "tourism=information",
+    47681,
+    47583
+   ],
+   [
+    "natural=peak",
+    43454,
+    43401
+   ],
+   [
+    "amenity=cafe",
+    20838,
+    20748
+   ],
+   [
+    "amenity=bar",
+    20428,
+    20333
+   ],
+   [
+    "leisure=park",
+    18907,
+    18860
+   ],
+   [
+    "historic=ruins",
+    17235,
+    17206
+   ],
+   [
+    "amenity=pub",
+    16503,
+    16453
+   ],
+   [
+    "tourism=artwork",
+    13574,
+    13544
+   ],
+   [
+    "tourism=hotel",
+    13286,
+    12687
+   ],
+   [
+    "tourism=viewpoint",
+    12226,
+    12056
+   ],
+   [
+    "natural=spring",
+    11630,
+    11603
+   ],
+   [
+    "historic=archaeological_site",
+    11240,
+    11153
+   ],
+   [
+    "amenity=fast_food",
+    9221,
+    9193
+   ],
+   [
+    "leisure=sports_centre",
+    9213,
+    9200
+   ]
+  ]
+ },
+ "p04_accommodation": {
+  "osm_accommodation": 31543,
+  "cities_measured": 398,
+  "cities_with_ge_10_within_3km": 211,
+  "cities_with_0": 71,
+  "median": 11,
+  "wv_pages_with_sleep": 383
+ },
+ "p09_booking": {
+  "wikivoyage_booking_text": 305,
+  "osm_reservation_tag": 1823
+ }
+}
