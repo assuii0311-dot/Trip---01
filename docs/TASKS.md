@@ -17,10 +17,10 @@
 | T-003 | docs/TASKS.md 작성 | 완료 | 준비 | T-002 | D-009 | |
 | T-004 | docs/decisions.md 작성 | 완료 | 준비 | T-002 | D-009 | |
 | T-005 | 1단계 요구사항 정의 | 완료 | 1단계 | | D-001, D-002, D-010 ~ D-014 | docs/01-requirements.md. 2단계 결과로 입력 항목과 조건부 기능 재조정 |
-| T-006 | 2단계 활용 가능한 데이터 정의. PoC 포함 | 진행 중 | 2단계 | T-005 | D-001, D-013, D-016, D-017 | A, B 완료 2026-10-19, C 완료 2026-10-20. A~E 완료 2026-10-21(E: 02-poc-results 22~30절). F 단계(분류표 확정, 데이터 모델 초안) 진행 중(D-019 묶음 진행). 결정 지점: Transitous 조건, NAP 가입(선택), 기기 테스트, 재조정, 설계 동의. 산출물 docs/02-data-sources.md, docs/02-poc-results.md, poc/ |
+| T-006 | 2단계 활용 가능한 데이터 정의. PoC 포함 | 진행 중 | 2단계 | T-005 | D-001, D-013, D-016, D-017 | A, B 완료 2026-10-19, C 완료 2026-10-20. A~E 완료 2026-10-21(E: 02-poc-results 22~30절). F-1 산출물 완료 2026-10-21(docs/02-poc-classification.md, docs/02-data-model.md). 남은 것: F-2 요구사항 재조정 결정(classification 3절 제안 ①~⑧), Transitous 조건, NAP 가입(선택), 기기 확인(poc/results/gmaps_samples). 산출물 docs/02-data-sources.md, docs/02-poc-results.md, poc/ |
 | T-007 | 엔진 설계 템플릿과 docs/engines 폴더 생성 | 완료 | 준비 | T-005 | D-012 | docs/engines/TEMPLATE.md, README.md |
 | T-008 | 개발 계획 문서 보완. 엔진 설계 하위 단계와 일정 추정 시점 추가 | 완료 | 준비 | T-005 | D-011 ~ D-014 | docs/development-plan.md 수정 |
-| T-009 | 작업 분해 기반 일정 추정 | 대기 | 2단계 이후 | T-006 | D-014 | 11월 완료 가능 여부 판단 |
+| T-009 | 작업 분해 기반 일정 추정 | 진행 중 | 2단계 이후 | T-006 | D-014, D-019 | 산출 완료 2026-10-21(docs/02-schedule-estimate.md). 결론 A/B/C 채택 대기 |
 | T-010 | 요구사항 정의서 수정 요청 반영 | 완료 | 1단계 | T-005 | D-015 | 수정 9건(세부 10개 변경), docs/01-requirements.md 부록 M1 ~ M10 |
 | T-011 | E1 데이터 수집·정규화 엔진 설계 문서 | 대기 | 2단계 | T-007 | D-012, D-013 | T-006과 병행 |
 | T-012 | E2 추천 엔진 설계 문서 | 대기 | 3단계 | T-006, T-007 | D-012 | |
