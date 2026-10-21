@@ -9,8 +9,8 @@
 
 | 판정 | 소스 |
 |---|---|
-| 사용 가능 | Wikidata(SPARQL, 엔티티 API), 영문과 스페인어 Wikivoyage(덤프), 위키백과(API, 영문·한국어·스페인어), OpenStreetMap 스페인 추출본(openstreetmap.fr), OSRM 데모 서버와 FOSSGIS 경로 서버(표본 요청만), Renfe 공개 데이터, 바르셀로나 공공데이터, Overture Maps 장소, Foursquare 공개 장소, 구글맵 경로 링크, Google My Maps 가져오기 |
-| 조건부 | Transitous(오픈소스·비상업 프로젝트만, 경로 호출 전 연락 필요), 스페인 교통 데이터 포털(무료 가입 필요), Wikimedia 페이지뷰(REST는 이 환경에서 거부, 월간 덤프 5.2GB로 대체), OpenRouteService(키 필요, 요금제 미확인), QLever(이 환경에서 429) |
+| 사용 가능 | Wikidata(SPARQL, 엔티티 API), 영문과 스페인어 Wikivoyage(덤프), 위키백과(API, 영문·한국어·스페인어), OpenStreetMap 스페인 추출본(openstreetmap.fr), 로컬 경로 엔진(pyvalhalla, 스페인 타일 2.1GB), OSRM 데모 서버와 FOSSGIS 경로 서버(표본 요청만), Renfe 정적 GTFS, Mobility Database 카탈로그 공개 복사본(스페인 GTFS 150건), 바르셀로나 공공데이터, 바르셀로나 AMB 택시 요금표, OpenFlights(노선 존재만), Overture Maps 장소, Foursquare 공개 장소, 구글맵 경로 링크, Google My Maps 가져오기 |
+| 조건부 | Transitous(오픈소스·비상업 프로젝트만, 경로 호출 전 연락 필요), 스페인 교통 데이터 포털 NAP(무료 가입 필요. 최신본·요금 파일이 필요할 때만), 마드리드 택시 요금표(시 포털 봇 차단), Wikimedia 페이지뷰(REST는 이 환경에서 거부, 월간 덤프 5.2GB로 대체), OpenRouteService(키 필요, 요금제 미확인), QLever(이 환경에서 429) |
 | 불가 | Google 검색 결과와 Google Trends(유료 API 또는 약관 위반), YouTube Data API(집계 금지 조항), Overpass API(본 서버 차단, 미러 오류), Geofabrik(차단), datos.gob.es와 마드리드 공공데이터(봇 차단), Nominatim 대량 조회(정책 금지) |
 
 ## 2. 소스 비교표
@@ -31,13 +31,16 @@
 | Nominatim | 참고 | ODbL | | 초당 1회, 대량 조회 금지 | 200 | | 대량 수집 불가 |
 | OSRM 데모(router.project-osrm.org) | P-05 | 결과는 ODbL 기반 | OSM 표기 | 비상업 합리적 사용, 초당 1회 이하, 무보증 | 200(route, table) | | 표본 요청만 |
 | FOSSGIS 경로 서버(routing.openstreetmap.de) | P-05 | 동일 | 동일 | 초당 1회, 스크래핑과 과다 사용 금지 | 200(도보 프로필) | | 표본 요청만 |
-| 로컬 경로 엔진(pyvalhalla) | P-05 대안 | 자체 계산 | OSM 표기 | 이 환경에서 구축. 외부 호출 없음 | PyPI 휠 37.5MB 있음 | | E 단계 검증 |
+| 로컬 경로 엔진(pyvalhalla) | P-05 주 경로 | 자체 계산(ODbL 기반) | OSM 표기 | 스페인 추출본 1.70GB로 타일 2.1GB를 8분에 구축(메모리 최대 13.4GB 관측). 외부 호출 없음. 표본 110쌍이 공개 서버와 거리 일치 | 구축 성공 | | 사용 가능 (02-poc-results 23절) |
 | Transitous | P-06 A단계 | 자체 데이터는 각 GTFS 라이선스 | transitous.org/sources 링크와 OSM 표기 필수 | 오픈소스이고 비상업적이며 자원을 적게 쓰는 프로젝트만. 경로 등 자원 집약 엔드포인트 사용 전 연락 요구. 원천 GTFS 전체 다운로드 제공 | 200(geocode, plan) | | 조건부 |
-| Renfe 공개 데이터 | P-15 | CC BY 4.0 | 필수 | CKAN API. gtfs 검색 결과 3건은 GTFS-RT. 정적 GTFS는 E 단계에서 확인 | 200 | | 사용 가능 |
-| 스페인 교통 데이터 포털(NAP) | P-15 | 교통부 공개데이터 라이선스(세부 미확인) | 미확인 | 사용자 가입 필요 | 200 | | 조건부. 가입 |
+| Renfe 공개 데이터 | P-15 | CC BY 4.0 | 필수 | 정적 GTFS 2개(고속·장거리·중거리, 광역전철)를 공개 URL로 확인. 요금 파일 없음, 요금 데이터셋 0건 | 200 | 16.8MB | 사용 가능 (02-poc-results 24절) |
+| Mobility Database 카탈로그 | P-06, P-15 | 피드별(대부분 MITRAMS 라이선스) | 피드별 | 스페인 GTFS 150건 전부 공개 복사본 주소 보유. 주요 운영사 21건 중 18건 다운로드 성공. 복사본 18건 중 11건은 유효 기간 만료 | 200 | 피드당 0.4~76MB | 사용 가능. 최신본은 원본 필요 |
+| 스페인 교통 데이터 포털(NAP) | P-15 | 교통부(MITRAMS) 공개 데이터 라이선스. 상업·비상업 허용, 원본 재배포는 동일 라이선스 | 출처 표기와 "Powered by MITRAMS" 문구·링크 | 다운로드는 가입과 API 키 필요(401). 라이선스 전문 확인 | 200 | | 조건부. 가입은 선택 |
+| 도시 택시 요금표 | P-15 | 공공 정보 | | 바르셀로나 AMB 페이지 접근 가능(요율 추출). 마드리드 시 포털은 404와 봇 차단 | 200 / 404 | | 도시별 수동 입력 |
+| OpenFlights | P-15 | ODbL | 필수 | 2014년 6월 이후 갱신 없음. 스페인 공항 56곳, 관련 노선 4,486건. 시간표·요금 없음 | 200 | 3.5MB | 노선 존재 참고만 |
 | OpenRouteService | P-05 대안 | 결과는 ODbL 기반 | OSM 표기 | API 키 필요. 요금제 페이지가 스크립트 렌더링이라 미확인 | 200 | | 보류 |
-| 구글맵 경로 링크 | P-14(R-13), P-16 | 외부 링크 | 해당 없음 | 키 불필요, 무료. 경유지는 모바일 브라우저 3개, 그 외 9개까지 | 200 | | 사용 가능 |
-| Google My Maps 가져오기 | P-16 | 외부 서비스 | 해당 없음 | KML/KMZ 5MB 이하, CSV 2,000행 이하 | 200 | | 사용 가능 |
+| 구글맵 경로 링크 | P-14(R-13), P-16 | 외부 링크 | 해당 없음 | 키 불필요, 무료. 경유지는 모바일 브라우저 3개, 그 외 9개까지. 표본 링크 생성(poc/results/gmaps_samples) | 200 | | 사용 가능. 기기 확인 대기 |
+| Google My Maps 가져오기 | P-16 | 외부 서비스 | 해당 없음 | KML/KMZ 5MB 이하, CSV 2,000행 이하. 표본 CSV·KML 생성(장소당 KML 171바이트) | 200 | | 사용 가능. 기기 확인 대기 |
 | YouTube Data API | P-17 | API 약관 | | 무료, 할당량 하루 10,000단위. 개발자 정책 "API 데이터를 집계하지 말 것" | 403(키 없음) | | 불가(정책) |
 | Google 검색, Trends | P-17 | | | Custom Search는 유료(하루 100건 무료), 페이지 자동 수집은 약관 위반, Trends 공식 API 없음 | 403, 429 | | 불가 |
 | Overture Maps 장소 | P-18 | CDLA Permissive 2.0(Meta, Microsoft), Apache 2.0(Foursquare 유래), CC0(AllThePlaces) | 필수 | S3 익명 읽기. 최신 릴리스 2026-09-23.1. Parquet 원격 필터링에 duckdb 필요 | 200 | 세계 전체. 스페인 부분만 원격 추출 | 사용 가능(도구 설치 후) |
@@ -99,9 +102,9 @@
 | 시점 | 행동 | 비고 |
 |---|---|---|
 | E 단계 전 | Transitous 사용 조건 결정. 앱을 오픈소스 라이선스로 공개하고 비상업으로 운영할지 | 결정이 없으면 대중교통 A 단계는 Transitous 없이 진행 |
-| E 단계 | 스페인 교통 데이터 포털 무료 가입 | 버스와 지하철 GTFS 확보용 |
+| E 단계 뒤(선택) | 스페인 교통 데이터 포털(NAP) 무료 가입 | 카탈로그 복사본으로 주요 도시 GTFS는 확보됨. 최신본과 요금 파일이 필요할 때만 |
 | B 단계 중 조건부 | Wikimedia 개발자 계정과 인증 토큰 | 429가 지속될 때만 요청 |
-| E 단계 | 생성된 구글맵 링크와 KML, CSV 파일을 기기에서 열어 확인 | P-16 |
+| E 단계 뒤 | 생성된 구글맵 링크와 KML, CSV 파일(poc/results/gmaps_samples)을 기기에서 열어 확인 | P-16. 파일 준비됨 |
 | 불필요 | YouTube API 키 | 정책상 불가로 판정 |
 
 ## 6. A 단계에서 확인된 사실 (2026-10-19)
@@ -113,3 +116,10 @@
 - Transitous: 오픈소스이고 비상업이며 자원을 적게 쓰는 프로젝트에 한해 무료. 경로 같은 자원 집약 엔드포인트 사용 전 연락 요구. 출처 링크와 OSM 표기 필수. 원천 데이터 전체 다운로드 제공.
 - 라이선스: Wikidata CC0, Wikivoyage CC BY-SA 4.0, OSM ODbL, Renfe와 바르셀로나 CC BY 4.0, Overture 장소 CDLA Permissive 2.0, Foursquare 공개 장소 Apache 2.0.
 - 덤프 갱신: Wikivoyage 2026-10-01, OSM 스페인 추출본 2026-10-19.
+
+## 7. E 단계에서 확인된 사실 (2026-10-21)
+
+- 로컬 경로 엔진: 패키지 실행 파일 직접 호출로 빌드 가능. 스페인 타일 2.1GB, 빌드 8분, 메모리 최대 13.4GB 관측. 도보·차량·자전거 경로와 행렬 계산이 0.1초 안. 상세는 02-poc-results 23절.
+- MITRAMS 공개 데이터 라이선스: 상업·비상업 재사용 허용, 출처 표기, 앱에 "Powered by MITRAMS" 문구와 링크, 원본 재배포는 동일 라이선스, 가공물은 다른 라이선스 가능. CRTM 라이선스도 상업·비상업 허용과 출처 표기.
+- Mobility Database 카탈로그의 공개 복사본은 인증 없이 받을 수 있으나 원본보다 오래될 수 있다(18건 중 11건 만료).
+- 비용 데이터는 교통비가 가장 약하다. GTFS 요금 파일은 마드리드 CRTM과 메트로 빌바오만.

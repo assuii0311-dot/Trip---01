@@ -31,5 +31,18 @@
 | pageviews_extract.py | C | 월간 페이지뷰 덤프에서 대상 문서의 en, es, ko 조회수 추출 (P-17) |
 | sample_review.py | D | 고정 난수로 층별 도시와 장소 표본을 뽑고 검수표 docs/02-review-sample.md 생성 |
 | review_gmaps.py | D | 표본을 구글맵에서 이름 검색해 명칭, 좌표(플러스 코드 해독), 분류, 영업시간의 1차 판정 생성 (D-018). 허용 주소 형식만 사용, 장소당 1회 |
+| routing_poc.py | E | 공개 경로 서버(OSRM 데모, FOSSGIS)에 도보·차량 표본 160건 요청. 성공률, 응답 시간, 직선 거리 대비 비율 |
+| routing_local.py | E | pyvalhalla 로컬 타일로 같은 표본 쌍을 다시 계산해 공개 서버 결과와 비교. N×N 도보 행렬 성능 |
+| gtfs_inspect.py | E | Renfe 정적 GTFS와 NAP 직접 다운로드 시험. 노선·정류장·운행 수, 요금 파일, 유효 기간 |
+| gtfs_catalog.py | E | Mobility Database 카탈로그의 공개 주소(urls.latest)로 주요 운영사 GTFS를 받아 검사 |
+| cost_poc.py | E | 비용 네 항목 확보율. Wikivoyage 가격 필드 숫자 추출과 저가·중가·고가 절, 교통 절의 금액 언급, OSM fee·charge, GTFS 요금 파일 |
+| gmaps_links.py | E | 구글맵 장소·경로 링크(경유지 한도 분할)와 My Maps 가져오기용 CSV·KML 표본 생성 |
 
-`poc/results/`에는 커밋하는 요약 수치 JSON을 둔다.
+`poc/results/`에는 커밋하는 요약 수치 JSON을 둔다. `poc/results/gmaps_samples/`는 기기 확인용 링크·CSV·KML 표본이다.
+
+## 로컬 경로 엔진(pyvalhalla) 실행 방법
+
+- 패키지의 `valhalla_build_tiles` 파이썬 래퍼는 실행 파일을 PATH에서 찾기 때문에 실패한다. 패키지 안의 실행 파일을 직접 부른다.
+  `B=<venv>/lib/python3.13/site-packages/valhalla/bin; export LD_LIBRARY_PATH=<venv>/lib/python3.13/site-packages/valhalla:<venv>/lib/python3.13/site-packages/valhalla.libs`
+  `$B/valhalla_build_tiles -c valhalla.json <추출본.pbf>` (valhalla.json은 `valhalla.get_config(tile_dir=..., tile_extract="")`로 생성)
+- 파이썬에서 쓸 때는 `Actor(get_config(tile_dir=<타일 디렉터리>, tile_extract=""))`. tile_extract 기본값은 tar 파일이라 비워야 한다.

@@ -1,0 +1,67 @@
+{
+ "places": 35,
+ "day_sample": [
+  "Museo de la Ciudad",
+  "La Iglesia de Jesucristo de los Santos de los Últimos Días",
+  "Naciones",
+  "Las Cábilas",
+  "Hostal Golden Torrejón",
+  "Parque de las Veredillas"
+ ],
+ "dir_links": {
+  "mobile": [
+   {
+    "from": "Museo de la Ciudad",
+    "to": "Hostal Golden Torrejón",
+    "via": [
+     "La Iglesia de Jesucristo de los Santos de los Últimos Días",
+     "Naciones",
+     "Las Cábilas"
+    ],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=40.456736,-3.476737&destination=40.457206,-3.472303&waypoints=40.458732,-3.467737|40.449838,-3.510747|40.461906,-3.480476&travelmode=walking"
+   },
+   {
+    "from": "Hostal Golden Torrejón",
+    "to": "Parque de las Veredillas",
+    "via": [],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=40.457206,-3.472303&destination=40.465153,-3.468744&travelmode=walking"
+   }
+  ],
+  "other": [
+   {
+    "from": "Museo de la Ciudad",
+    "to": "Parque de las Veredillas",
+    "via": [
+     "La Iglesia de Jesucristo de los Santos de los Últimos Días",
+     "Naciones",
+     "Las Cábilas",
+     "Hostal Golden Torrejón"
+    ],
+    "url": "https://www.google.com/maps/dir/?api=1&origin=40.456736,-3.476737&destination=40.465153,-3.468744&waypoints=40.458732,-3.467737|40.449838,-3.510747|40.461906,-3.480476|40.457206,-3.472303&travelmode=walking"
+   }
+  ]
+ },
+ "place_links_sample": [
+  {
+   "name": "Museo de la Ciudad",
+   "by_coord": "https://www.google.com/maps/search/?api=1&query=40.456736,-3.476737",
+   "by_name": "https://www.google.com/maps/search/?api=1&query=Museo%20de%20la%20Ciudad"
+  },
+  {
+   "name": "La Iglesia de Jesucristo de los Santos de los Últimos Días",
+   "by_coord": "https://www.google.com/maps/search/?api=1&query=40.458732,-3.467737",
+   "by_name": "https://www.google.com/maps/search/?api=1&query=La%20Iglesia%20de%20Jesucristo%20de%20los%20Santos%20de%20los%20%C3%9Altimos%20D%C3%ADas"
+  },
+  {
+   "name": "Naciones",
+   "by_coord": "https://www.google.com/maps/search/?api=1&query=40.449838,-3.510747",
+   "by_name": "https://www.google.com/maps/search/?api=1&query=Naciones"
+  }
+ ],
+ "csv_bytes": 2274,
+ "kml_bytes": 5981,
+ "kml_bytes_per_place": 171,
+ "kml_places_under_5mb": 29259,
+ "mymaps_rows_limit": 2000,
+ "url_len_max": 206
+}

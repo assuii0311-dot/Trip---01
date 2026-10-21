@@ -1,0 +1,403 @@
+{
+ "wikivoyage": {
+  "marker": {
+   "listings": 1651,
+   "price_field_pct": 0.0,
+   "numeric_pct": 0.0,
+   "free_pct": 0.0,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": null,
+   "eur_p25_p75": null
+  },
+  "listing": {
+   "listings": 795,
+   "price_field_pct": 7.8,
+   "numeric_pct": 7.4,
+   "free_pct": 2.8,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 12.35,
+   "eur_p25_p75": [
+    4.0,
+    30.0
+   ]
+  },
+  "go": {
+   "listings": 786,
+   "price_field_pct": 21.4,
+   "numeric_pct": 18.2,
+   "free_pct": 11.7,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 6.0,
+   "eur_p25_p75": [
+    3.25,
+    15.0
+   ]
+  },
+  "do": {
+   "listings": 1044,
+   "price_field_pct": 14.9,
+   "numeric_pct": 13.5,
+   "free_pct": 3.2,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 22.0,
+   "eur_p25_p75": [
+    10.0,
+    37.0
+   ]
+  },
+  "buy": {
+   "listings": 446,
+   "price_field_pct": 2.9,
+   "numeric_pct": 2.2,
+   "free_pct": 1.1,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 40.0,
+   "eur_p25_p75": [
+    20.0,
+    40.0
+   ]
+  },
+  "sleep": {
+   "listings": 2029,
+   "price_field_pct": 50.9,
+   "numeric_pct": 49.0,
+   "free_pct": 0.6,
+   "tier_pct": 28.2,
+   "tier": {
+    "중가": 287,
+    "저가": 147,
+    "고가": 139
+   },
+   "eur_median": 90.0,
+   "eur_p25_p75": [
+    50.0,
+    135.0
+   ]
+  },
+  "see": {
+   "listings": 2630,
+   "price_field_pct": 32.5,
+   "numeric_pct": 31.2,
+   "free_pct": 17.9,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 5.0,
+   "eur_p25_p75": [
+    2.5,
+    8.0
+   ]
+  },
+  "eat": {
+   "listings": 1819,
+   "price_field_pct": 18.6,
+   "numeric_pct": 16.9,
+   "free_pct": 0.1,
+   "tier_pct": 55.9,
+   "tier": {
+    "저가": 473,
+    "중가": 386,
+    "고가": 157
+   },
+   "eur_median": 19.0,
+   "eur_p25_p75": [
+    10.0,
+    30.0
+   ]
+  },
+  "drink": {
+   "listings": 426,
+   "price_field_pct": 8.7,
+   "numeric_pct": 8.2,
+   "free_pct": 0.5,
+   "tier_pct": 0.0,
+   "tier": {},
+   "eur_median": 10.0,
+   "eur_p25_p75": [
+    6.0,
+    10.0
+   ]
+  }
+ },
+ "wikivoyage_transport": {
+  "docs": 565,
+  "get_around_eur": 94,
+  "get_in_eur": 114,
+  "get_around_section": 545
+ },
+ "osm": {
+  "places": 646875,
+  "fee_tag": 4733,
+  "fee_yes": 1704,
+  "fee_no": 3010,
+  "charge_tag": 347,
+  "top_fee_coverage": [
+   [
+    "tourism=caravan_site",
+    1613,
+    959,
+    59.5
+   ],
+   [
+    "tourism=camp_site",
+    1622,
+    407,
+    25.1
+   ],
+   [
+    "tourism=wilderness_hut",
+    951,
+    226,
+    23.8
+   ],
+   [
+    "tourism=museum",
+    3853,
+    804,
+    20.9
+   ],
+   [
+    "natural=cave_entrance",
+    7707,
+    1056,
+    13.7
+   ],
+   [
+    "leisure=sports_centre",
+    9213,
+    392,
+    4.3
+   ],
+   [
+    "leisure=garden",
+    2029,
+    82,
+    4.0
+   ],
+   [
+    "tourism=camp_pitch",
+    928,
+    28,
+    3.0
+   ],
+   [
+    "leisure=swimming_pool",
+    1739,
+    43,
+    2.5
+   ],
+   [
+    "railway=halt",
+    521,
+    8,
+    1.5
+   ]
+  ]
+ },
+ "gtfs": {
+  "feeds": 26,
+  "with_fare_attributes": 7,
+  "with_fare_v2": 0,
+  "detail": [
+   {
+    "feed": "Renfe 고속·장거리·중거리",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "Renfe Cercanías(광역전철)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "NAP 마드리드 광역버스(1361)",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "NAP 바르셀로나 광역버스(1496)",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "NAP 발렌시아 광역버스(1526)",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "Metropolitano de Tenerife (Metrotenerife)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Consorcio Regional de Transportes de Madrid CRTM Intercity Buses (Madrid Intercity Buses)",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Empresa Municipal de Transportes de Madrid (EMT Madrid)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Metro de Madrid",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Empresa Municipal de Transportes de Valencia (EMT Valencia)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Àrea Metropolitana de Barcelona (AMB)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Consorcio Regional de Transportes de Madrid CRTM EMT (Red de EMT)",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "TRAM Barcelona (Tranvía Metropolitano Barcelona)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "TRAM Barcelona Besós (Tranvía Metropolitano Barcelona)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Metro de Málaga",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "MetroValencia",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Generalitat Valenciana (Intercity bus)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Empresa Malagueña de Transportes (EMT)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Transports Metropolitans de Barcelona (TMB)",
+    "fare_attributes": false,
+    "fare_rules": false,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Consorcio Regional de Transportes de Madrid CRTM Commuter Network (Red de Cercanías)",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Metro de Sevilla",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "Public Works Agency of the Andalusian Regional Government (Metro de Grenada)",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "Consorcio Regional de Transportes de Madrid CRTM Light Rail Network (Red de Metro Ligero)",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "Consorcio Regional de Transportes de Madrid CRTM Madrid City Bus (Autobús urbano de Madrid)",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": []
+   },
+   {
+    "feed": "FGV - Generalitat Valenciana Metro de Valencia",
+    "fare_attributes": null,
+    "fare_rules": null,
+    "fare_v2": false,
+    "samples": null
+   },
+   {
+    "feed": "Metro Bilbao",
+    "fare_attributes": true,
+    "fare_rules": true,
+    "fare_v2": false,
+    "samples": [
+     [
+      "   2.00000",
+      "EUR"
+     ],
+     [
+      "   2.20000",
+      "EUR"
+     ],
+     [
+      "   2.25000",
+      "EUR"
+     ]
+    ]
+   }
+  ]
+ }
+}

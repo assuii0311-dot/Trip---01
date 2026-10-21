@@ -1,0 +1,1594 @@
+{
+ "summary": {
+  "requests_total": 160,
+  "driving": {
+   "n": 60,
+   "ok": 60,
+   "sec_median": 0.225,
+   "ratio_median": 1.2650000000000001,
+   "speed_kmh_median": 86.58010733452593
+  },
+  "foot_intracity_osrm": {
+   "n": 50,
+   "ok": 50,
+   "sec_median": 0.28,
+   "ratio_median": 1.63,
+   "speed_kmh_median": 27.371463563992652,
+   "fail_status": []
+  },
+  "foot_intracity_fossgis": {
+   "n": 50,
+   "ok": 50,
+   "sec_median": 0.13,
+   "ratio_median": 1.24,
+   "speed_kmh_median": 4.488376606470853,
+   "fail_status": []
+  }
+ },
+ "driving_intercity": [
+  {
+   "from": "Murcia",
+   "to": "Palma de Mallorca",
+   "ok": true,
+   "sec": 0.67,
+   "status": "Ok",
+   "dist_km": 833.4,
+   "dur_min": 814,
+   "straight_km": 371.9,
+   "ratio": 2.24
+  },
+  {
+   "from": "Valencia",
+   "to": "Palma de Mallorca",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 608.8,
+   "dur_min": 673,
+   "straight_km": 259.8,
+   "ratio": 2.34
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Valladolid",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 986.6,
+   "dur_min": 920,
+   "straight_km": 664.3,
+   "ratio": 1.49
+  },
+  {
+   "from": "Zaragoza",
+   "to": "La Coruña",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 777.3,
+   "dur_min": 510,
+   "straight_km": 644.6,
+   "ratio": 1.21
+  },
+  {
+   "from": "Murcia",
+   "to": "Alicante",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 82.0,
+   "dur_min": 58,
+   "straight_km": 69.4,
+   "ratio": 1.18
+  },
+  {
+   "from": "Madrid",
+   "to": "La Coruña",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 591.3,
+   "dur_min": 388,
+   "straight_km": 508.6,
+   "ratio": 1.16
+  },
+  {
+   "from": "Málaga",
+   "to": "Vigo",
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_km": 948.0,
+   "dur_min": 676,
+   "straight_km": 716.3,
+   "ratio": 1.32
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Vitoria",
+   "ok": true,
+   "sec": 0.49,
+   "status": "Ok",
+   "dist_km": 822.6,
+   "dur_min": 810,
+   "straight_km": 575.4,
+   "ratio": 1.43
+  },
+  {
+   "from": "Valencia",
+   "to": "Zaragoza",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 309.7,
+   "dur_min": 215,
+   "straight_km": 246.2,
+   "ratio": 1.26
+  },
+  {
+   "from": "Madrid",
+   "to": "Sevilla",
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_km": 532.2,
+   "dur_min": 348,
+   "straight_km": 390.8,
+   "ratio": 1.36
+  },
+  {
+   "from": "Alicante",
+   "to": "Vitoria",
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_km": 728.5,
+   "dur_min": 491,
+   "straight_km": 533.5,
+   "ratio": 1.37
+  },
+  {
+   "from": "Sevilla",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 990.3,
+   "dur_min": 651,
+   "straight_km": 823.4,
+   "ratio": 1.2
+  },
+  {
+   "from": "Murcia",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 58.6,
+   "dur_min": 42,
+   "straight_km": 49.2,
+   "ratio": 1.19
+  },
+  {
+   "from": "Zaragoza",
+   "to": "Alicante",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 469.8,
+   "dur_min": 325,
+   "straight_km": 369.0,
+   "ratio": 1.27
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 269.4,
+   "dur_min": 456,
+   "straight_km": 204.7,
+   "ratio": 1.32
+  },
+  {
+   "from": "Zaragoza",
+   "to": "Las Palmas de Gran Canaria",
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_km": 1092.5,
+   "dur_min": 745,
+   "straight_km": 1999.6,
+   "ratio": 0.55
+  },
+  {
+   "from": "Valladolid",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 608.4,
+   "dur_min": 419,
+   "straight_km": 509.5,
+   "ratio": 1.19
+  },
+  {
+   "from": "Sevilla",
+   "to": "Palma de Mallorca",
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_km": 1257.7,
+   "dur_min": 1096,
+   "straight_km": 790.1,
+   "ratio": 1.59
+  },
+  {
+   "from": "Alicante",
+   "to": "Gijón",
+   "ok": true,
+   "sec": 0.17,
+   "status": "Ok",
+   "dist_km": 887.4,
+   "dur_min": 585,
+   "straight_km": 722.6,
+   "ratio": 1.23
+  },
+  {
+   "from": "Q10509",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 327.0,
+   "dur_min": 229,
+   "straight_km": 282.6,
+   "ratio": 1.16
+  },
+  {
+   "from": "Alicante",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 527.5,
+   "dur_min": 346,
+   "straight_km": 401.1,
+   "ratio": 1.32
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_km": 791.2,
+   "dur_min": 797,
+   "straight_km": 323.7,
+   "ratio": 2.44
+  },
+  {
+   "from": "Málaga",
+   "to": "Bilbao",
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_km": 923.7,
+   "dur_min": 624,
+   "straight_km": 738.8,
+   "ratio": 1.25
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Gijón",
+   "ok": true,
+   "sec": 0.31,
+   "status": "Ok",
+   "dist_km": 1131.1,
+   "dur_min": 1012,
+   "straight_km": 820.6,
+   "ratio": 1.38
+  },
+  {
+   "from": "Málaga",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.2,
+   "status": "Ok",
+   "dist_km": 451.3,
+   "dur_min": 312,
+   "straight_km": 370.5,
+   "ratio": 1.22
+  },
+  {
+   "from": "Zaragoza",
+   "to": "Palma de Mallorca",
+   "ok": true,
+   "sec": 0.36,
+   "status": "Ok",
+   "dist_km": 572.0,
+   "dur_min": 647,
+   "straight_km": 377.6,
+   "ratio": 1.51
+  },
+  {
+   "from": "Sevilla",
+   "to": "La Coruña",
+   "ok": true,
+   "sec": 0.32,
+   "status": "Ok",
+   "dist_km": 920.3,
+   "dur_min": 591,
+   "straight_km": 695.5,
+   "ratio": 1.32
+  },
+  {
+   "from": "Córdoba",
+   "to": "Valladolid",
+   "ok": true,
+   "sec": 0.18,
+   "status": "Ok",
+   "dist_km": 583.0,
+   "dur_min": 405,
+   "straight_km": 418.3,
+   "ratio": 1.39
+  },
+  {
+   "from": "Murcia",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.22,
+   "status": "Ok",
+   "dist_km": 278.7,
+   "dur_min": 198,
+   "straight_km": 235.5,
+   "ratio": 1.18
+  },
+  {
+   "from": "Vigo",
+   "to": "Vitoria",
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_km": 657.1,
+   "dur_min": 434,
+   "straight_km": 500.5,
+   "ratio": 1.31
+  },
+  {
+   "from": "Córdoba",
+   "to": "Gijón",
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_km": 858.4,
+   "dur_min": 568,
+   "straight_km": 631.6,
+   "ratio": 1.36
+  },
+  {
+   "from": "Alicante",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.2,
+   "status": "Ok",
+   "dist_km": 351.3,
+   "dur_min": 247,
+   "straight_km": 303.3,
+   "ratio": 1.16
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_km": 269.4,
+   "dur_min": 456,
+   "straight_km": 204.7,
+   "ratio": 1.32
+  },
+  {
+   "from": "Vigo",
+   "to": "La Coruña",
+   "ok": true,
+   "sec": 0.24,
+   "status": "Ok",
+   "dist_km": 159.9,
+   "dur_min": 112,
+   "straight_km": 129.1,
+   "ratio": 1.24
+  },
+  {
+   "from": "Sevilla",
+   "to": "Gijón",
+   "ok": true,
+   "sec": 0.17,
+   "status": "Ok",
+   "dist_km": 793.5,
+   "dur_min": 517,
+   "straight_km": 683.3,
+   "ratio": 1.16
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Bilbao",
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_km": 868.2,
+   "dur_min": 836,
+   "straight_km": 620.9,
+   "ratio": 1.4
+  },
+  {
+   "from": "Vigo",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.24,
+   "status": "Ok",
+   "dist_km": 1009.1,
+   "dur_min": 666,
+   "straight_km": 811.2,
+   "ratio": 1.24
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.27,
+   "status": "Ok",
+   "dist_km": 791.2,
+   "dur_min": 797,
+   "straight_km": 323.7,
+   "ratio": 2.44
+  },
+  {
+   "from": "Murcia",
+   "to": "Palma de Mallorca",
+   "ok": true,
+   "sec": 0.18,
+   "status": "Ok",
+   "dist_km": 833.4,
+   "dur_min": 814,
+   "straight_km": 371.9,
+   "ratio": 2.24
+  },
+  {
+   "from": "Las Palmas de Gran Canaria",
+   "to": "Valladolid",
+   "ok": true,
+   "sec": 0.17,
+   "status": "Ok",
+   "dist_km": 787.6,
+   "dur_min": 562,
+   "straight_km": 1789.6,
+   "ratio": 0.44
+  },
+  {
+   "from": "Gijón",
+   "to": "Vitoria",
+   "ok": true,
+   "sec": 0.2,
+   "status": "Ok",
+   "dist_km": 333.6,
+   "dur_min": 232,
+   "straight_km": 255.1,
+   "ratio": 1.31
+  },
+  {
+   "from": "Bilbao",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.15,
+   "status": "Ok",
+   "dist_km": 810.1,
+   "dur_min": 539,
+   "straight_km": 679.3,
+   "ratio": 1.19
+  },
+  {
+   "from": "Alicante",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.24,
+   "status": "Ok",
+   "dist_km": 351.3,
+   "dur_min": 247,
+   "straight_km": 303.3,
+   "ratio": 1.16
+  },
+  {
+   "from": "Sevilla",
+   "to": "Vitoria",
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_km": 814.0,
+   "dur_min": 528,
+   "straight_km": 669.3,
+   "ratio": 1.22
+  },
+  {
+   "from": "Valladolid",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_km": 720.1,
+   "dur_min": 472,
+   "straight_km": 569.3,
+   "ratio": 1.26
+  },
+  {
+   "from": "Bilbao",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.29,
+   "status": "Ok",
+   "dist_km": 601.4,
+   "dur_min": 388,
+   "straight_km": 464.8,
+   "ratio": 1.29
+  },
+  {
+   "from": "Barcelona",
+   "to": "Las Palmas de Gran Canaria",
+   "ok": true,
+   "sec": 1.0,
+   "status": "Ok",
+   "dist_km": 1303.7,
+   "dur_min": 871,
+   "straight_km": 2173.8,
+   "ratio": 0.6
+  },
+  {
+   "from": "Valencia",
+   "to": "Málaga",
+   "ok": true,
+   "sec": 0.56,
+   "status": "Ok",
+   "dist_km": 606.4,
+   "dur_min": 411,
+   "straight_km": 467.6,
+   "ratio": 1.3
+  },
+  {
+   "from": "Valencia",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.32,
+   "status": "Ok",
+   "dist_km": 341.4,
+   "dur_min": 228,
+   "straight_km": 296.7,
+   "ratio": 1.15
+  },
+  {
+   "from": "Málaga",
+   "to": "Valladolid",
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_km": 719.5,
+   "dur_min": 505,
+   "straight_km": 549.4,
+   "ratio": 1.31
+  },
+  {
+   "from": "La Coruña",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.4,
+   "status": "Ok",
+   "dist_km": 1011.0,
+   "dur_min": 659,
+   "straight_km": 860.6,
+   "ratio": 1.17
+  },
+  {
+   "from": "Zaragoza",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.33,
+   "status": "Ok",
+   "dist_km": 725.1,
+   "dur_min": 482,
+   "straight_km": 549.5,
+   "ratio": 1.32
+  },
+  {
+   "from": "Madrid",
+   "to": "Córdoba",
+   "ok": true,
+   "sec": 0.24,
+   "status": "Ok",
+   "dist_km": 393.7,
+   "dur_min": 269,
+   "straight_km": 295.9,
+   "ratio": 1.33
+  },
+  {
+   "from": "La Coruña",
+   "to": "Granada",
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_km": 1010.0,
+   "dur_min": 658,
+   "straight_km": 799.8,
+   "ratio": 1.26
+  },
+  {
+   "from": "Barcelona",
+   "to": "Córdoba",
+   "ok": true,
+   "sec": 0.29,
+   "status": "Ok",
+   "dist_km": 861.0,
+   "dur_min": 570,
+   "straight_km": 710.8,
+   "ratio": 1.21
+  },
+  {
+   "from": "Palma de Mallorca",
+   "to": "Hospitalet de Llobregat",
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_km": 269.4,
+   "dur_min": 456,
+   "straight_km": 204.7,
+   "ratio": 1.32
+  },
+  {
+   "from": "Valencia",
+   "to": "Valladolid",
+   "ok": true,
+   "sec": 0.49,
+   "status": "Ok",
+   "dist_km": 547.7,
+   "dur_min": 385,
+   "straight_km": 440.4,
+   "ratio": 1.24
+  },
+  {
+   "from": "Alicante",
+   "to": "Q10509",
+   "ok": true,
+   "sec": 0.49,
+   "status": "Ok",
+   "dist_km": 29.0,
+   "dur_min": 26,
+   "straight_km": 20.7,
+   "ratio": 1.4
+  },
+  {
+   "from": "Sevilla",
+   "to": "Alicante",
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_km": 601.1,
+   "dur_min": 413,
+   "straight_km": 495.3,
+   "ratio": 1.21
+  },
+  {
+   "from": "Murcia",
+   "to": "Alicante",
+   "ok": true,
+   "sec": 0.33,
+   "status": "Ok",
+   "dist_km": 82.0,
+   "dur_min": 58,
+   "straight_km": 69.4,
+   "ratio": 1.18
+  }
+ ],
+ "foot_osrm": [
+  {
+   "ok": true,
+   "sec": 0.22,
+   "status": "Ok",
+   "dist_m": 2376,
+   "dur_min": 5.1,
+   "straight_m": 1702,
+   "ratio": 1.4
+  },
+  {
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_m": 3133,
+   "dur_min": 5.4,
+   "straight_m": 1749,
+   "ratio": 1.79
+  },
+  {
+   "ok": true,
+   "sec": 0.22,
+   "status": "Ok",
+   "dist_m": 3286,
+   "dur_min": 7.1,
+   "straight_m": 1933,
+   "ratio": 1.7
+  },
+  {
+   "ok": true,
+   "sec": 0.38,
+   "status": "Ok",
+   "dist_m": 1928,
+   "dur_min": 3.8,
+   "straight_m": 1351,
+   "ratio": 1.43
+  },
+  {
+   "ok": true,
+   "sec": 0.22,
+   "status": "Ok",
+   "dist_m": 2068,
+   "dur_min": 4.6,
+   "straight_m": 1668,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 0.29,
+   "status": "Ok",
+   "dist_m": 1973,
+   "dur_min": 4.6,
+   "straight_m": 467,
+   "ratio": 4.22
+  },
+  {
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_m": 2042,
+   "dur_min": 4.8,
+   "straight_m": 1292,
+   "ratio": 1.58
+  },
+  {
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_m": 2826,
+   "dur_min": 7.0,
+   "straight_m": 1019,
+   "ratio": 2.77
+  },
+  {
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_m": 2048,
+   "dur_min": 4.8,
+   "straight_m": 1183,
+   "ratio": 1.73
+  },
+  {
+   "ok": true,
+   "sec": 0.15,
+   "status": "Ok",
+   "dist_m": 1142,
+   "dur_min": 3.4,
+   "straight_m": 735,
+   "ratio": 1.55
+  },
+  {
+   "ok": true,
+   "sec": 0.42,
+   "status": "Ok",
+   "dist_m": 1383,
+   "dur_min": 4.7,
+   "straight_m": 798,
+   "ratio": 1.73
+  },
+  {
+   "ok": true,
+   "sec": 0.18,
+   "status": "Ok",
+   "dist_m": 2002,
+   "dur_min": 4.8,
+   "straight_m": 1149,
+   "ratio": 1.74
+  },
+  {
+   "ok": true,
+   "sec": 0.29,
+   "status": "Ok",
+   "dist_m": 3579,
+   "dur_min": 8.2,
+   "straight_m": 2327,
+   "ratio": 1.54
+  },
+  {
+   "ok": true,
+   "sec": 0.2,
+   "status": "Ok",
+   "dist_m": 3060,
+   "dur_min": 7.8,
+   "straight_m": 1173,
+   "ratio": 2.61
+  },
+  {
+   "ok": true,
+   "sec": 0.22,
+   "status": "Ok",
+   "dist_m": 1309,
+   "dur_min": 4.2,
+   "straight_m": 892,
+   "ratio": 1.47
+  },
+  {
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_m": 4831,
+   "dur_min": 8.3,
+   "straight_m": 4356,
+   "ratio": 1.11
+  },
+  {
+   "ok": true,
+   "sec": 0.25,
+   "status": "Ok",
+   "dist_m": 3665,
+   "dur_min": 7.9,
+   "straight_m": 2088,
+   "ratio": 1.76
+  },
+  {
+   "ok": true,
+   "sec": 0.17,
+   "status": "Ok",
+   "dist_m": 5320,
+   "dur_min": 11.0,
+   "straight_m": 3205,
+   "ratio": 1.66
+  },
+  {
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_m": 3890,
+   "dur_min": 7.8,
+   "straight_m": 2113,
+   "ratio": 1.84
+  },
+  {
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_m": 4515,
+   "dur_min": 8.6,
+   "straight_m": 1999,
+   "ratio": 2.26
+  },
+  {
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_m": 4269,
+   "dur_min": 7.5,
+   "straight_m": 2916,
+   "ratio": 1.46
+  },
+  {
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_m": 3376,
+   "dur_min": 6.6,
+   "straight_m": 2000,
+   "ratio": 1.69
+  },
+  {
+   "ok": true,
+   "sec": 0.15,
+   "status": "Ok",
+   "dist_m": 3705,
+   "dur_min": 6.9,
+   "straight_m": 1934,
+   "ratio": 1.92
+  },
+  {
+   "ok": true,
+   "sec": 0.19,
+   "status": "Ok",
+   "dist_m": 2984,
+   "dur_min": 7.4,
+   "straight_m": 2208,
+   "ratio": 1.35
+  },
+  {
+   "ok": true,
+   "sec": 0.16,
+   "status": "Ok",
+   "dist_m": 5863,
+   "dur_min": 10.8,
+   "straight_m": 3338,
+   "ratio": 1.76
+  },
+  {
+   "ok": true,
+   "sec": 0.24,
+   "status": "Ok",
+   "dist_m": 2361,
+   "dur_min": 5.8,
+   "straight_m": 1514,
+   "ratio": 1.56
+  },
+  {
+   "ok": true,
+   "sec": 0.19,
+   "status": "Ok",
+   "dist_m": 2581,
+   "dur_min": 6.4,
+   "straight_m": 1940,
+   "ratio": 1.33
+  },
+  {
+   "ok": true,
+   "sec": 0.34,
+   "status": "Ok",
+   "dist_m": 2422,
+   "dur_min": 4.3,
+   "straight_m": 1546,
+   "ratio": 1.57
+  },
+  {
+   "ok": true,
+   "sec": 0.23,
+   "status": "Ok",
+   "dist_m": 3365,
+   "dur_min": 7.9,
+   "straight_m": 2160,
+   "ratio": 1.56
+  },
+  {
+   "ok": true,
+   "sec": 0.18,
+   "status": "Ok",
+   "dist_m": 2108,
+   "dur_min": 4.8,
+   "straight_m": 1317,
+   "ratio": 1.6
+  },
+  {
+   "ok": true,
+   "sec": 0.31,
+   "status": "Ok",
+   "dist_m": 1781,
+   "dur_min": 5.5,
+   "straight_m": 794,
+   "ratio": 2.24
+  },
+  {
+   "ok": true,
+   "sec": 0.18,
+   "status": "Ok",
+   "dist_m": 556,
+   "dur_min": 1.8,
+   "straight_m": 267,
+   "ratio": 2.08
+  },
+  {
+   "ok": true,
+   "sec": 0.3,
+   "status": "Ok",
+   "dist_m": 4278,
+   "dur_min": 8.1,
+   "straight_m": 2912,
+   "ratio": 1.47
+  },
+  {
+   "ok": true,
+   "sec": 0.21,
+   "status": "Ok",
+   "dist_m": 3634,
+   "dur_min": 8.3,
+   "straight_m": 2569,
+   "ratio": 1.41
+  },
+  {
+   "ok": true,
+   "sec": 0.42,
+   "status": "Ok",
+   "dist_m": 2501,
+   "dur_min": 6.2,
+   "straight_m": 650,
+   "ratio": 3.85
+  },
+  {
+   "ok": true,
+   "sec": 0.59,
+   "status": "Ok",
+   "dist_m": 2868,
+   "dur_min": 4.8,
+   "straight_m": 1937,
+   "ratio": 1.48
+  },
+  {
+   "ok": true,
+   "sec": 0.57,
+   "status": "Ok",
+   "dist_m": 6217,
+   "dur_min": 11.9,
+   "straight_m": 3379,
+   "ratio": 1.84
+  },
+  {
+   "ok": true,
+   "sec": 0.6,
+   "status": "Ok",
+   "dist_m": 3565,
+   "dur_min": 6.6,
+   "straight_m": 1611,
+   "ratio": 2.21
+  },
+  {
+   "ok": true,
+   "sec": 0.56,
+   "status": "Ok",
+   "dist_m": 1591,
+   "dur_min": 3.9,
+   "straight_m": 1040,
+   "ratio": 1.53
+  },
+  {
+   "ok": true,
+   "sec": 0.41,
+   "status": "Ok",
+   "dist_m": 2774,
+   "dur_min": 5.4,
+   "straight_m": 2229,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 0.78,
+   "status": "Ok",
+   "dist_m": 5327,
+   "dur_min": 10.6,
+   "straight_m": 2935,
+   "ratio": 1.81
+  },
+  {
+   "ok": true,
+   "sec": 0.56,
+   "status": "Ok",
+   "dist_m": 2779,
+   "dur_min": 5.4,
+   "straight_m": 1951,
+   "ratio": 1.42
+  },
+  {
+   "ok": true,
+   "sec": 0.61,
+   "status": "Ok",
+   "dist_m": 1957,
+   "dur_min": 5.4,
+   "straight_m": 390,
+   "ratio": 5.01
+  },
+  {
+   "ok": true,
+   "sec": 0.36,
+   "status": "Ok",
+   "dist_m": 1600,
+   "dur_min": 3.6,
+   "straight_m": 1254,
+   "ratio": 1.28
+  },
+  {
+   "ok": true,
+   "sec": 0.49,
+   "status": "Ok",
+   "dist_m": 6622,
+   "dur_min": 12.2,
+   "straight_m": 4417,
+   "ratio": 1.5
+  },
+  {
+   "ok": true,
+   "sec": 0.4,
+   "status": "Ok",
+   "dist_m": 4735,
+   "dur_min": 9.7,
+   "straight_m": 3184,
+   "ratio": 1.49
+  },
+  {
+   "ok": true,
+   "sec": 0.35,
+   "status": "Ok",
+   "dist_m": 1196,
+   "dur_min": 3.5,
+   "straight_m": 702,
+   "ratio": 1.7
+  },
+  {
+   "ok": true,
+   "sec": 0.27,
+   "status": "Ok",
+   "dist_m": 3122,
+   "dur_min": 6.2,
+   "straight_m": 1844,
+   "ratio": 1.69
+  },
+  {
+   "ok": true,
+   "sec": 0.34,
+   "status": "Ok",
+   "dist_m": 1943,
+   "dur_min": 7.0,
+   "straight_m": 812,
+   "ratio": 2.39
+  },
+  {
+   "ok": true,
+   "sec": 0.46,
+   "status": "Ok",
+   "dist_m": 3388,
+   "dur_min": 6.4,
+   "straight_m": 2175,
+   "ratio": 1.56
+  }
+ ],
+ "foot_fossgis": [
+  {
+   "ok": true,
+   "sec": 2.58,
+   "status": "Ok",
+   "dist_m": 2103,
+   "dur_min": 28.2,
+   "straight_m": 1702,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 1.05,
+   "status": "Ok",
+   "dist_m": 2161,
+   "dur_min": 29.0,
+   "straight_m": 1749,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 0.39,
+   "status": "Ok",
+   "dist_m": 2269,
+   "dur_min": 30.5,
+   "straight_m": 1933,
+   "ratio": 1.17
+  },
+  {
+   "ok": true,
+   "sec": 0.27,
+   "status": "Ok",
+   "dist_m": 1557,
+   "dur_min": 20.9,
+   "straight_m": 1351,
+   "ratio": 1.15
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1893,
+   "dur_min": 25.3,
+   "straight_m": 1668,
+   "ratio": 1.13
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 903,
+   "dur_min": 12.3,
+   "straight_m": 467,
+   "ratio": 1.93
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1639,
+   "dur_min": 21.9,
+   "straight_m": 1292,
+   "ratio": 1.27
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1335,
+   "dur_min": 17.8,
+   "straight_m": 1019,
+   "ratio": 1.31
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1527,
+   "dur_min": 20.4,
+   "straight_m": 1183,
+   "ratio": 1.29
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1157,
+   "dur_min": 15.4,
+   "straight_m": 735,
+   "ratio": 1.57
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1024,
+   "dur_min": 13.8,
+   "straight_m": 798,
+   "ratio": 1.28
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1446,
+   "dur_min": 19.3,
+   "straight_m": 1149,
+   "ratio": 1.26
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2669,
+   "dur_min": 35.6,
+   "straight_m": 2327,
+   "ratio": 1.15
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1377,
+   "dur_min": 18.4,
+   "straight_m": 1173,
+   "ratio": 1.17
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1164,
+   "dur_min": 15.7,
+   "straight_m": 892,
+   "ratio": 1.31
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 5175,
+   "dur_min": 69.2,
+   "straight_m": 4356,
+   "ratio": 1.19
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2313,
+   "dur_min": 31.1,
+   "straight_m": 2088,
+   "ratio": 1.11
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 3687,
+   "dur_min": 49.2,
+   "straight_m": 3205,
+   "ratio": 1.15
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2510,
+   "dur_min": 33.5,
+   "straight_m": 2113,
+   "ratio": 1.19
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2563,
+   "dur_min": 34.3,
+   "straight_m": 1999,
+   "ratio": 1.28
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 4256,
+   "dur_min": 56.8,
+   "straight_m": 2916,
+   "ratio": 1.46
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2504,
+   "dur_min": 33.5,
+   "straight_m": 2000,
+   "ratio": 1.25
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 2263,
+   "dur_min": 30.5,
+   "straight_m": 1934,
+   "ratio": 1.17
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2650,
+   "dur_min": 35.4,
+   "straight_m": 2208,
+   "ratio": 1.2
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 4004,
+   "dur_min": 53.6,
+   "straight_m": 3338,
+   "ratio": 1.2
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1838,
+   "dur_min": 24.6,
+   "straight_m": 1514,
+   "ratio": 1.21
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2452,
+   "dur_min": 32.7,
+   "straight_m": 1940,
+   "ratio": 1.26
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 1970,
+   "dur_min": 26.3,
+   "straight_m": 1546,
+   "ratio": 1.27
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2809,
+   "dur_min": 37.5,
+   "straight_m": 2160,
+   "ratio": 1.3
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1635,
+   "dur_min": 21.9,
+   "straight_m": 1317,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1135,
+   "dur_min": 15.2,
+   "straight_m": 794,
+   "ratio": 1.43
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 325,
+   "dur_min": 4.3,
+   "straight_m": 267,
+   "ratio": 1.22
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 3536,
+   "dur_min": 47.3,
+   "straight_m": 2912,
+   "ratio": 1.21
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 3212,
+   "dur_min": 42.8,
+   "straight_m": 2569,
+   "ratio": 1.25
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 828,
+   "dur_min": 11.0,
+   "straight_m": 650,
+   "ratio": 1.27
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2562,
+   "dur_min": 34.3,
+   "straight_m": 1937,
+   "ratio": 1.32
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 3854,
+   "dur_min": 51.8,
+   "straight_m": 3379,
+   "ratio": 1.14
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1954,
+   "dur_min": 26.1,
+   "straight_m": 1611,
+   "ratio": 1.21
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1342,
+   "dur_min": 18.0,
+   "straight_m": 1040,
+   "ratio": 1.29
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2768,
+   "dur_min": 37.1,
+   "straight_m": 2229,
+   "ratio": 1.24
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 3390,
+   "dur_min": 45.2,
+   "straight_m": 2935,
+   "ratio": 1.15
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2498,
+   "dur_min": 33.4,
+   "straight_m": 1951,
+   "ratio": 1.28
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 562,
+   "dur_min": 7.5,
+   "straight_m": 390,
+   "ratio": 1.44
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 1507,
+   "dur_min": 20.2,
+   "straight_m": 1254,
+   "ratio": 1.2
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 5535,
+   "dur_min": 73.9,
+   "straight_m": 4417,
+   "ratio": 1.25
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 3623,
+   "dur_min": 48.4,
+   "straight_m": 3184,
+   "ratio": 1.14
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 1038,
+   "dur_min": 13.8,
+   "straight_m": 702,
+   "ratio": 1.48
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2263,
+   "dur_min": 30.3,
+   "straight_m": 1844,
+   "ratio": 1.23
+  },
+  {
+   "ok": true,
+   "sec": 0.14,
+   "status": "Ok",
+   "dist_m": 978,
+   "dur_min": 13.0,
+   "straight_m": 812,
+   "ratio": 1.21
+  },
+  {
+   "ok": true,
+   "sec": 0.13,
+   "status": "Ok",
+   "dist_m": 2693,
+   "dur_min": 36.1,
+   "straight_m": 2175,
+   "ratio": 1.24
+  }
+ ]
+}
