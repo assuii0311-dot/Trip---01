@@ -157,5 +157,7 @@
 
 ## 4. 현재 상태
 
-- 1단계 요구사항 정의 완료 (`docs/01-requirements.md`, 2026-10-18)
-- 2단계 데이터 정의 착수 전
+- 1단계 요구사항 정의 완료 (`docs/01-requirements.md`, 2026-10-18). 2026-10-25 2단계 결과로 재조정(D-021)
+- 2단계 데이터 정의 완료 (2026-10-25). 산출물: `docs/02-data-sources.md`, `docs/02-poc-results.md`, `docs/02-poc-classification.md`, `docs/02-data-model.md`, `poc/`. E1, E3, E6 설계 문서는 초안 상태로 설계 동의 대기
+- 일정: A안 채택(D-022). 앱 사용 가능 목표 2026-11-20, 2026-11-10 진척 점검. 추정은 `docs/02-schedule-estimate.md`
+- 3단계 기획 착수 전. 첫 과업은 E1·E3·E6 설계 동의와 기능 명세
