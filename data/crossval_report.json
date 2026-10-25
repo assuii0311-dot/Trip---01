@@ -1,11 +1,11 @@
 {
- "generated": "2026-10-25 15:50",
+ "generated": "2026-10-25 16:40",
  "inputs": {
   "wikidata": 133362,
   "osm_places": 473529,
   "wv_en": 11613,
   "wv_es": 3999,
-  "pageviews": 19049,
+  "pageviews": 29796,
   "boundaries": 8452
  },
  "match": {
@@ -66,12 +66,12 @@
   "hours": 2634,
   "price": 3327,
   "desc_wv": 5156,
-  "pageviews": 8906
+  "pageviews": 17937
  },
  "files": {
   "cities": {
-   "raw_bytes": 6943097,
-   "gz_bytes": 1088193
+   "raw_bytes": 6944814,
+   "gz_bytes": 1088436
   },
   "regions": {
    "raw_bytes": 96407,
@@ -82,14 +82,14 @@
    "gz_bytes": 2161
   },
   "places_tier1": {
-   "raw_bytes": 60574239,
-   "gz_bytes": 6235020
+   "raw_bytes": 60740749,
+   "gz_bytes": 6266134
   },
   "airports": {
    "raw_bytes": 36900,
    "gz_bytes": 10975
   }
  },
- "tier2_gz_bytes": 17472695,
- "elapsed_s": 187
+ "tier2_gz_bytes": 17472694,
+ "elapsed_s": 184
 }
