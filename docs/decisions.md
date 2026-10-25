@@ -185,3 +185,10 @@
 - 근거: 사용자 결정(2026-10-25, "이전 요청도 제안대로 결정해서 진행"). 제안값의 근거는 각 문서 4절과 2단계 PoC.
 - 대안: 항목별 개별 결정. 왕복을 줄이기 위해 일괄 채택했다. Transitous 사용(사전 연락 뒤 A 단계). 1차 일정 안에 넣기 어려워 보류했다.
 
+## D-026. 기술 설계에 동의하고 와이어프레임과 스타일 규칙을 확정한다
+
+- 날짜: 2026-10-25
+- 결정: `docs/05-architecture.md`의 플랫폼(설치형 웹 앱, GitHub Pages), 기술 스택(JavaScript + JSDoc과 tsc 검사, Preact + htm 동봉, MapLibre GL + OpenFreeMap 타일과 OSM 래스터 폴백, WebCrypto, .json.gz 데이터 파일과 파일당 10MB 이하, node --test·pytest·Playwright, Actions Pages 배포와 묶음마다 배포, iOS 17+·Android Chrome 최신 2버전), 저장소 구조, 모듈 경계, 캐싱·폴백, 보안, 테스트 전략을 확정한다. `docs/04-wireframes.md`와 `docs/04-design-rules.md`를 확정한다. 코드 프로토타입은 묶음 2(T-025)에서 만든다. 기본 브랜치(main) 병합은 묶음 단위로 사용자가 한다. CLAUDE.md에 기술 스택과 코드 규칙을 반영한다(T-023).
+- 근거: 사용자 동의(2026-10-25, "제안값대로 기술 설계에 동의. 와이어프레임도 확인"). 사실: OpenFreeMap 무료·무제한·키 없음·상업 허용(2026-10-25 확인), GitHub Pages gzip 전송, GitHub API 한도(문서).
+- 대안: TypeScript 빌드, Leaflet + OSM 래스터, 평문 JSON. 빌드 단계와 타일 정책 부담 때문에 채택하지 않았다.
+
