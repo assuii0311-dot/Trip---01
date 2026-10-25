@@ -6,3 +6,6 @@ venv/
 *.bz2
 *.parquet
 __pycache__/
+
+# 배포용 사이트 디렉터리(scripts/stage.sh 산출)
+site/
