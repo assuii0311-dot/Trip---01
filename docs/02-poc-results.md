@@ -320,7 +320,7 @@ Wikidata 지자체 인구 분포와 Wikivoyage 문서 존재를 기준으로 다
 | 테네리페 | Metrotenerife | 0.0MB | 2 | 25 | 0 | 없음 | 2025-07-15(만료) |
 
 - 사실: 카탈로그 복사본 18건 중 11건은 유효 기간이 오늘(2026-10-21) 이전이다. 복사본은 원본보다 오래될 수 있다. 최신본은 NAP(가입) 또는 운영사 포털에서 받아야 한다. 피드 안의 calendar 종료일이 과거라도 노선·정류장 정보는 쓸 수 있다.
-- 요금 파일(fare_attributes)은 CRTM 6건과 Metro Bilbao 1건에만 있고 GTFS-Fares v2는 0건이다. 시험한 26건(Renfe 포함) 중 7건.
+- 요금 파일(fare_attributes)은 CRTM 6건과 Metro Bilbao 1건에만 있고 GTFS-Fares v2는 0건이다. 시험한 26건(Renfe 포함) 중 7건. 추가 확인(2026-10-25, 묶음 5 E3 사전 계산): CRTM 피드의 fare_attributes.txt는 머리글만 있고 행이 0건이다. 실제 요금 값이 있는 피드는 Metro Bilbao(3건)뿐이다.
 - Renfe CKAN에서 요금 데이터셋 검색(tarifa, precio, fare)은 0건이다.
 
 ### 라이선스

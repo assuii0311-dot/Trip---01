@@ -23,7 +23,7 @@
 | 일정(날짜별 장소, 식사 수, 숙박 도시와 일수, 이동 구간과 수단) | E4 결과 | 필수 |
 | 장소 가격(price_eur, is_free, price_tier, 출처) | E1 places | 필수 |
 | 도시 가격대 분포(sleep·eat의 저가·중가·고가 비율과 중앙값·사분위) | E1 cities.price_profile | 필수 |
-| 대중교통 요금(1회권 가격) | GTFS fare_attributes(마드리드 CRTM, 메트로 빌바오) | 선택 |
+| 대중교통 요금(1회권 가격) | GTFS fare_attributes(메트로 빌바오 3건. 사실: CRTM 파일은 머리글만 있어 값 없음, 2026-10-25 확인) | 선택 |
 | 택시 요금표 | E1 cities.taxi_fare(개발 시점 데이터 입력. 바르셀로나 확인) | 선택 |
 
 ## 3. 출력
