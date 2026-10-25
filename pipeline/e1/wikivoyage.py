@@ -34,6 +34,9 @@ def plain(wikitext, limit=4000):
     t = BOLD_RE.sub("", t)
     t = re.sub(r"^=+\s*(.*?)\s*=+\s*$", r"\1.", t, flags=re.M)  # 소제목은 문장처럼 마침표로 끝낸다
     t = re.sub(r"^[*#:;]+\s*", "", t, flags=re.M)
+    t = re.sub(r"[ \t]+([.,;:])", r"\1", t)  # 템플릿을 뺀 자리의 " ." 정리
+    t = re.sub(r"\(\s*\)", "", t)
+    t = re.sub(r"[ \t]{2,}", " ", t)
     t = re.sub(r"\n{2,}", "\n", t).strip()
     return t[:limit]
 

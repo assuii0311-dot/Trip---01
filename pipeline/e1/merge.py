@@ -25,8 +25,14 @@ def parse_price(s):
 def place_from_group(g, pageviews, foreign_cfg=None):
     wd, osm, wv = g["wd"], g["osm"], g["wv"]
     srcs = [s for s, has in (("wd", wd is not None), ("osm", bool(osm)), ("wv", bool(wv))) if has]
-    # 좌표 우선순위: OSM > Wikidata > Wikivoyage
-    o0 = osm[0] if osm else None
+    # 대표 OSM 객체: Wikidata 라벨과 이름이 가장 비슷한 것(없으면 첫 번째). 좌표 우선순위: OSM > Wikidata > Wikivoyage
+    o0 = None
+    if osm:
+        if wd and wd["labels"]:
+            from .match import sim
+            o0 = max(osm, key=lambda o: max((sim(o.get(k), l) for k in ("name", "name:es", "name:en", "name:ca", "name:eu", "name:gl") for l in wd["labels"].values() if o.get(k)), default=0.0))
+        else:
+            o0 = osm[0]
     if o0:
         lat, lon, cs = o0["lat"], o0["lon"], "osm"
     elif wd and wd["coord"]:

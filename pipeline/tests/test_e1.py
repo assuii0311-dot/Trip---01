@@ -72,7 +72,7 @@ def test_match_by_qid_and_geo_and_single():
     assert stats["osm_by_qid"] == 1 and stats["osm_by_geo"] == 1 and stats["osm_alone"] == 1
     assert stats["wv_by_qid"] == 1 and stats["wv_by_geo"] == 1
     g = groups["Q160112"]
-    assert len(g["osm"]) == 1 and len(g["wv"]) == 1 and not g["flags"]
+    assert len(g["osm"]) == 1 and len(g["wv"]) == 1 and "mismatch" not in g["flags"]
     p = place_from_group(g, {"Q160112": {"en": 20000, "es": 9000, "ko": 300, "months": 1}})
     assert p["cv"] == "match" and p["ver"] is True and p["tier"] == 1
     assert p["cs"] == "osm" and p["cc"] == "high"
@@ -141,3 +141,24 @@ def test_listing_with_lat_but_no_lon_does_not_crash():
     wv = [wv_listing(0, "Museo Medio", 40.0, None, wikidata="Q7")]
     groups, stats = build_groups(wd, [], wv)
     assert stats["wv_by_qid"] == 1 and stats["mismatch"] == 0
+
+
+def test_noise_osm_not_matched_and_no_second_geo_attach_when_qid_linked():
+    wd = {"Q1": wd_item("Q1", 40.4155, -3.7074, "Plaza Mayor", "Plaza Mayor", classes=("Q174782",), sitelinks=50)}
+    osm = [osm_poi("n1", 40.41551, -3.70741, "Centro de Turismo Plaza Mayor", key="tourism", value="information"),  # 잡음: 안내소
+           osm_poi("w2", 40.41552, -3.70742, "Plaza Mayor", key="place", value="square", wikidata="Q1"),           # QID로 연결
+           osm_poi("n3", 40.41560, -3.70750, "Bar Plaza Mayor", key="amenity", value="bar")]                     # 좌표·명칭은 비슷하지만 범주 불일치
+    groups, stats = build_groups(wd, osm, [])
+    g = groups["Q1"]
+    assert stats.get("osm_noise") == 1 and [o["id"] for o in g["osm"]] == ["w2"]
+    p = place_from_group(g, {})
+    assert p["n"]["local"] == "Plaza Mayor"
+
+
+def test_representative_osm_member_is_closest_name_to_label():
+    wd = {"Q1": wd_item("Q1", 40.0, -3.0, "Puerta de Alcalá", "Alcalá Gate", classes=("Q4989906",), sitelinks=30)}
+    osm = [osm_poi("n9", 40.0001, -3.0001, "Plaza de Toros de la Puerta de Alcalá", key="historic", value="yes", wikidata="Q1"),
+           osm_poi("w1", 40.0002, -3.0002, "Puerta de Alcalá", key="historic", value="city_gate", wikidata="Q1")]
+    groups, _ = build_groups(wd, osm, [])
+    p = place_from_group(groups["Q1"], {})
+    assert p["n"]["local"] == "Puerta de Alcalá" and p["src"]["osm"][0] == "w1" or p["n"]["local"] == "Puerta de Alcalá"

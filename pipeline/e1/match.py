@@ -114,23 +114,28 @@ def build_groups(wd_items, osm_places, wv_listings):
     go = Grid()
     stats = {"osm_by_qid": 0, "osm_by_geo": 0, "osm_alone": 0, "wv_by_qid": 0, "wv_by_geo": 0, "wv_alone": 0, "wv_nocoord": 0, "mismatch": 0}
     for o in osm_places:
+        ocats = osm_categories(o["key"], o["value"])
+        if not ocats:
+            stats["osm_noise"] = stats.get("osm_noise", 0) + 1
+            continue  # 잡음 태그(관광안내판, 길가 십자가 등)는 장소도 매칭 후보도 아니다
         q = o.get("wikidata")
         g = by_qid.get(q) if q else None
         names = [o.get("name"), o.get("name:es"), o.get("name:en"), o.get("name:ca"), o.get("name:eu"), o.get("name:gl")]
         if g is not None:
-            stats["osm_by_qid"] += 1
+            stats["osm_by_qid"] += 1; g["flags"].add("osm_qid")
             c = g["wd"]["coord"]
             if c and (hav(o["lat"], o["lon"], c[0], c[1]) > C.R_MISMATCH_M or max((sim(n, l) for n in names if n for l in g["wd"]["labels"].values()), default=1.0) < C.SIM_MISMATCH):
                 g["flags"].add("mismatch"); stats["mismatch"] += 1
         else:
-            ocats = osm_categories(o["key"], o["value"])
-            b = best(gw.near(o["lat"], o["lon"]), o["lat"], o["lon"], names, cats=ocats)
+            # QID로 이미 OSM 객체가 붙은 Wikidata 항목에는 좌표·명칭 매칭으로 다른 OSM 객체를 더 붙이지 않는다(투우장 ↔ 알칼라 문 같은 오합 방지)
+            cands = [c for c in gw.near(o["lat"], o["lon"]) if "osm_qid" not in by_qid[c["key"]]["flags"]]
+            b = best(cands, o["lat"], o["lon"], names, cats=ocats)
             if b:
                 g = by_qid[b[0]["key"]]; stats["osm_by_geo"] += 1
             else:
                 g = new_group("osm:" + o["id"]); stats["osm_alone"] += 1
         g["osm"].append(o)
-        go.add(o["lat"], o["lon"], {"key": g["key"], "lat": o["lat"], "lon": o["lon"], "names": names, "cats": osm_categories(o["key"], o["value"])})
+        go.add(o["lat"], o["lon"], {"key": g["key"], "lat": o["lat"], "lon": o["lon"], "names": names, "cats": ocats})
     for w in wv_listings:
         if w["type"] in ("marker", "go") and not w.get("wikidata"):
             continue
