@@ -57,7 +57,17 @@ def main():
           page.locator(".card").first.click(); page.wait_for_selector(".sheet", timeout=10000); time.sleep(1.5)
           res["steps"]["detail_title"] = page.locator(".sheet h2").inner_text(); res["steps"]["detail_text"] = page.locator(".sheet").inner_text()[:400]
           page.screenshot(path=str(shots / "s6.png"))
-          page.click(".sheet .close"); page.click("nav.tabs button:has-text('설정')"); page.wait_for_selector("text=출처 표기", timeout=5000); page.screenshot(path=str(shots / "s8.png"))
+          page.click(".sheet .btn:has-text('선택')"); time.sleep(0.3); page.click(".sheet .close")
+          # S4: 선택한 장소를 1일에 배치, 숙박 탭
+          page.click("nav.tabs button:has-text('일정')"); page.wait_for_selector("select[aria-label='날짜']", timeout=10000)
+          page.locator("select[aria-label='날짜']").first.select_option(index=1); time.sleep(0.3)
+          res["steps"]["day1_items"] = page.locator(".card .row").count()
+          page.click("button:has-text('숙박')"); page.wait_for_selector("input[type=number]", timeout=5000); res["steps"]["lodging_zones"] = page.locator(".chips button.chip").count()
+          page.screenshot(path=str(shots / "s4.png"))
+          page.click("nav.tabs button:has-text('설정')"); page.wait_for_selector("text=출처 표기", timeout=5000)
+          page.fill("input[placeholder*='trip-2027']", "assuii0311-dot/Trip---01"); page.click("button:has-text('연결 확인')"); page.wait_for_selector("text=연결됨:", timeout=30000)
+          res["steps"]["gh_check"] = page.locator("p.note:has-text('연결됨')").inner_text()[:80]
+          page.screenshot(path=str(shots / "s8.png"))
           res["steps"]["tabs"] = page.locator("nav.tabs button").count()
       finally:
         try: page.screenshot(path=str(shots / "last.png"))
