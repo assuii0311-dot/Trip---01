@@ -64,6 +64,9 @@ def main():
           res["steps"]["day1_items"] = page.locator(".card .row").count()
           page.click("button:has-text('숙박')"); page.wait_for_selector("input[type=number]", timeout=5000); res["steps"]["lodging_zones"] = page.locator(".chips button.chip").count()
           page.screenshot(path=str(shots / "s4.png"))
+          page.click("button:has-text('장소 배치')"); page.click("button:has-text('일정 생성')"); page.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
+          res["steps"]["itin_days"] = page.locator(".toolbar .chip").count(); res["steps"]["itin_items"] = page.locator(".card .title").count(); res["steps"]["itin_note"] = page.locator("p.note").first.inner_text()[:120]
+          page.screenshot(path=str(shots / "s5.png"))
           page.click("nav.tabs button:has-text('설정')"); page.wait_for_selector("text=출처 표기", timeout=5000)
           page.fill("input[placeholder*='trip-2027']", "assuii0311-dot/Trip---01"); page.click("button:has-text('연결 확인')"); page.wait_for_selector("text=연결됨:", timeout=30000)
           res["steps"]["gh_check"] = page.locator("p.note:has-text('연결됨')").inner_text()[:80]

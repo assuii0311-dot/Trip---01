@@ -5,6 +5,10 @@ import { S1Input } from "./screens/s1_input.js";
 import { S2Summary } from "./screens/s2_summary.js";
 import { S3Explore } from "./screens/s3_explore.js";
 import { S4Arrange } from "./screens/s4_arrange.js";
+import { S5Itinerary } from "./screens/s5_itinerary.js";
+import { generate, toMin, toHHMM } from "../engines/e4.js";
+import { makeIntraIndex, makeTransitIndex, cityLeg, intercityLeg } from "../engines/e3.js";
+import { dateList } from "../state/plan.js";
 import { S6Detail } from "./screens/s6_detail.js";
 import { S8Settings } from "./screens/s8_settings.js";
 import { profile, cityNights } from "../engines/e2.js";
@@ -24,6 +28,9 @@ export function App({ data, loader }) {
   const [detailId, setDetailId] = useState(null);
   const [exploreTab, setExploreTab] = useState("explore");
   const [exploreCity, setExploreCity] = useState(null);
+  const [planTab, setPlanTab] = useState("arrange");
+  const [genBusy, setGenBusy] = useState(false);
+  const travelCache = useRef(new Map()).current;
   const [cfg, setCfgState] = useState(() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch { return {}; } });
   const [sync, setSyncState] = useState({ connected: false, dirty: false });
   const [conflict, setConflict] = useState(null);
@@ -46,6 +53,51 @@ export function App({ data, loader }) {
   const openDetail = (id) => setDetailId(id);
   const loaderWithCache = { ...loader, tier2: async (c) => { const rows = await loader.tier2(c); rows.forEach((p) => data.tier2cache.set(p.id, p)); return rows; } };
   const cityPlacesOf = (cityId) => data.tier1.filter((p) => p.city === cityId);
+
+  // --- E3·E4: 일정 생성 ---
+  async function travelFor(cityId) {
+    if (!travelCache.has(cityId)) {
+      const [tr, tz, inter] = await Promise.all([loader.load(`travel/${cityId}.json.gz`).catch(() => null), loader.load(`transit/${cityId}.json.gz`).catch(() => null), loader.load("travel/intercity.json.gz").catch(() => null)]);
+      const city = data.cities.find((c) => c.id === cityId);
+      travelCache.set(cityId, { intra: tr ? makeIntraIndex(tr) : null, tidx: tz ? makeTransitIndex(tz) : null, taxi: city?.taxi_fare || null, inter });
+    }
+    const t = travelCache.get(cityId);
+    return (a, b) => { const leg = cityLeg(a, b, t); return { ...leg.best, alternatives: leg.alternatives }; };
+  }
+  function buildDays(plan0) {
+    const dates = dateList(plan0.trip); const out = []; let k = 0;
+    const cityOrder = plan0.trip.cities; if (!dates.length || !cityOrder.length) return out;
+    const nightsOf = (cid) => Number(plan0.lodging[cid]?.nights ?? nights[cid] ?? 1);
+    let ci = 0, left = nightsOf(cityOrder[0]);
+    for (let i = 0; i < dates.length; i++) {
+      const cid = cityOrder[Math.min(ci, cityOrder.length - 1)]; const c = data.cities.find((x) => x.id === cid); const l = plan0.lodging[cid] || {};
+      const origin = l.zoneLat ? { lat: l.zoneLat, lon: l.zoneLon, name: l.zoneName } : { lat: c?.lat, lon: c?.lon, name: c?.n?.ko || cid };
+      const d = { date: dates[i], cityId: cid, origin };
+      if (i === 0 && plan0.trip.timeIn) { d.edge = "arrive"; d.arriveAt = toHHMM(toMin(plan0.trip.timeIn) + 60); }  // 입국 절차 60분(추정)
+      if (i === dates.length - 1 && plan0.trip.timeOut) { d.edge = "depart"; d.departAt = plan0.trip.timeOut; d.departMode = "flight"; }
+      if (i > 0 && out[i - 1].cityId !== cid) d.intercityFrom = out[i - 1].cityId;
+      out.push(d); left--; if (left <= 0 && ci < cityOrder.length - 1) { ci++; left = nightsOf(cityOrder[ci]); }
+    }
+    return out;
+  }
+  async function runGenerate(onlyDate = null) {
+    setGenBusy(true);
+    try {
+      const plan0 = planRef.current; const days = buildDays(plan0);
+      const all = new Map(); const byCity = { __all: all };
+      for (const id of plan0.selection) { const p = getPlace(id); if (!p) continue; all.set(id, p); (byCity[p.city || days[0]?.cityId] ||= []).push(p); }
+      const travelFns = {}; for (const cid of new Set(days.map((d) => d.cityId))) travelFns[cid] = await travelFor(cid);
+      const prev = plan0.itinerary;
+      const assigned = { ...plan0.days };
+      for (const [id, locked] of Object.entries(plan0.locks || {})) if (locked && prev) { const d = prev.days.find((dd) => dd.items.some((it) => it.id === id)); if (d) assigned[d.date] = [...(assigned[d.date] || []).filter((x) => x !== id), id]; }
+      days.forEach((d) => { if (prev && onlyDate && d.date !== onlyDate) { const pd = prev.days.find((x) => x.date === d.date); if (pd) { d.lockedOrder = pd.items.filter((it) => it.kind === "place").map((it) => it.id); assigned[d.date] = d.lockedOrder; } } });
+      const r = generate({ days, placesByCity: byCity, assigned, dwellOverrides: plan0.dwell || {}, fixed: plan0.fixed || {}, travelFor: (cid) => travelFns[cid], meals: plan0.trip.meals, dayStart: plan0.trip.dayStart || "09:00", dayEnd: plan0.trip.dayEnd || "22:00" });
+      const inter = travelCache.get(days[0]?.cityId)?.inter;
+      r.days.forEach((d, i) => { const src = days[i].intercityFrom; if (src && inter) { const a = data.cities.find((c) => c.id === src), b = data.cities.find((c) => c.id === d.cityId); if (a && b) d.intercity = { from: src, to: d.cityId, leg: intercityLeg(a, b, inter) }; } });
+      setPlan((pl) => ({ ...pl, itinerary: { ...r, generated: new Date().toISOString() } }));
+      setPlanTab("itinerary");
+    } catch (e) { alert("일정 생성 실패: " + (e.message || e)); } finally { setGenBusy(false); }
+  }
 
   // --- E7 ---
   const repoOf = () => { const r = parseRepo(cfg.repo); if (!r) throw new Error("저장소 주소를 확인하세요."); return r; };
@@ -88,17 +140,19 @@ export function App({ data, loader }) {
     document.addEventListener("visibilitychange", onVis); return () => document.removeEventListener("visibilitychange", onVis);
   }, [cfg.repo, cfg.token]);
 
-  const titles = { input: "입력", explore: exploreTab === "summary" ? "요약" : "탐색·추천", plan: "선택·배치", share: "공유", settings: "설정" };
+  const titles = { input: "입력", explore: exploreTab === "summary" ? "요약" : "탐색·추천", plan: planTab === "arrange" ? "선택·배치" : "일정표", share: "공유", settings: "설정" };
   return html`
     <header class="top"><h1>${titles[tab]}</h1>
       ${tab === "explore" && html`<button class="chip" onClick=${() => setExploreTab(exploreTab === "summary" ? "explore" : "summary")}>${exploreTab === "summary" ? "탐색 ▶" : "◀ 요약"}</button>`}
+      ${tab === "plan" && html`<button class="chip" onClick=${() => setPlanTab(planTab === "arrange" ? "itinerary" : "arrange")}>${planTab === "arrange" ? "일정표 ▶" : "◀ 배치"}</button>`}
       ${sync.connected ? html`<button class=${"chip " + (sync.dirty ? "warn" : sync.stale ? "warn" : "ok")} title="버전" onClick=${() => { setTab("settings"); }}>${sync.commit ? sync.commit.slice(0, 7) : "—"}${sync.dirty ? " · 저장 필요" : sync.stale ? " · 오래됨" : " · 최신"}</button>` : html`<span class="version" title="데이터 갱신일">데이터 ${data.attribution.generated}</span>`}
     </header>
     <main class="main">
       ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} role=${cfg.token || !sync.connected ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} onReselect=${() => setTab("input")} onExplore=${(cid) => { setExploreCity(cid); setExploreTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} />`}
-      ${tab === "plan" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${(id, d) => setPlan((p) => assignDay(p, id, d))} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => alert("일정 생성(E4)은 묶음 5에서 제공됩니다.")} />`}
+      ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${(id, d) => setPlan((p) => assignDay(p, id, d))} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} />`}
+      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${(id, v) => setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } }))} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { setPlan((pl) => assignDay(pl, id, d)); setTimeout(() => runGenerate(), 0); }} />`}
       ${tab === "share" && html`<${Empty}>내보내기·My Maps(묶음 6), 제안·승인(묶음 9)은 다음 묶음에서 제공됩니다.</${Empty}>`}
       ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${onLoad} onSave=${onSave} onDisconnect=${onDisconnect} />`}
     </main>
