@@ -1,7 +1,7 @@
 # 3단계 기능 명세
 
 - 작성일: 2026-10-25
-- 상태: 초안 (사용자 확인 대기)
+- 상태: 확정 (2026-10-25, D-025). 엔진 결정값은 각 설계 문서가 기준
 - 근거: `docs/01-requirements.md`(2차 확정, D-021), `docs/02-poc-classification.md`, `docs/02-data-model.md`, `docs/engines/` E1~E7
 - 관련 결정: D-011, D-013, D-021, D-022, D-023
 
