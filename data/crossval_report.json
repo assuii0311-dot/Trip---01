@@ -1,0 +1,95 @@
+{
+ "generated": "2026-10-25 15:50",
+ "inputs": {
+  "wikidata": 133362,
+  "osm_places": 473529,
+  "wv_en": 11613,
+  "wv_es": 3999,
+  "pageviews": 19049,
+  "boundaries": 8452
+ },
+ "match": {
+  "osm_by_qid": 23822,
+  "osm_by_geo": 10021,
+  "osm_alone": 389930,
+  "wv_by_qid": 2455,
+  "wv_by_geo": 3272,
+  "wv_alone": 3672,
+  "wv_nocoord": 3290,
+  "mismatch": 1008,
+  "osm_noise": 49756
+ },
+ "places": {
+  "total": 498123,
+  "tier1": 101681,
+  "tier2": 396442,
+  "crossval": {
+   "match": 34880,
+   "single": 462299,
+   "mismatch": 944
+  },
+  "verified": {
+   "True": 80321,
+   "False": 417802
+  },
+  "coord_source": {
+   "osm": 422341,
+   "wikidata": 72615,
+   "wikivoyage": 3167
+  },
+  "city_assignment": {
+   "city_polygon": 487025,
+   "city_nearest": 10431,
+   "city_none": 667
+  }
+ },
+ "categories_tier1": {
+  "heritage": 68767,
+  "park": 1119,
+  "square": 1553,
+  "museum": 1592,
+  "activity": 1455,
+  "nature": 10939,
+  "market": 502,
+  "restaurant": 1579,
+  "cafe": 345,
+  "lodging": 1476,
+  "religious": 14375,
+  "beach": 2086
+ },
+ "names": {
+  "ko": 241,
+  "en": 80837,
+  "es": 58217
+ },
+ "fields_tier1": {
+  "hours": 2634,
+  "price": 3327,
+  "desc_wv": 5156,
+  "pageviews": 8906
+ },
+ "files": {
+  "cities": {
+   "raw_bytes": 6943097,
+   "gz_bytes": 1088193
+  },
+  "regions": {
+   "raw_bytes": 96407,
+   "gz_bytes": 34929
+  },
+  "categories": {
+   "raw_bytes": 5932,
+   "gz_bytes": 2161
+  },
+  "places_tier1": {
+   "raw_bytes": 60574239,
+   "gz_bytes": 6235020
+  },
+  "airports": {
+   "raw_bytes": 36900,
+   "gz_bytes": 10975
+  }
+ },
+ "tier2_gz_bytes": 17472695,
+ "elapsed_s": 187
+}
