@@ -38,7 +38,15 @@ def main():
           page.click("text=다음 ▶"); page.wait_for_selector(".cats", timeout=5000)
           cats = page.locator(".catcard"); res["steps"]["categories"] = cats.count(); cats.nth(2).click(); cats.nth(0).click()
           page.screenshot(path=str(shots / "s1_tastes.png"))
-          page.click("text=탐색으로 ▶"); page.wait_for_selector(".card", timeout=30000); time.sleep(2)
+          page.click("text=탐색으로 ▶"); page.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          res["steps"]["summary_cards"] = page.locator(".card").count(); res["steps"]["summary_profile"] = page.locator(".section p").first.inner_text()[:80]
+          page.screenshot(path=str(shots / "s2.png"))
+          page.locator(".card .btn").first.click(); page.wait_for_selector(".seg", timeout=10000); time.sleep(2)
+          res["steps"]["rec_cards"] = page.locator(".card").count(); res["steps"]["rec_first"] = page.locator(".card .title").first.inner_text() if page.locator(".card").count() else None
+          res["steps"]["rec_note"] = page.locator("p.note").first.inner_text()[:100]
+          page.screenshot(path=str(shots / "s3_rec.png"))
+          page.click("text=대안 ▸"); page.wait_for_selector(".sheet", timeout=10000); res["steps"]["alt_rows"] = page.locator(".sheet .row").count(); page.click(".sheet .close")
+          page.click("button:has-text('전체 후보')"); page.wait_for_selector(".card", timeout=30000); time.sleep(1)
           res["steps"]["cards"] = page.locator(".card").count(); res["steps"]["note"] = page.locator(".note").first.inner_text()[:120]
           res["steps"]["map_canvas"] = page.locator(".map canvas").count()
           page.screenshot(path=str(shots / "s3.png"))

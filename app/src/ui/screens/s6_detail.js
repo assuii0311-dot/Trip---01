@@ -4,10 +4,11 @@ import { md5 } from "../../util/hash.js";
 import { html, Chip } from "../components/ui.js";
 import { placeName, altNames, isForeignLandmark, firstSentences } from "../../data/places.js";
 import { gmapsCoord, gmapsName, CAT_ICON } from "../../util/format.js";
+import { reservationHint, placeAlternatives } from "../../engines/e2.js";
 
 const CV = { match: ["ok", "일치"], mismatch: ["warn", "불일치"], single: ["x", "단일 출처"], user: ["user", "사용자 추가"] };
 
-export function S6Detail({ place: p, categories, loader, onClose, selected, onToggleSelect }) {
+export function S6Detail({ place: p, categories, loader, onClose, selected, onToggleSelect, cityPlaces = [], prof, reservation, onSetReservation, onOpenDetail }) {
   const [src, setSrc] = useState(null);
   useEffect(() => {
     let alive = true;
@@ -27,6 +28,8 @@ export function S6Detail({ place: p, categories, loader, onClose, selected, onTo
   const name = placeName(p), alt = altNames(p);
   const [cvKind, cvLabel] = CV[p.cv] || CV.single;
   const wd = (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "ko") || (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "en");
+  const hint = reservationHint(p);
+  const alts = prof ? placeAlternatives(p, cityPlaces, prof.weights) : [];
   return html`<div class="sheet" role="dialog" aria-label=${name}>
     <button class="close" aria-label="닫기" onClick=${onClose}>✕</button>
     <h2>${name}${p.n?.ko_src === "generated" && html` <span class="chip x">생성</span>`}</h2>
@@ -45,6 +48,8 @@ export function S6Detail({ place: p, categories, loader, onClose, selected, onTo
     <dl class="kv">
       <dt>영업시간</dt><dd>${p.hrs ? html`${p.hrs} <span class="chip warn">⚠ 참고값, 확인 필요</span>` : html`<span class="note">정보 없음 · 확인 필요</span>`}</dd>
       <dt>입장료·가격</dt><dd>${p.price ? html`${p.price.free ? "무료" : p.price.eur != null ? `€${p.price.eur}` : p.price.raw}${p.price.tier ? ` · ${p.price.tier}` : ""} <span class="note">(${p.price.src === "wikivoyage" ? "Wikivoyage 참고값" : "OSM"})</span>` : html`<span class="note">정보 없음</span>`}</dd>
+      <dt>예약</dt><dd><span class=${"chip " + (hint.level === "none" ? "x" : "warn")}>🎫 ${hint.label}</span> <span class="note">${hint.reason}</span>
+        ${onSetReservation && html`<div class="row" style="margin-top:4px"><span class="note">확정:</span><select value=${reservation || ""} onChange=${(e) => onSetReservation(e.target.value || null)}><option value="">미확정</option><option value="required">예약 필요</option><option value="recommended">예약 권장</option><option value="none">불필요</option></select></div>`}</dd>
       ${p.osm_tags?.cuisine && html`<dt>음식</dt><dd>${p.osm_tags.cuisine}</dd>`}
       <dt>좌표</dt><dd>${p.lat.toFixed(5)}, ${p.lon.toFixed(5)} <span class="note">(${p.cs}, 신뢰도 ${p.cc})</span></dd>
       ${p.pop && html`<dt>대표성</dt><dd>사이트링크 ${p.pop.sl}${p.pop.pv ? ` · 월 조회 en ${p.pop.pv.en.toLocaleString()} / es ${p.pop.pv.es.toLocaleString()}` : ""}</dd>`}
@@ -57,6 +62,7 @@ export function S6Detail({ place: p, categories, loader, onClose, selected, onTo
       ${p.links?.enwiki && html` · <a href=${"https://en.wikipedia.org/wiki/" + encodeURIComponent(p.links.enwiki)} target="_blank" rel="noopener">en.wikipedia</a>`}
       ${p.links?.kowiki && html` · <a href=${"https://ko.wikipedia.org/wiki/" + encodeURIComponent(p.links.kowiki)} target="_blank" rel="noopener">ko.wikipedia</a>`}
       ${p.links?.web && html` · <a href=${p.links.web} target="_blank" rel="noopener">웹사이트</a>`}</div>
+    ${alts.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">대안 장소 <span class="note">같은 범주, 2km 안</span></h3>${alts.map((a) => html`<div class="row" style="padding:4px 0"><a href="#" style="flex:1" onClick=${(e) => { e.preventDefault(); onOpenDetail && onOpenDetail(a.p.id); }}>${CAT_ICON[a.p.cat[0]] || ""} ${placeName(a.p)}</a><span class="note">${Math.round(a.dist)}m · ${a.score.toFixed(2)}</span></div>`)}`}
     ${onToggleSelect && html`<div style="margin-top:16px"><button class="btn" onClick=${onToggleSelect}>${selected ? "선택 해제" : "+ 선택"}</button></div>`}
   </div>`;
 }

@@ -140,7 +140,7 @@ def build_groups(wd_items, osm_places, wv_listings):
         if g is not None:
             stats["wv_by_qid"] += 1
             c = g["wd"]["coord"]
-            if c and w.get("lat") is not None and hav(w["lat"], w["lon"], c[0], c[1]) > C.R_MISMATCH_M:
+            if c and w.get("lat") is not None and w.get("lon") is not None and hav(w["lat"], w["lon"], c[0], c[1]) > C.R_MISMATCH_M:
                 g["flags"].add("mismatch"); stats["mismatch"] += 1
         elif w.get("lat") is not None and w.get("lon") is not None:
             wcats = wv_categories(w["type"], w.get("raw_type"))

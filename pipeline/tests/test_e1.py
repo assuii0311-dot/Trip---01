@@ -134,3 +134,10 @@ def test_plain_drops_file_links():
     from pipeline.e1.wikivoyage import plain
     t = plain("[[File:Cibeles.jpg|thumb|right|Palacio de Cibeles, [[Madrid]]'s city hall]]\nMadrid has over 3.4 million residents. {{cite|x}} See [[Retiro Park|the park]].")
     assert t.startswith("Madrid has over 3.4 million residents.") and "the park" in t and "thumb" not in t
+
+
+def test_listing_with_lat_but_no_lon_does_not_crash():
+    wd = {"Q7": wd_item("Q7", 40.0, -3.0, "Museo Medio", classes=("Q33506",))}
+    wv = [wv_listing(0, "Museo Medio", 40.0, None, wikidata="Q7")]
+    groups, stats = build_groups(wd, [], wv)
+    assert stats["wv_by_qid"] == 1 and stats["mismatch"] == 0
