@@ -1,12 +1,13 @@
 {
- "generated": "2026-10-26 01:46",
+ "generated": "2026-10-26 14:10",
  "inputs": {
   "wikidata": 133362,
   "osm_places": 473529,
   "wv_en": 11613,
   "wv_es": 3999,
   "pageviews": 29797,
-  "boundaries": 8452
+  "boundaries": 8452,
+  "airports_wd": 67
  },
  "match": {
   "osm_by_qid": 23822,
@@ -71,7 +72,7 @@
  "files": {
   "cities": {
    "raw_bytes": 6944961,
-   "gz_bytes": 1089141
+   "gz_bytes": 1089181
   },
   "regions": {
    "raw_bytes": 96407,
@@ -83,13 +84,13 @@
   },
   "places_tier1": {
    "raw_bytes": 60740671,
-   "gz_bytes": 6267453
+   "gz_bytes": 6267464
   },
   "airports": {
-   "raw_bytes": 36900,
-   "gz_bytes": 10975
+   "raw_bytes": 18315,
+   "gz_bytes": 4845
   }
  },
- "tier2_gz_bytes": 17472689,
- "elapsed_s": 160
+ "tier2_gz_bytes": 17472694,
+ "elapsed_s": 252
 }

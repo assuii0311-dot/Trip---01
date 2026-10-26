@@ -34,6 +34,10 @@ def main():
           page.fill("input[placeholder*='도시 이름']", "madrid"); page.wait_for_selector(".chips button.chip", timeout=5000)
           res["steps"]["city_hits"] = [x.strip()[:40] for x in page.locator(".chips button.chip").all_inner_texts()][:4]; page.locator(".chips button.chip").first.click()
           res["steps"]["city_chip"] = page.locator(".chip.on").first.inner_text()
+          # 공항(D-029): 검색 → 첫 제안 선택
+          page.locator("input[placeholder*='공항 검색']").first.fill("madrid"); page.wait_for_selector(".airport .chips button.chip", timeout=5000)
+          res["steps"]["airport_hits"] = [x.strip()[:70] for x in page.locator(".airport .chips button.chip").all_inner_texts()][:3]; page.locator(".airport .chips button.chip").first.click()
+          res["steps"]["airport_in"] = page.locator(".airport .chip.on").first.inner_text()
           page.click("text=다음 ▶"); page.wait_for_selector(".seg", timeout=5000); res["steps"]["s1_step2"] = True
           page.click("text=다음 ▶"); page.wait_for_selector(".cats", timeout=5000)
           cats = page.locator(".catcard"); res["steps"]["categories"] = cats.count(); cats.nth(2).click(); cats.nth(0).click()

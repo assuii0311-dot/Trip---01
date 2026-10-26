@@ -1,6 +1,6 @@
 """E1 파이프라인 실행. 소스 읽기 → 매칭 → 통합 → 귀속 → 등급 → 정적 파일 생성 (docs/engines/E1-data-pipeline.md 3절).
 
-실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl>] [--views <views.jsonl>] [--bbox S,W,N,E]
+실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl>] [--views <views.jsonl>] [--airports <airports_wd.jsonl>] [--bbox S,W,N,E]
 데이터 루트 아래: wikidata/, osm/out/pois.jsonl, e1/wv_en, e1/wv_es
 """
 import argparse
@@ -13,6 +13,7 @@ import statistics
 import sys
 import time
 
+from . import airports as airport_mod
 from . import config as C
 from . import sources
 from .geo import Boundaries, Nearest, assign_admin, assign_city
@@ -37,7 +38,7 @@ def in_bbox(lat, lon, bbox):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root"); ap.add_argument("out")
-    ap.add_argument("--labels"); ap.add_argument("--boundaries"); ap.add_argument("--views"); ap.add_argument("--bbox")
+    ap.add_argument("--labels"); ap.add_argument("--boundaries"); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--bbox")
     ap.add_argument("--gtfs-catalog", default=str(ROOT / "poc/results/gtfs_catalog.json"))
     a = ap.parse_args()
     root, out = pathlib.Path(a.root), pathlib.Path(a.out)
@@ -221,11 +222,15 @@ def main():
         t2_total += dump_gz(out / "places_tier2" / f"{cq}.json.gz", ps)[1]
     for sh, d in shards.items():
         dump_gz(out / "sources" / f"{sh}.json.gz", d)
-    sizes["airports"] = dump_gz(out / "airports.json.gz", [{"id": o["id"], "n": o.get("name"), "en": o.get("name:en"), "lat": o["lat"], "lon": o["lon"], "wd": o.get("wikidata")} for o in airports if o.get("name")])
+    # 공항(E1 4절 13항, D-029): Wikidata IATA 공항 + OSM 공항 + 도시
+    wd_air = airport_mod.load_rows(a.airports) if a.airports and pathlib.Path(a.airports).exists() else []
+    air_out = airport_mod.build_airports(wd_air, airports, cities) if wd_air else []
+    log(f"공항 {len(air_out)}곳(IATA 보유 {len(wd_air)}건 입력), OSM 연결 {sum(1 for x in air_out if x['osm'])}, 도시 추정 {sum(1 for x in air_out if x['city']['guess'])}" if wd_air else "공항 입력(--airports) 없음: 빈 목록")
+    sizes["airports"] = dump_gz(out / "airports.json.gz", air_out)
     attribution = {"generated": time.strftime("%Y-%m-%d"), "sources": C.ATTRIBUTION, "data_license": "data/LICENSE-DATA.md", "counts": {"places": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "cities": len(cities), "regions": len(regions)}}
     (out / "attribution.json").write_text(json.dumps(attribution, ensure_ascii=False, indent=1), encoding="utf-8")
     cv = collections.Counter(p["cv"] for p in places); ver = collections.Counter(p["ver"] for p in places); cs = collections.Counter(p["cs"] for p in places); cityhow = {k: v for k, v in dropped.items() if k.startswith("city_")}
-    report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "inputs": {"wikidata": len(wd), "osm_places": len(osm_places), "wv_en": len(list_en), "wv_es": len(list_es), "pageviews": len(views), "boundaries": boundaries.count if boundaries else 0},
+    report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "inputs": {"wikidata": len(wd), "osm_places": len(osm_places), "wv_en": len(list_en), "wv_es": len(list_es), "pageviews": len(views), "boundaries": boundaries.count if boundaries else 0, "airports_wd": len(wd_air)},
               "match": mstats, "places": {"total": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "crossval": dict(cv), "verified": {str(k): v for k, v in ver.items()}, "coord_source": dict(cs), "city_assignment": cityhow},
               "categories_tier1": dict(cat_counts), "names": {"ko": sum(1 for p in tier1 if p["n"].get("ko")), "en": sum(1 for p in tier1 if p["n"].get("en")), "es": sum(1 for p in tier1 if p["n"].get("es"))},
               "fields_tier1": {"hours": sum(1 for p in tier1 if p["hrs"]), "price": sum(1 for p in tier1 if p["price"]), "desc_wv": sum(1 for p in tier1 if any(d["src"] == "wikivoyage" for d in p["desc"])), "pageviews": sum(1 for p in tier1 if p["pop"]["pv"])},

@@ -39,6 +39,17 @@
 | taxi_fare | 기본요금, km당, 최소 요금 | 도시 요금표(수동 입력) | 바르셀로나만 확인 |
 | pageviews | 언어별 월평균 조회수 | Wikimedia 월간 덤프 | 도시 문서 대부분 |
 
+### Airport (공항, D-029)
+
+| 필드 | 설명 | 출처 | 커버리지(사실, 2026-10-26) |
+|---|---|---|---|
+| id, iata, icao | 키(QID)와 공항 코드 | Wikidata P238·P239 | IATA 보유 항목 67건 중 공항 분류 60곳 안팎 |
+| n.en, n.local, n.es, n.ko | 영문·현지어·스페인어·한국어 이름 | OSM name:en·name, Wikidata 라벨 | 한국어는 36건 |
+| city.id, city.en, city.ko, city.guess | 소속 도시 ID와 영문·한국어 명칭, 추정 여부 | Wikidata P931(도시·섬), 없으면 20km 안 인구 2만 이상 도시 | P931 없음 9건 |
+| lat, lon | 좌표 | OSM 우선, 없으면 Wikidata | 100% |
+| pax, pax_year | 연 이용객과 연도 | Wikidata P3872 | 이용객 없음 17건 |
+| osm, heliport | OSM ID, 헬리포트 여부 | OSM(wikidata 태그 일치), Wikidata 분류 | OSM 연결 33건 |
+
 ### Place (장소)
 
 | 필드 | 설명 | 출처 | 커버리지(사실) |

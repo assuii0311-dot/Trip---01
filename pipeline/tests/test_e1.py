@@ -7,6 +7,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from pipeline.e1 import categories as cat  # noqa: E402
+from pipeline.e1.airports import build_airports, parse_rows  # noqa: E402
 from pipeline.e1 import config as C  # noqa: E402
 from pipeline.e1.match import build_groups, hav, sim  # noqa: E402
 from pipeline.e1.merge import parse_price, place_from_group  # noqa: E402
@@ -162,3 +163,50 @@ def test_representative_osm_member_is_closest_name_to_label():
     groups, _ = build_groups(wd, osm, [])
     p = place_from_group(groups["Q1"], {})
     assert p["n"]["local"] == "Puerta de Alcalá" and p["src"]["osm"][0] == "w1" or p["n"]["local"] == "Puerta de Alcalá"
+
+
+# --- 공항(E1 4절 13항, D-029). 고정 입력은 2026-10-26 SPARQL 결과를 축약한 것 ---
+def _b(**kv):
+    """SPARQL 바인딩 한 행"""
+    return {k: {"value": v} for k, v in kv.items() if v is not None}
+
+
+def test_airports_parse_rows_latest_pax_and_classes():
+    rows = [
+        _b(a="http://www.wikidata.org/entity/Q166276", iata="MAD", len="Madrid-Barajas Airport", les="aeropuerto Adolfo Suárez Madrid-Barajas", lko="마드리드 바라하스 국제공항",
+           cls="http://www.wikidata.org/entity/Q644371", city="http://www.wikidata.org/entity/Q2807", cityEn="Madrid", coord="Point(-3.5676 40.4936)", pax="41833686", paxT="2014-01-01T00:00:00Z"),
+        _b(a="http://www.wikidata.org/entity/Q166276", iata="MAD", cls="http://www.wikidata.org/entity/Q1248784", pax="66197066", paxT="2024-01-01T00:00:00Z"),
+    ]
+    out = parse_rows(rows)
+    assert len(out) == 1 and out[0]["qid"] == "Q166276" and out[0]["classes"] == ["Q1248784", "Q644371"]
+    assert out[0]["pax"] == {"value": 66197066, "year": 2024} and out[0]["coord"] == (40.4936, -3.5676) and out[0]["city"]["qid"] == "Q2807"
+
+
+def _wd(qid, iata, en, lat, lon, classes=("Q1248784",), city=None, pax=None, es=None, ko=None):
+    return {"qid": qid, "iata": iata, "icao": None, "labels": {"en": en, "es": es, "ko": ko}, "classes": list(classes), "city": city or {"qid": None, "en": None, "ko": None, "island": False}, "coord": (lat, lon), "pax": pax}
+
+
+def test_build_airports_filter_dedupe_join_city():
+    cities = [{"id": "Q2807", "n": {"en": "Madrid", "ko": "마드리드"}, "lat": 40.416944, "lon": -3.703333, "pop": 3506730},
+              {"id": "Q943431", "n": {"en": "Granadilla de Abona", "ko": None}, "lat": 28.1186, "lon": -16.5756, "pop": 58752},
+              {"id": "Qsmall", "n": {"en": "Tiny", "ko": None}, "lat": 28.04, "lon": -16.57, "pop": 500}]
+    osm = [{"id": "w1", "lat": 40.4936, "lon": -3.5668, "name": "Aeropuerto Adolfo Suárez Madrid-Barajas", "name:en": "Adolfo Suárez Madrid-Barajas Airport", "wikidata": "Q166276"},
+           {"id": "w2", "lat": 28.0445, "lon": -16.5725, "name": "Base Aérea de Son Sant Joan"}]  # QID 없는 3km 안 OSM 객체: 잇지 않는다(공군기지 오합 방지)
+    wd = [_wd("Q166276", "MAD", "Madrid-Barajas Airport", 40.49, -3.57, ("Q644371",), {"qid": "Q2807", "en": "Madrid", "ko": "마드리드"}, {"value": 66197066, "year": 2024}, es="aeropuerto Adolfo Suárez Madrid-Barajas"),
+          _wd("Q40", "TFS", "Tenerife South Airport", 28.0445, -16.5725, ("Q1248784",), {"qid": "Q40846", "en": "Tenerife", "ko": "테네리페", "island": True}, {"value": 10821703, "year": 2022}, es="aeropuerto de Tenerife Sur"),
+          _wd("Qbase", "TOJ", "Torrejón Air Base", 40.49, -3.45, ("Q695850",)),  # 공군기지만: 제외
+          _wd("Qtoj", "TOJ", "Madrid-Torrejón Airport", 40.4967, -3.56, ("Q1248784",), {"qid": "Qdistrict", "en": "Some District", "ko": None, "island": False}, pax={"value": 1970, "year": 2013}),
+          _wd("Qrail", "XOC", "Madrid Atocha railway station", 40.4066, -3.6895, ("Q55488",)),  # 철도역: 제외
+          _wd("Qheli", "JCU", "Ceuta Heliport", 35.8925, -5.3064, ("Q502074",))]
+    out = build_airports(wd, osm, cities)
+    assert [a["iata"] for a in out] == ["MAD", "TFS", "TOJ", "JCU"]  # 이용객 내림차순, 없으면 코드 순
+    mad = out[0]
+    assert mad["osm"] == "w1" and (mad["lat"], mad["lon"]) == (40.4936, -3.5668)  # 좌표는 OSM 우선
+    assert mad["n"]["en"] == "Adolfo Suárez Madrid-Barajas Airport" and mad["n"]["local"].startswith("Aeropuerto") and mad["n"]["es"].startswith("Aeropuerto")
+    assert mad["city"] == {"id": "Q2807", "en": "Madrid", "ko": "마드리드", "guess": False} and mad["heliport"] is False
+    tfs = out[1]
+    assert tfs["osm"] is None and tfs["n"]["local"] == "Aeropuerto de Tenerife Sur" and tfs["n"]["en"] == "Tenerife South Airport"  # OSM은 QID가 같을 때만
+    assert tfs["city"] == {"id": "Q943431", "en": "Tenerife", "ko": "테네리페", "guess": True}  # P931이 섬 → 섬 이름, ID는 최근접 인구 2만 이상 도시
+    assert out[2]["id"] == "Qtoj" and out[2]["city"] == {"id": "Q2807", "en": "Madrid", "ko": "마드리드", "guess": True}  # P931이 cities에 없고 섬도 아님 → 20km 안 도시
+    jcu = out[3]
+    assert jcu["heliport"] is True and jcu["city"]["en"] == "Madrid" and jcu["city"]["guess"] is True  # P931·근처 도시 없음 → 최근접(표본에는 마드리드뿐)

@@ -3,9 +3,26 @@ import { useState } from "../../lib.js";
 import { html } from "../components/ui.js";
 import { validateTrip, tripDays } from "../../state/store.js";
 import { CAT_ICON } from "../../util/format.js";
+import { airportLabel, airportSub, searchAirports } from "../../util/airports.js";
 
 const BUDGET = [["low", "저가"], ["mid", "중가"], ["high", "고가"]];
 const MEALS = [["light", "가볍게"], ["normal", "보통"], ["drink", "반주"], ["snack", "간식 포함"]];
+
+// 공항 선택(D-029): 영문 도시명 기준 표기, 도시명·코드·공항명 검색, 선택 도시 근처 공항을 먼저 제안
+function AirportPick({ label, value, time, airports, cities, cityIds, ro, onPick, onTime }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const sel = airports.find((a) => a.id === value);
+  const hits = !ro && !sel && (open || q) ? searchAirports(airports, q, { cities, cityIds, limit: 6 }) : [];
+  return html`<div class="airport">
+    <div class="row"><span class="note" style="min-width:8.5em">${label}</span>
+      ${sel ? html`<span class="chip on" onClick=${() => !ro && onPick(null)}>${airportLabel(sel)}${ro ? "" : " ×"}</span>`
+        : value ? html`<span class="chip x" onClick=${() => !ro && onPick(null)}>${value} (목록에 없음)${ro ? "" : " ×"}</span>` : null}
+      <input type="time" disabled=${ro} value=${time} onInput=${(e) => onTime(e.target.value)} /></div>
+    ${!ro && !sel && html`<input placeholder="공항 검색 (도시 영문명, 코드, 공항 이름)" value=${q} onInput=${(e) => { setQ(e.target.value); setOpen(true); }} onFocus=${() => setOpen(true)} />`}
+    ${hits.length > 0 && html`<div class="chips">${hits.map((a) => html`<button class="chip wide" onClick=${() => { onPick(a.id); setQ(""); setOpen(false); }}>${airportLabel(a)}<span class="note">${airportSub(a)}</span></button>`)}</div>`}
+  </div>`;
+}
 
 export function S1Input({ trip, setTrip, cities, airports, categories, role, onDone }) {
   const [step, setStep] = useState(1);
@@ -22,7 +39,6 @@ export function S1Input({ trip, setTrip, cities, airports, categories, role, onD
   const cityHits = nq ? bigCities.filter((c) => Object.values(c.n || {}).some((v) => typeof v === "string" && norm(v).includes(nq)))
     .sort((a, b) => (Object.values(b.n || {}).some((v) => norm(v) === nq) - Object.values(a.n || {}).some((v) => norm(v) === nq)) || ((b.pop || 0) - (a.pop || 0))).slice(0, 8) : [];
   const cityName = (c) => c.n?.ko || c.n?.es || c.n?.local;
-  const airportOpts = airports.filter((a) => a.n).sort((a, b) => (a.n || "").localeCompare(b.n || ""));
   const steps = ["기본 정보", "여행 형태", "취향"];
   return html`<div class="section">
     <div class="steps">${steps.map((s, i) => html`<span class=${step === i + 1 ? "on" : ""}>${i + 1} ${s}</span>`)}</div>
@@ -35,9 +51,10 @@ export function S1Input({ trip, setTrip, cities, airports, categories, role, onD
         ${!ro && html`<input placeholder="도시 이름 검색 (예: 마드리드, Sevilla)" value=${cityQ} onInput=${(e) => setCityQ(e.target.value)} />`}
         ${cityHits.length > 0 && html`<div class="chips">${cityHits.map((c) => html`<button class="chip" onClick=${() => { if (!trip.cities.includes(c.id)) upd({ cities: [...trip.cities, c.id] }); setCityQ(""); }}>${cityName(c)}${c.n?.es && c.n.es !== cityName(c) ? ` (${c.n.es})` : ""} · ${(c.pop || 0).toLocaleString()}명</button>`)}</div>`}
         ${showErr && err.cities && html`<span class="error">${err.cities}</span>`}</div>
-      <div class="field"><label>출발·도착 공항과 시각</label>
-        <div class="row"><select disabled=${ro} value=${trip.airportOut || ""} onChange=${(e) => upd({ airportOut: e.target.value || null })}><option value="">출발 공항</option>${airportOpts.map((a) => html`<option value=${a.id}>${a.n}</option>`)}</select><input type="time" disabled=${ro} value=${trip.timeOut} onInput=${(e) => upd({ timeOut: e.target.value })} /></div>
-        <div class="row"><select disabled=${ro} value=${trip.airportIn || ""} onChange=${(e) => upd({ airportIn: e.target.value || null })}><option value="">도착 공항</option>${airportOpts.map((a) => html`<option value=${a.id}>${a.n}</option>`)}</select><input type="time" disabled=${ro} value=${trip.timeIn} onInput=${(e) => upd({ timeIn: e.target.value })} /></div></div>
+      <div class="field"><label>입국·출국 공항과 시각</label>
+        <${AirportPick} label="입국(첫날 도착)" value=${trip.airportIn} time=${trip.timeIn} airports=${airports} cities=${cities} cityIds=${trip.cities} ro=${ro} onPick=${(id) => upd({ airportIn: id })} onTime=${(v) => upd({ timeIn: v })} />
+        <${AirportPick} label="출국(마지막 날 출발)" value=${trip.airportOut} time=${trip.timeOut} airports=${airports} cities=${cities} cityIds=${trip.cities} ro=${ro} onPick=${(id) => upd({ airportOut: id })} onTime=${(v) => upd({ timeOut: v })} />
+        <span class="note">영문 도시명 · 공항 영문명 (코드)로 표기하고 현지어 이름은 아래에 둡니다(D-029). 선택한 여행 도시 근처 공항을 먼저 보입니다.</span></div>
       <div class="field"><label>인원</label><input type="number" min="1" max="20" disabled=${ro} value=${trip.people} onInput=${(e) => upd({ people: Number(e.target.value) })} />${showErr && err.people && html`<span class="error">${err.people}</span>`}</div>
       <button class="btn" onClick=${() => { setShowErr(true); if (!err.period && !err.cities && !err.people) setStep(2); }}>다음 ▶</button>`}
     ${step === 2 && html`
