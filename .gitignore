@@ -1,0 +1,11 @@
+# PoC 원시 데이터와 가상환경은 커밋하지 않는다 (D-016)
+poc/data/
+.venv/
+venv/
+*.pbf
+*.bz2
+*.parquet
+__pycache__/
+
+# 배포용 사이트 디렉터리(scripts/stage.sh 산출)
+site/

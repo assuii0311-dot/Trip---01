@@ -1,0 +1,67 @@
+{
+ "generated": "2026-10-26",
+ "sources": [
+  {
+   "source": "OpenStreetMap",
+   "license": "ODbL 1.0",
+   "text": "© OpenStreetMap contributors",
+   "url": "https://www.openstreetmap.org/copyright"
+  },
+  {
+   "source": "Wikidata",
+   "license": "CC0 1.0",
+   "text": "Wikidata",
+   "url": "https://www.wikidata.org/"
+  },
+  {
+   "source": "Wikivoyage",
+   "license": "CC BY-SA 4.0",
+   "text": "Wikivoyage 기여자",
+   "url": "https://en.wikivoyage.org/"
+  },
+  {
+   "source": "Wikipedia",
+   "license": "CC BY-SA 4.0",
+   "text": "위키백과 기여자",
+   "url": "https://www.wikipedia.org/"
+  },
+  {
+   "source": "Wikimedia pageviews",
+   "license": "CC0 1.0",
+   "text": "Wikimedia Analytics",
+   "url": "https://dumps.wikimedia.org/other/pageview_complete/"
+  },
+  {
+   "source": "Renfe",
+   "license": "CC BY 4.0",
+   "text": "Renfe 공개 데이터",
+   "url": "https://data.renfe.com/"
+  },
+  {
+   "source": "MITRAMS (NAP)",
+   "license": "MITRAMS 공개 데이터 라이선스",
+   "text": "Powered by MITRAMS",
+   "url": "https://www.transportes.gob.es/"
+  },
+  {
+   "source": "CRTM",
+   "license": "CRTM 공개 데이터 라이선스",
+   "text": "Consorcio Regional de Transportes de Madrid",
+   "url": "https://www.crtm.es/"
+  },
+  {
+   "source": "Mobility Database",
+   "license": "피드별",
+   "text": "MobilityData",
+   "url": "https://mobilitydatabase.org/"
+  }
+ ],
+ "data_license": "data/LICENSE-DATA.md",
+ "counts": {
+  "places": 498123,
+  "tier1": 101681,
+  "tier2": 396442,
+  "cities": 8371,
+  "regions": 130
+ }
+}

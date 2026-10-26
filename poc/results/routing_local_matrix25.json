@@ -1,0 +1,47 @@
+{
+ "n": 25,
+ "sec": 4.99,
+ "unreachable": 114,
+ "unreachable_pairs": [
+  [
+   "Madrid",
+   "Palma de Mallorca"
+  ],
+  [
+   "Madrid",
+   "Palma de Mallorca"
+  ],
+  [
+   "Barcelona",
+   "Palma de Mallorca"
+  ],
+  [
+   "Barcelona",
+   "Palma de Mallorca"
+  ],
+  [
+   "Valencia",
+   "Palma de Mallorca"
+  ],
+  [
+   "Valencia",
+   "Palma de Mallorca"
+  ],
+  [
+   "Zaragoza",
+   "Palma de Mallorca"
+  ],
+  [
+   "Zaragoza",
+   "Palma de Mallorca"
+  ],
+  [
+   "Sevilla",
+   "Palma de Mallorca"
+  ],
+  [
+   "Sevilla",
+   "Palma de Mallorca"
+  ]
+ ]
+}

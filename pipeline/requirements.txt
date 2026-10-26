@@ -1,0 +1,6 @@
+# 파이프라인 패키지. 설치: <venv>/bin/pip install -r pipeline/requirements.txt (가상환경은 저장소 밖)
+requests
+shapely
+osmium        # OSM 추출본(pbf)과 행정 경계 영역 처리
+pytest
+# pyvalhalla  # E3 사전 계산(묶음 5)에서 추가

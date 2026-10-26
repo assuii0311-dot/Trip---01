@@ -1,0 +1,89 @@
+[
+ {
+  "feed": "Renfe 고속·장거리·중거리",
+  "url": "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip",
+  "license": "CC BY 4.0",
+  "http": 200,
+  "bytes": 881059,
+  "content_type": "application/zip",
+  "files": [
+   "agency.txt",
+   "calendar_dates.txt",
+   "calendar.txt",
+   "routes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 663,
+  "stops": 1006,
+  "trips": 8668,
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_products": false,
+  "agencies": [
+   "RENFE OPERADORA"
+  ],
+  "max_date": "20270929",
+  "sec": 3.2
+ },
+ {
+  "feed": "Renfe Cercanías(광역전철)",
+  "url": "https://ssl.renfe.com/ftransit/Fichero_CER_FOMENTO/fomento_transit.zip",
+  "license": "CC BY 4.0",
+  "http": 200,
+  "bytes": 15885173,
+  "content_type": "application/zip",
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "transfers.txt",
+   "trips.txt"
+  ],
+  "routes": 767,
+  "stops": 1147,
+  "trips": 132808,
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_products": false,
+  "agencies": [
+   "Renfe Cercanias"
+  ],
+  "max_date": "20261119",
+  "sec": 14.9
+ },
+ {
+  "feed": "NAP 마드리드 광역버스(1361)",
+  "url": "https://nap.transportes.gob.es/api/Fichero/download/1361",
+  "license": "미확인",
+  "http": 401,
+  "bytes": 25,
+  "content_type": "",
+  "note": "zip 아님 또는 오류. 본문 앞부분: Api Key was not provided.",
+  "sec": 0.9
+ },
+ {
+  "feed": "NAP 바르셀로나 광역버스(1496)",
+  "url": "https://nap.transportes.gob.es/api/Fichero/download/1496",
+  "license": "미확인",
+  "http": 401,
+  "bytes": 25,
+  "content_type": "",
+  "note": "zip 아님 또는 오류. 본문 앞부분: Api Key was not provided.",
+  "sec": 0.1
+ },
+ {
+  "feed": "NAP 발렌시아 광역버스(1526)",
+  "url": "https://nap.transportes.gob.es/api/Fichero/download/1526",
+  "license": "CC BY 4.0",
+  "http": 401,
+  "bytes": 25,
+  "content_type": "",
+  "note": "zip 아님 또는 오류. 본문 앞부분: Api Key was not provided.",
+  "sec": 0.1
+ }
+]

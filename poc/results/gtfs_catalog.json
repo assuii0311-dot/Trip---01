@@ -1,0 +1,715 @@
+[
+ {
+  "mdb_id": "788",
+  "provider": "Metropolitano de Tenerife (Metrotenerife)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-santa-cruz-de-tenerife-metropolitano-de-tenerife-gtfs-788.zip?alt=media",
+  "http": 200,
+  "mb": 0.0,
+  "files": [
+   "calendar.txt",
+   "frequencies.txt",
+   "agency.txt",
+   "calendar_dates.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stop_times.txt",
+   "stops.txt",
+   "transfers.txt",
+   "trips.txt"
+  ],
+  "routes": 2,
+  "stops": 25,
+  "trips": 12,
+  "route_types": [
+   "0"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20250715",
+  "sec": 0.5
+ },
+ {
+  "mdb_id": "791",
+  "provider": "Consorcio Regional de Transportes de Madrid CRTM Intercity Buses (Madrid Intercity Buses)",
+  "name": "Powered by CRTM: http://www.crtm.es/",
+  "municipality": "",
+  "catalog_license": "http://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-autobuses-interurbanos-madrid-crtm-gtfs-791.zip?alt=media",
+  "http": 200,
+  "mb": 75.7,
+  "files": [
+   "agency.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "stops.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "routes.txt",
+   "trips.txt",
+   "shapes.txt",
+   "stop_times.txt"
+  ],
+  "routes": 354,
+  "stops": 8402,
+  "trips": 55219,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20270626",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20260526"
+  },
+  "sec": 4.9
+ },
+ {
+  "mdb_id": "793",
+  "provider": "Empresa Municipal de Transportes de Madrid (EMT Madrid)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-empresa-municipal-de-transportes-de-madrid-emt-madrid-gtfs-793.zip?alt=media",
+  "http": 200,
+  "mb": 17.6,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "frequencies.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 236,
+  "stops": 4909,
+  "trips": 87931,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20261231",
+  "sec": 1.4
+ },
+ {
+  "mdb_id": "794",
+  "provider": "Metro de Madrid",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "http://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-metro-de-madrid-gtfs-794.zip?alt=media",
+  "http": 200,
+  "mb": 1.5,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 13,
+  "stops": 1050,
+  "trips": 120,
+  "route_types": [
+   "1"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260527",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20250527"
+  },
+  "sec": 0.4
+ },
+ {
+  "mdb_id": "795",
+  "provider": "Empresa Municipal de Transportes de Valencia (EMT Valencia)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "https://www.valencia.es/val/ajuntament/govern-obert",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-valencia-emt-valencia-gtfs-795.zip?alt=media",
+  "http": 200,
+  "mb": 5.4,
+  "files": [
+   "agency.txt",
+   "calendar_dates.txt",
+   "calendar.txt",
+   "feed_info.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 49,
+  "stops": 1155,
+  "trips": 25535,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260612",
+  "feed_info": {
+   "feed_publisher_name": "EMT Valencia",
+   "feed_version": "13-05-2026",
+   "feed_end_date": "20260612"
+  },
+  "sec": 0.7
+ },
+ {
+  "mdb_id": "892",
+  "provider": "Àrea Metropolitana de Barcelona (AMB)",
+  "name": "Bus",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-barcelona-autos-castellbisbal-gtfs-892.zip?alt=media",
+  "http": 200,
+  "mb": 8.1,
+  "files": [
+   "agency.txt",
+   "stops.txt",
+   "routes.txt",
+   "trips.txt",
+   "stop_times.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "shapes.txt",
+   "transfers.txt",
+   "areas.txt",
+   "stop_areas.txt",
+   "feed_info.txt"
+  ],
+  "routes": 137,
+  "stops": 4926,
+  "trips": 29848,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20281231",
+  "feed_info": {
+   "feed_publisher_name": "AMBMobilitat",
+   "feed_version": "20260603",
+   "feed_end_date": "20260608"
+  },
+  "sec": 0.9
+ },
+ {
+  "mdb_id": "993",
+  "provider": "Consorcio Regional de Transportes de Madrid CRTM EMT (Red de EMT)",
+  "name": "Powered by CRTM: http://www.crtm.es/",
+  "municipality": "",
+  "catalog_license": "http://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-cercanias-madrid-gtfs-993.zip?alt=media",
+  "http": 200,
+  "mb": 26.3,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 222,
+  "stops": 4815,
+  "trips": 103742,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20240329",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20230331"
+  },
+  "sec": 2.3
+ },
+ {
+  "mdb_id": "1003",
+  "provider": "TRAM Barcelona (Tranvía Metropolitano Barcelona)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-barcelona-tram-gtfs-1003.zip?alt=media",
+  "http": 200,
+  "mb": 0.4,
+  "files": [
+   "trips.txt",
+   "agency.txt",
+   "stops.txt",
+   "routes.txt",
+   "stop_times.txt",
+   "calendar_dates.txt",
+   "shapes.txt"
+  ],
+  "routes": 3,
+  "stops": 86,
+  "trips": 2044,
+  "route_types": [
+   "0",
+   "2"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260704",
+  "sec": 0.3
+ },
+ {
+  "mdb_id": "1004",
+  "provider": "TRAM Barcelona Besós (Tranvía Metropolitano Barcelona)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-barcelona-trambesos-gtfs-1004.zip?alt=media",
+  "http": 200,
+  "mb": 0.5,
+  "files": [
+   "trips.txt",
+   "agency.txt",
+   "stops.txt",
+   "routes.txt",
+   "stop_times.txt",
+   "calendar_dates.txt",
+   "shapes.txt"
+  ],
+  "routes": 3,
+  "stops": 87,
+  "trips": 4238,
+  "route_types": [
+   "0"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260630",
+  "sec": 0.3
+ },
+ {
+  "mdb_id": "1017",
+  "provider": "Metro de Málaga",
+  "name": "GTFS static",
+  "municipality": "Málaga",
+  "catalog_license": "https://metromalaga.es/GTFS/ACCESO%20A%20DATOS%20P%C3%9ABLICOS%20DE%20METRO%20M%C3%81LAGA%20LICENCIA%20Y%20CONDICIONES%20DE%20USO.pdf",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-andalucia-metro-de-malaga-gtfs-1017.zip?alt=media",
+  "http": 200,
+  "mb": 0.4,
+  "files": [
+   "shapes.txt",
+   "feed_info.txt",
+   "stops.txt",
+   "trips.txt",
+   "agency.txt",
+   "routes.txt",
+   "stop_times.txt",
+   "calendar_dates.txt"
+  ],
+  "routes": 2,
+  "stops": 21,
+  "trips": 4208,
+  "route_types": [
+   "1"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20250226",
+  "feed_info": {
+   "feed_publisher_name": "Metro Malaga",
+   "feed_version": "1737024829",
+   "feed_end_date": "20250226"
+  },
+  "sec": 0.3
+ },
+ {
+  "mdb_id": "1054",
+  "provider": "MetroValencia",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-valenciana-metrovalencia-gtfs-1054.zip?alt=media",
+  "http": 200,
+  "mb": 1.9,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "trips.txt",
+   "stop_times.txt",
+   "stops.txt",
+   "routes.txt",
+   "shapes.txt"
+  ],
+  "routes": 121,
+  "stops": 144,
+  "trips": 19004,
+  "route_types": [
+   "0",
+   "1"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20251231",
+  "sec": 0.4
+ },
+ {
+  "mdb_id": "1870",
+  "provider": "Generalitat Valenciana (Intercity bus)",
+  "name": "",
+  "municipality": "",
+  "catalog_license": "https://dadesobertes.gva.es/va/dataset/tra-hyr-atmv-horaris-i-rutes",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-valenciana-generalitat-valenciana-gtfs-1870.zip?alt=media",
+  "http": 200,
+  "mb": 18.1,
+  "files": [
+   "trips.txt",
+   "stops.txt",
+   "agency.txt",
+   "stop_times.txt",
+   "calendar_dates.txt",
+   "routes.txt",
+   "shapes.txt"
+  ],
+  "routes": 381,
+  "stops": 5225,
+  "trips": 9738,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260618",
+  "sec": 1.2
+ },
+ {
+  "mdb_id": "2212",
+  "provider": "Empresa Malagueña de Transportes (EMT)",
+  "name": "",
+  "municipality": "Málaga",
+  "catalog_license": "",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-andalucia-empresa-malaguena-de-transportes-emt-gtfs-2212.zip?alt=media",
+  "http": 200,
+  "mb": 4.9,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "feed_info.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 48,
+  "stops": 1134,
+  "trips": 19531,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20260731",
+  "feed_info": {
+   "feed_publisher_name": "EMT Málaga",
+   "feed_version": "vers29mayo2026"
+  },
+  "sec": 0.8
+ },
+ {
+  "mdb_id": "2359",
+  "provider": "Transports Metropolitans de Barcelona (TMB)",
+  "name": "TMB",
+  "municipality": "Barcelona",
+  "catalog_license": "https://developer.tmb.cat/",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-barcelona-transports-metropolitans-de-barcelona-tmb-gtfs-2359.zip?alt=media",
+  "http": 200,
+  "mb": 7.6,
+  "files": [
+   "feed_info.txt",
+   "agency.txt",
+   "routes.txt",
+   "stops.txt",
+   "transfers.txt",
+   "shapes.txt",
+   "trips.txt",
+   "calendar_dates.txt",
+   "calendar.txt",
+   "frequencies.txt",
+   "stop_times.txt",
+   "pathways.txt"
+  ],
+  "routes": 116,
+  "stops": 3450,
+  "trips": 55117,
+  "route_types": [
+   "1",
+   "3",
+   "7"
+  ],
+  "fare_attributes": false,
+  "fare_rules": false,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20261206",
+  "feed_info": {
+   "feed_publisher_name": "TMB",
+   "feed_version": "084410042026002",
+   "feed_end_date": "20261205"
+  },
+  "sec": 0.9
+ },
+ {
+  "mdb_id": "2720",
+  "provider": "Consorcio Regional de Transportes de Madrid CRTM Commuter Network (Red de Cercanías)",
+  "name": "Powered by CRTM: http://www.crtm.es/",
+  "municipality": "",
+  "catalog_license": "https://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-cercanias-madrid-gtfs-2720.zip?alt=media",
+  "http": 200,
+  "mb": 0.0,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stops.txt",
+   "stop_times.txt",
+   "trips.txt"
+  ],
+  "routes": 10,
+  "stops": 97,
+  "trips": 0,
+  "route_types": [
+   "2"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20250717",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20240717"
+  },
+  "sec": 0.1
+ },
+ {
+  "mdb_id": "2781",
+  "provider": "Metro de Sevilla",
+  "name": "Raw data from the Spanish National Access Point, powered by MIMTRANS (https://www.transportes.gob.es)",
+  "municipality": "Seville",
+  "catalog_license": "https://nap.transportes.gob.es/licencia-datos",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-andalusia-seville-metro-de-sevilla-gtfs-2781.zip?alt=media",
+  "http": 404,
+  "mb": 0.0,
+  "note": "No such object: mdb-latest/es-andalusia-seville-metro-de-sevilla-gtfs-2781.zip",
+  "sec": 0.1
+ },
+ {
+  "mdb_id": "2784",
+  "provider": "Public Works Agency of the Andalusian Regional Government (Metro de Grenada)",
+  "name": "Raw data from the Spanish National Access Point, powered by MIMTRANS (https://www.transportes.gob.es)",
+  "municipality": "Grenada",
+  "catalog_license": "https://nap.transportes.gob.es/licencia-datos",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-andalusia-grenada-metro-gtfs-2784.zip?alt=media",
+  "http": 404,
+  "mb": 0.0,
+  "note": "No such object: mdb-latest/es-andalusia-grenada-metro-gtfs-2784.zip",
+  "sec": 0.1
+ },
+ {
+  "mdb_id": "2802",
+  "provider": "Consorcio Regional de Transportes de Madrid CRTM Light Rail Network (Red de Metro Ligero)",
+  "name": "Powered by CRTM: http://www.crtm.es/",
+  "municipality": "",
+  "catalog_license": "https://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-crtm-light-rail-gtfs-2802.zip?alt=media",
+  "http": 200,
+  "mb": 0.4,
+  "files": [
+   "trips.txt",
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "routes.txt",
+   "shapes.txt",
+   "stop_times.txt",
+   "stops.txt"
+  ],
+  "routes": 4,
+  "stops": 96,
+  "trips": 3001,
+  "route_types": [
+   "0"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20270507",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20260507"
+  },
+  "sec": 0.3
+ },
+ {
+  "mdb_id": "2820",
+  "provider": "Consorcio Regional de Transportes de Madrid CRTM Madrid City Bus (Autobús urbano de Madrid)",
+  "name": "Powered by CRTM: http://www.crtm.es/",
+  "municipality": "",
+  "catalog_license": "https://www.crtm.es/licencia-de-uso",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-madrid-crtm-city-bus-gtfs-2820.zip?alt=media",
+  "http": 200,
+  "mb": 8.9,
+  "files": [
+   "agency.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt",
+   "feed_info.txt",
+   "frequencies.txt",
+   "stops.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "routes.txt",
+   "trips.txt",
+   "shapes.txt",
+   "stop_times.txt"
+  ],
+  "routes": 117,
+  "stops": 8402,
+  "trips": 15756,
+  "route_types": [
+   "3"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [],
+  "max_date": "20270626",
+  "feed_info": {
+   "feed_publisher_name": "Consorcio Regional de Transportes de Madrid",
+   "feed_version": "20260526"
+  },
+  "sec": 0.8
+ },
+ {
+  "mdb_id": "2830",
+  "provider": "FGV - Generalitat Valenciana Metro de Valencia",
+  "name": "Raw data from the Spanish National Access Point, powered by MIMTRANS (https://www.transportes.gob.es)",
+  "municipality": "Valencia",
+  "catalog_license": "https://nap.transportes.gob.es/licencia-datos",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-valencia-metro-de-valencia-gtfs-2830.zip?alt=media",
+  "http": 404,
+  "mb": 0.0,
+  "note": "No such object: mdb-latest/es-valencia-metro-de-valencia-gtfs-2830.zip",
+  "sec": 0.1
+ },
+ {
+  "mdb_id": "3052",
+  "provider": "Metro Bilbao",
+  "name": "Metro Bilbao",
+  "municipality": "",
+  "catalog_license": "https://data.ctb.eus/en/pages/legal-notice",
+  "latest": "https://storage.googleapis.com/storage/v1/b/mdb-latest/o/es-metro-bilbao-gtfs-3052.zip?alt=media",
+  "http": 200,
+  "mb": 1.3,
+  "files": [
+   "agency.txt",
+   "calendar.txt",
+   "calendar_dates.txt",
+   "routes.txt",
+   "trips.txt",
+   "stop_times.txt",
+   "stops.txt",
+   "shapes.txt",
+   "fare_attributes.txt",
+   "fare_rules.txt"
+  ],
+  "routes": 1,
+  "stops": 191,
+  "trips": 4485,
+  "route_types": [
+   "1"
+  ],
+  "fare_attributes": true,
+  "fare_rules": true,
+  "fare_v2": [],
+  "fare_samples": [
+   [
+    "   2.00000",
+    "EUR"
+   ],
+   [
+    "   2.20000",
+    "EUR"
+   ],
+   [
+    "   2.25000",
+    "EUR"
+   ]
+  ],
+  "max_date": "20260703",
+  "sec": 0.3
+ }
+]

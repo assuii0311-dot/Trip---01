@@ -1,0 +1,15 @@
+{
+ "month": "2025-09",
+ "docs_with_views": 19049,
+ "en_gt0": 10812,
+ "es_gt0": 18798,
+ "ko_gt0": 533,
+ "both_en_es": 10561,
+ "es_share": {
+  "p10": 0.55,
+  "median": 0.86,
+  "p90": 0.94
+ },
+ "lines_processed": 452316347,
+ "seconds": 2353
+}
