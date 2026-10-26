@@ -17,11 +17,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22 }
+        with:
+          node-version: 22
       - name: 앱 단위 테스트
         run: node --test tests/app/*.test.js
       - uses: actions/setup-python@v5
-        with: { python-version: "3.13" }
+        with:
+          python-version: "3.13"
       - name: 파이프라인 단위 테스트
         run: |
           python -m pip install -q -r pipeline/requirements.txt
@@ -29,11 +31,14 @@ jobs:
       - name: 사이트 구성
         run: scripts/stage.sh site
       - uses: actions/upload-pages-artifact@v3
-        with: { path: site }
+        with:
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
