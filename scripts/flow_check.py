@@ -67,6 +67,10 @@ def main():
           page.click("button:has-text('장소 배치')"); page.click("button:has-text('일정 생성')"); page.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
           res["steps"]["itin_days"] = page.locator(".toolbar .chip").count(); res["steps"]["itin_items"] = page.locator(".card .title").count(); res["steps"]["itin_note"] = page.locator("p.note").first.inner_text()[:120]
           page.screenshot(path=str(shots / "s5.png"))
+          page.click("button:has-text('비용 €')"); page.wait_for_selector(".sheet", timeout=10000); res["steps"]["cost_total"] = page.locator(".sheet p").first.inner_text()[:60]; page.screenshot(path=str(shots / "s5_cost.png")); page.click(".sheet .close")
+          page.click("nav.tabs button:has-text('공유')"); page.wait_for_selector("text=구글맵 일괄 저장", timeout=5000)
+          res["steps"]["share_links"] = page.locator("a[href*='maps/dir']").count(); res["steps"]["share_limit"] = page.locator("p.note").first.inner_text()[:100]
+          page.screenshot(path=str(shots / "s7.png"))
           page.click("nav.tabs button:has-text('설정')"); page.wait_for_selector("text=출처 표기", timeout=5000)
           page.fill("input[placeholder*='trip-2027']", "assuii0311-dot/Trip---01"); page.click("button:has-text('연결 확인')"); page.wait_for_selector("text=연결됨:", timeout=30000)
           res["steps"]["gh_check"] = page.locator("p.note:has-text('연결됨')").inner_text()[:80]

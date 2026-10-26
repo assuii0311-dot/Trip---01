@@ -32,7 +32,7 @@ test("placeDay: 시작·마감(시작 시각 기준), 확인 필요 표시, 초�
 test("generate: 배치된 장소는 그 날에, 나머지는 도시 묶음으로, 초과분은 다음 날로", () => {
   const all = new Map(P.map((p) => [p.id, p]));
   const r = generate({ days: [{ date: "2027-05-01", cityId: "Q2807", origin: { lat: 40.4169, lon: -3.7033 } }, { date: "2027-05-02", cityId: "Q2807", origin: { lat: 40.4169, lon: -3.7033 } }], placesByCity: { Q2807: P, __all: all }, assigned: { "2027-05-02": ["debod"] }, travelFor: () => travel, meals: ["normal"], dayStart: "09:00", dayEnd: "22:00" });
-  assert.equal(r.days.length, 2);
+  assert.equal(r.days.length, 2); assert.deepEqual(r.days[0].origin, { lat: 40.4169, lon: -3.7033 });
   const day2 = r.days[1].items.filter((i) => i.kind === "place").map((i) => i.id); assert.ok(day2.includes("debod"));
   const placed = r.days.flatMap((d) => d.items.filter((i) => i.kind === "place").map((i) => i.id)); assert.equal(new Set(placed).size, placed.length);
   assert.equal(placed.length + r.overflow.length, P.length);

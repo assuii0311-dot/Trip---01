@@ -8,7 +8,7 @@ import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
 
-export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, travelLegFor, intercity, busy }) {
+export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, onCost, busy }) {
   const [di, setDi] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
   const days = result?.days || [];
@@ -34,9 +34,9 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
                 <button class="btn secondary" style="min-height:36px;padding:2px 8px" onClick=${() => onToggleLock(p.id)}>${plan.locks?.[p.id] ? "잠금 해제" : "잠금"}</button>
                 <select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">다른 날로…</option>${days.map((d2, j) => j !== di && html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select></div>
             </div></div></div>`; })())}
-      <div class="row" style="margin-top:12px"><button class="btn secondary" disabled=${busy} onClick=${() => onRegenerateDay(day.date)}>이 날 재생성</button><button class="btn secondary" disabled=${busy} onClick=${onGenerate}>전체 재생성</button><button class="btn secondary" onClick=${() => setShowOverflow(!showOverflow)}>초과분 ${result.overflow.length}곳 ${showOverflow ? "▴" : "▾"}</button></div>
+      <div class="row" style="margin-top:12px"><button class="btn secondary" disabled=${busy} onClick=${() => onRegenerateDay(day.date)}>이 날 재생성</button><button class="btn secondary" disabled=${busy} onClick=${onGenerate}>전체 재생성</button><button class="btn secondary" onClick=${() => setShowOverflow(!showOverflow)}>초과분 ${result.overflow.length}곳 ${showOverflow ? "▴" : "▾"}</button><button class="btn secondary" onClick=${onCost}>비용 €</button></div>
       ${showOverflow && html`<div class="card" style="margin:8px 0"><div class="body"><div class="title">초과분</div>${result.overflow.length === 0 ? html`<div class="note">없음</div>` : result.overflow.map((o) => { const p = getPlace(o.id); return p && html`<div class="row" style="padding:4px 0"><span style="flex:1" onClick=${() => onOpenDetail(p.id)}>${placeName(p)} <span class="note">${o.reason}</span></span><select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">날짜에 넣기…</option>${days.map((d2, j) => html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select></div>`; })}</div></div>`}
-      <p class="note">잠긴 항목과 사용자가 배치한 항목은 재생성에도 유지됩니다(E4 4절 9항). 비용 패널은 묶음 7에서.</p>
+      <p class="note">잠긴 항목과 사용자가 배치한 항목은 재생성에도 유지됩니다(E4 4절 9항).</p>
     </div>`}
   </div>`;
 }

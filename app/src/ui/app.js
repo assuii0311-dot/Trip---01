@@ -10,7 +10,10 @@ import { generate, toMin, toHHMM } from "../engines/e4.js";
 import { makeIntraIndex, makeTransitIndex, cityLeg, intercityLeg } from "../engines/e3.js";
 import { dateList } from "../state/plan.js";
 import { S6Detail } from "./screens/s6_detail.js";
+import { S7Share } from "./screens/s7_share.js";
 import { S8Settings } from "./screens/s8_settings.js";
+import { CostPanel } from "./components/cost_panel.js";
+import { estimateCost } from "../engines/e6.js";
 import { profile, cityNights } from "../engines/e2.js";
 import { tripDays } from "../state/store.js";
 import { loadPlan, savePlan, toggleSelect as planToggle, assignDay, moveInDay, addCustomPlace, setLodging } from "../state/plan.js";
@@ -30,6 +33,7 @@ export function App({ data, loader }) {
   const [exploreCity, setExploreCity] = useState(null);
   const [planTab, setPlanTab] = useState("arrange");
   const [genBusy, setGenBusy] = useState(false);
+  const [costOpen, setCostOpen] = useState(false);
   const travelCache = useRef(new Map()).current;
   const [cfg, setCfgState] = useState(() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch { return {}; } });
   const [sync, setSyncState] = useState({ connected: false, dirty: false });
@@ -152,8 +156,9 @@ export function App({ data, loader }) {
       ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} onReselect=${() => setTab("input")} onExplore=${(cid) => { setExploreCity(cid); setExploreTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} />`}
       ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${(id, d) => setPlan((p) => assignDay(p, id, d))} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} />`}
-      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${(id, v) => setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } }))} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { setPlan((pl) => assignDay(pl, id, d)); setTimeout(() => runGenerate(), 0); }} />`}
-      ${tab === "share" && html`<${Empty}>내보내기·My Maps(묶음 6), 제안·승인(묶음 9)은 다음 묶음에서 제공됩니다.</${Empty}>`}
+      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${(id, v) => setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } }))} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { setPlan((pl) => assignDay(pl, id, d)); setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} />`}
+    ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: (id) => data.cities.find((c) => c.id === id), trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
+      ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} />`}
       ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${onLoad} onSave=${onSave} onDisconnect=${onDisconnect} />`}
     </main>
     ${detail && html`<${S6Detail} place=${detail} categories=${data.categories} loader=${loader} onClose=${() => setDetailId(null)} selected=${plan.selection.includes(detail.id)} onToggleSelect=${() => toggleSelect(detail.id)} cityPlaces=${cityPlacesOf(detail.city)} prof=${prof} reservation=${plan.reservations[detail.id]} onSetReservation=${(v) => setPlan((p) => ({ ...p, reservations: { ...p.reservations, [detail.id]: v } }))} onOpenDetail=${openDetail} />`}

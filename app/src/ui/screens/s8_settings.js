@@ -35,6 +35,6 @@ export function S8Settings({ data, cfg, setCfg, syncState, onCheck, onInit, onLo
     </section>
     <section class="section"><h2>출처 표기</h2><ul>${data.attribution.sources.map((s) => html`<li><a href=${s.url} target="_blank" rel="noopener">${s.source}</a> · ${s.license} · ${s.text}</li>`)}</ul>
       <p class="note">기준 데이터 생성일 ${data.attribution.generated}. 장소 ${data.attribution.counts.places.toLocaleString()}곳(1등급 ${data.attribution.counts.tier1.toLocaleString()}), 도시 ${data.attribution.counts.cities.toLocaleString()}. 데이터 라이선스는 저장소의 data/LICENSE-DATA.md. 지도: © OpenStreetMap contributors, OpenFreeMap.</p>
-      <h2>앱 정보</h2><p class="note">Trip01 v0.1 (묶음 4). 제안·승인(서브 수립자)은 묶음 9에서 제공됩니다.</p></section>
+      <h2>앱 정보</h2><p class="note">Trip01 v0.1 (묶음 7). 제안·승인(서브 수립자)은 묶음 9에서 제공됩니다.</p></section>
   </div>`;
 }

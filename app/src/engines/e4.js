@@ -108,7 +108,7 @@ export function generate({ days, placesByCity, assigned = {}, dwellOverrides = {
     if (d.edge === "arrive" && d.arriveAt) start = toHHMM(Math.max(toMin(dayStart), toMin(d.arriveAt)));
     if (d.edge === "depart" && d.departAt) end = toHHMM(Math.max(toMin(dayStart), toMin(d.departAt) - (EDGE_BUFFER_MIN[d.departMode] ?? 60)));
     const day = placeDay({ start, end, places: list.map((p) => ({ p, dwell: dwellOf(p, dwellOverrides), fixedAt: fixed[p.id] ? toMin(fixed[p.id]) : null })), origin: d.origin, travel: travelFor(d.cityId), meals, order: d.lockedOrder ? d.lockedOrder.map((id) => list.findIndex((p) => p.id === id)).filter((i) => i >= 0) : undefined });
-    out.push({ date: d.date, cityId: d.cityId, ...day });
+    out.push({ date: d.date, cityId: d.cityId, origin: d.origin, ...day });
     // 넘친 장소는 같은 도시의 다음 날로 넘긴다(한 번만)
     if (day.overflow.length && di + 1 < days.length && days[di + 1].cityId === d.cityId) auto[di + 1] = (auto[di + 1] || []).concat(day.overflow.map((id) => placesByCity.__all.get(id)));
     else overflow.push(...day.overflow.map((id) => ({ id, reason: "시간 부족" })));
