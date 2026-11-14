@@ -12,7 +12,7 @@ function download(name, text, type) {
 export function S7Share({ plan, getPlace, cities, cfg, onImport }) {
   const [scope, setScope] = useState("itinerary");
   const [msg, setMsg] = useState(null);
-  const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.es : id; };
+  const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.en || c.n.es : id; };
   const dayPlaces = (plan.itinerary?.days || []).flatMap((d) => d.items.filter((i) => i.kind === "place").map((i) => ({ p: getPlace(i.id), date: d.date }))).filter((x) => x.p);
   const selPlaces = plan.selection.map((id) => getPlace(id)).filter(Boolean);
   const places = scope === "itinerary" && dayPlaces.length ? dayPlaces.map((x) => x.p) : selPlaces;

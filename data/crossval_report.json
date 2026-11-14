@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-26 14:10",
+ "generated": "2026-11-14 08:37",
  "inputs": {
   "wikidata": 133362,
   "osm_places": 473529,
@@ -7,7 +7,25 @@
   "wv_es": 3999,
   "pageviews": 29797,
   "boundaries": 8452,
-  "airports_wd": 67
+  "airports_wd": 67,
+  "islands_osm": 121,
+  "islands_wd": 56
+ },
+ "destinations": {
+  "candidates": 331,
+  "islands": 11,
+  "island_members": 155,
+  "via": {
+   "rank": 100,
+   "unesco": 11,
+   "island": 1
+  },
+  "tiers": {
+   "1": 20,
+   "2": 30,
+   "3": 62
+  },
+  "destinations": 112
  },
  "match": {
   "osm_by_qid": 23822,
@@ -71,8 +89,8 @@
  },
  "files": {
   "cities": {
-   "raw_bytes": 6944961,
-   "gz_bytes": 1089181
+   "raw_bytes": 7282375,
+   "gz_bytes": 1174416
   },
   "regions": {
    "raw_bytes": 96407,
@@ -84,13 +102,13 @@
   },
   "places_tier1": {
    "raw_bytes": 60740671,
-   "gz_bytes": 6267464
+   "gz_bytes": 6267462
   },
   "airports": {
    "raw_bytes": 18315,
    "gz_bytes": 4845
   }
  },
- "tier2_gz_bytes": 17472694,
- "elapsed_s": 252
+ "tier2_gz_bytes": 17472693,
+ "elapsed_s": 182
 }

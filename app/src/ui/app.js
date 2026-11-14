@@ -19,6 +19,7 @@ import { tripDays } from "../state/store.js";
 import { loadPlan, savePlan, toggleSelect as planToggle, assignDay, moveInDay, addCustomPlace, setLodging } from "../state/plan.js";
 import { makeGitHub } from "../engines/e7/github.js";
 import { makeSync, parseRepo } from "../engines/e7/sync.js";
+import { memberIds, makeDestOf, destName } from "../data/dest.js";
 
 const TABS = [["input", "입력", "📝"], ["explore", "탐색", "🧭"], ["plan", "일정", "📅"], ["share", "공유", "🤝"], ["settings", "설정", "⚙️"]];
 const CFG_KEY = "trip01.sync.v1";
@@ -35,6 +36,7 @@ export function App({ data, loader }) {
   const [genBusy, setGenBusy] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const travelCache = useRef(new Map()).current;
+  const muniCache = useRef(new Map()).current; // 지자체별 이동·대중교통 파일(섬 여행지는 여러 지자체 파일을 합쳐 쓴다)
   const [cfg, setCfgState] = useState(() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch { return {}; } });
   const [sync, setSyncState] = useState({ connected: false, dirty: false });
   const [conflict, setConflict] = useState(null);
@@ -55,17 +57,28 @@ export function App({ data, loader }) {
   const role = cfg.token ? "메인 수립자" : sync.connected ? "공유자(열람)" : "로컬(미연결)";
   const detail = detailId ? getPlace(detailId) : null;
   const openDetail = (id) => setDetailId(id);
-  const loaderWithCache = { ...loader, tier2: async (c) => { const rows = await loader.tier2(c); rows.forEach((p) => data.tier2cache.set(p.id, p)); return rows; } };
+  const cityById = (id) => data.cities.find((c) => c.id === id);
+  const loaderWithCache = { ...loader, tier2: async (c) => { const ids = memberIds(cityById(c)).filter((m) => (cityById(m)?.places?.tier2 ?? 1) > 0); /* 2등급이 없는 지자체는 파일도 없다 */ const rows = (await Promise.all(ids.map((m) => loader.tier2(m)))).flat(); rows.forEach((p) => data.tier2cache.set(p.id, p)); return rows; } };
   const cityPlacesOf = (cityId) => data.tier1.filter((p) => p.city === cityId);
 
   // --- E3·E4: 일정 생성 ---
-  async function travelFor(cityId) {
-    if (!travelCache.has(cityId)) {
-      const [tr, tz, inter] = await Promise.all([loader.load(`travel/${cityId}.json.gz`).catch(() => null), loader.load(`transit/${cityId}.json.gz`).catch(() => null), loader.load("travel/intercity.json.gz").catch(() => null)]);
-      const city = data.cities.find((c) => c.id === cityId);
-      travelCache.set(cityId, { intra: tr ? makeIntraIndex(tr) : null, tidx: tz ? makeTransitIndex(tz) : null, taxi: city?.taxi_fare || null, inter });
+  async function muniTravel(mid, withTransit) {
+    if (!muniCache.has(mid)) {
+      const [tr, tz] = await Promise.all([loader.load(`travel/${mid}.json.gz`).catch(() => null), withTransit ? loader.load(`transit/${mid}.json.gz`).catch(() => null) : null]);
+      muniCache.set(mid, { intra: tr ? makeIntraIndex(tr) : null, tidx: tz ? makeTransitIndex(tz) : null });
     }
-    const t = travelCache.get(cityId);
+    return muniCache.get(mid);
+  }
+  // 여행지(도시 또는 섬)의 이동 시간 함수. muniIds: 그 여행지에서 장소가 있는 지자체(섬이면 여러 곳)
+  async function travelFor(destId, muniIds = null) {
+    const dest = cityById(destId); const island = dest?.kind === "island";
+    const ids = island ? (muniIds || []).filter((m) => dest.members.includes(m)) : [destId];
+    // 대중교통 파일은 피드가 있는 지자체만 시도한다(섬은 소속 지자체의 피드 목록 기준)
+    const parts = await Promise.all(ids.map((m) => muniTravel(m, !island || (cityById(m)?.transit_feeds || []).length > 0)));
+    const inter = await loader.load("travel/intercity.json.gz").catch(() => null);
+    const intra = parts.some((x) => x.intra) ? { lookup: (a, b) => { for (const x of parts) { const r = x.intra && x.intra.lookup(a, b); if (r) return r; } return null; } } : null;
+    const t = { intra, tidx: (parts.find((x) => x.tidx) || {}).tidx || null, taxi: dest?.taxi_fare || null, inter };
+    travelCache.set(destId, t);
     return (a, b) => { const leg = cityLeg(a, b, t); return { ...leg.best, alternatives: leg.alternatives }; };
   }
   function buildDays(plan0) {
@@ -75,7 +88,7 @@ export function App({ data, loader }) {
     let ci = 0, left = nightsOf(cityOrder[0]);
     for (let i = 0; i < dates.length; i++) {
       const cid = cityOrder[Math.min(ci, cityOrder.length - 1)]; const c = data.cities.find((x) => x.id === cid); const l = plan0.lodging[cid] || {};
-      const origin = l.zoneLat ? { lat: l.zoneLat, lon: l.zoneLon, name: l.zoneName } : { lat: c?.lat, lon: c?.lon, name: c?.n?.ko || cid };
+      const origin = l.zoneLat ? { lat: l.zoneLat, lon: l.zoneLon, name: l.zoneName } : { lat: c?.lat, lon: c?.lon, name: c ? destName(c) : cid };
       const d = { date: dates[i], cityId: cid, origin };
       if (i === 0 && plan0.trip.timeIn) { d.edge = "arrive"; d.arriveAt = toHHMM(toMin(plan0.trip.timeIn) + 60); }  // 입국 절차 60분(추정)
       if (i === dates.length - 1 && plan0.trip.timeOut) { d.edge = "depart"; d.departAt = plan0.trip.timeOut; d.departMode = "flight"; }
@@ -89,8 +102,9 @@ export function App({ data, loader }) {
     try {
       const plan0 = planRef.current; const days = buildDays(plan0);
       const all = new Map(); const byCity = { __all: all };
-      for (const id of plan0.selection) { const p = getPlace(id); if (!p) continue; all.set(id, p); (byCity[p.city || days[0]?.cityId] ||= []).push(p); }
-      const travelFns = {}; for (const cid of new Set(days.map((d) => d.cityId))) travelFns[cid] = await travelFor(cid);
+      const destOf = makeDestOf(data.cities, plan0.trip.cities); // 장소의 지자체 → 여행지(섬 포함)
+      for (const id of plan0.selection) { const p = getPlace(id); if (!p) continue; all.set(id, p); (byCity[destOf(p) || p.city || days[0]?.cityId] ||= []).push(p); }
+      const travelFns = {}; for (const cid of new Set(days.map((d) => d.cityId))) travelFns[cid] = await travelFor(cid, [...new Set((byCity[cid] || []).map((p) => p.city).filter(Boolean))]);
       const prev = plan0.itinerary;
       const assigned = { ...plan0.days };
       for (const [id, locked] of Object.entries(plan0.locks || {})) if (locked && prev) { const d = prev.days.find((dd) => dd.items.some((it) => it.id === id)); if (d) assigned[d.date] = [...(assigned[d.date] || []).filter((x) => x !== id), id]; }
@@ -152,12 +166,12 @@ export function App({ data, loader }) {
       ${sync.connected ? html`<button class=${"chip " + (sync.dirty ? "warn" : sync.stale ? "warn" : "ok")} title="버전" onClick=${() => { setTab("settings"); }}>${sync.commit ? sync.commit.slice(0, 7) : "—"}${sync.dirty ? " · 저장 필요" : sync.stale ? " · 오래됨" : " · 최신"}</button>` : html`<span class="version" title="데이터 갱신일">데이터 ${data.attribution.generated}</span>`}
     </header>
     <main class="main">
-      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} role=${cfg.token || !sync.connected ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
+      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${cfg.token || !sync.connected ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} onReselect=${() => setTab("input")} onExplore=${(cid) => { setExploreCity(cid); setExploreTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} />`}
       ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${(id, d) => setPlan((p) => assignDay(p, id, d))} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} />`}
       ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${(id, v) => setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } }))} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { setPlan((pl) => assignDay(pl, id, d)); setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} />`}
-    ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: (id) => data.cities.find((c) => c.id === id), trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
+    ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: cityById, trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
       ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} />`}
       ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${onLoad} onSave=${onSave} onDisconnect=${onDisconnect} />`}
     </main>

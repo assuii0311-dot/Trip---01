@@ -28,3 +28,12 @@ test("intercityLeg: 행렬·기차·섬은 비행기·배 추정", () => {
   const mb = intercityLeg(inter.cities[0], inter.cities[1], inter); assert.equal(mb.best.mode, "train"); assert.equal(mb.best.min, 150); assert.ok(mb.options.some((o) => o.mode === "flight"));
   const mp = intercityLeg(inter.cities[0], inter.cities[2], inter); assert.ok(mp.options.some((o) => o.mode === "ferry") && mp.options.some((o) => o.mode === "flight")); assert.equal(mp.best.mode, "flight");
 });
+test("intercityLeg: 섬 여행지가 끼면 차량 없이 비행기·배만(D-030)", () => {
+  const inter = { cities: [], car_min: [], car_km: [], train_min: [], trains_per_day: [] };
+  const ibiza = { id: "Q52631", kind: "island", lat: 38.91, lon: 1.43 }, mallorca = { id: "Q8828", kind: "island", lat: 39.57, lon: 2.65 };
+  const palma = { id: "Q8826", island: "Q8828", lat: 39.57, lon: 2.65 }, soller = { id: "Qs", island: "Q8828", lat: 39.77, lon: 2.71 }, valencia = { id: "Q8818", lat: 39.47, lon: -0.38 };
+  const a = intercityLeg(ibiza, mallorca, inter); assert.deepEqual(a.options.map((o) => o.mode).sort(), ["ferry", "flight"]);
+  const b = intercityLeg(valencia, palma, inter); assert.ok(!b.options.some((o) => o.mode === "car"));
+  const c = intercityLeg(palma, soller, inter); assert.ok(c.options.some((o) => o.mode === "car")); // 같은 섬 안은 차량 가능
+  const d = intercityLeg(mallorca, soller, inter); assert.ok(d.options.some((o) => o.mode === "car"));
+});

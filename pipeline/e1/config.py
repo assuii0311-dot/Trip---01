@@ -1,4 +1,6 @@
 """E1 파이프라인 설정. 상위 범주, 소스별 대응표, 임계값, 등급 규칙 (docs/engines/E1-data-pipeline.md, D-023)."""
+import re
+
 
 # 상위 범주 12개 (D-023). 키는 코드 식별자, 값은 한국어 이름
 CATEGORIES = {
@@ -78,6 +80,21 @@ LODGING_CENTER_RADIUS_M = 3000.0
 # 등급 (E1 4절 7항): 1등급 = Wikivoyage 수록, 유산 지정, 사이트링크 1개 이상 중 하나
 TIER1_MIN_SITELINKS = 1
 MAX_FILE_MB = 10
+
+# 여행지 목록(E1 4절 14~16항, D-030). 등급은 정렬과 참고 표시용이며 값은 제안값(추정)이다
+DEST_TIER_SIZES = (20, 30, 50)  # 순위 1~20위 1등급, 21~50위 2등급, 51~100위 3등급
+# 사용자 검수로 채우는 수동 보정표. exclude: 목록에서 뺄 ID, include: {ID: 등급} 100위 밖이어도 넣을 것, tier: {ID: 등급} 등급 고정
+DEST_OVERRIDES = {"exclude": [], "include": {}, "tier": {}}
+# 취향 중심 표기: 대표 장소 상위 N곳의 범주 비중이 후보 전체의 기준 비중보다 뚜렷이 높은 범주(숙박 제외)
+DEST_FOCUS_CATS = ("heritage", "religious", "museum", "nature", "park", "beach", "square", "market", "restaurant", "cafe", "activity")
+DEST_FOCUS_TOP_N = 12        # 추정값
+DEST_FOCUS_MIN_PLACES = 2    # 추정값: 상위 N곳 안에 그 범주가 2곳 이상
+DEST_FOCUS_MIN_SCORE = 0.04  # 추정값: 비중 × ln(비중 ÷ 기준 비중)
+DEST_FOCUS_MAX = 2
+DEST_FOCUS_WV_BONUS = 0.7    # 추정값: Wikivoyage 수록 장소의 가중치 가산
+# 대표 명소 이름(카드 표시용): 볼거리 범주를 먼저 보이고, 역은 이름으로 걸러 뺀다(장소 레코드에 역 여부가 없어 이름으로 판별. 추정)
+DEST_HL_SIGHT_CATS = ("heritage", "religious", "museum", "nature", "park", "beach", "square")
+DEST_HL_SKIP_NAME = re.compile(r"\b(station|estaci[oó]n|estació|geltokia)\b", re.I)
 
 # 택시 요금표(개발 시점 데이터 입력, E6). 사실: 바르셀로나 AMB 2026-10-21 확인. 다른 도시는 입력 전
 TAXI_FARES = {"Q1492": {"base_eur": 2.80, "per_km_eur": 1.35, "per_km_eur_night": 1.66, "min_eur": 8.0, "airport_eur": 4.60, "source": "taxi.amb.cat/es/usuaris/tarifes-del-taxi (2026-10-21)"}}

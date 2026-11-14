@@ -2,6 +2,7 @@
 import { html, Chip } from "../components/ui.js";
 import { firstSentences } from "../../data/places.js";
 import { CAT_ICON } from "../../util/format.js";
+import { destName, isIsland } from "../../data/dest.js";
 
 export function S2Summary({ trip, cities, categories, prof, onReselect, onExplore }) {
   const catName = (id) => (categories.find((c) => c.id === id) || {}).ko || id;
@@ -20,12 +21,13 @@ export function S2Summary({ trip, cities, categories, prof, onReselect, onExplor
       const sleepT = c.price_profile?.sleep?.tiers; const mode = sleepT ? Object.entries(sleepT).sort((a, b) => b[1] - a[1])[0]?.[0] : null;
       return html`<div class="card" key=${c.id}>
         <div class="body">
-          <div class="title">${c.n.ko || c.n.es} <span class="note">${c.n.es && c.n.es !== (c.n.ko || c.n.es) ? c.n.es : ""}</span></div>
-          <div class="chips meta"><${Chip} kind="star">★ 대표 명소 ${c.places?.foreign ?? 0}</${Chip}><${Chip}>1등급 ${(c.places?.tier1 ?? 0).toLocaleString()}</${Chip}><${Chip}>2등급 ${(c.places?.tier2 ?? 0).toLocaleString()}</${Chip}></div>
-          <p>${c.wv?.understand ? firstSentences(c.wv.understand, 2) : html`<span class="note">${c.wiki?.en ? "가이드 개요 없음(위키백과 문서 있음)" : "가이드 개요 없음"}</span>`}</p>
+          <div class="title">${destName(c)} <span class="note">${c.n.es && c.n.es !== destName(c) ? c.n.es : ""}</span></div>
+          <div class="chips meta">${isIsland(c) && html`<${Chip} kind="user">🏝 섬 · 지자체 ${c.members.length}곳</${Chip}>`}${(c.focus || []).map((f, i) => html`<${Chip} kind=${prof.weights[f] >= 1 ? "on" : "user"}>${CAT_ICON[f] || ""} ${catName(f)}${i === 0 ? " 중심" : ""}</${Chip}>`)}<${Chip} kind="star">★ 대표 명소 ${c.places?.foreign ?? 0}</${Chip}><${Chip}>1등급 ${(c.places?.tier1 ?? 0).toLocaleString()}</${Chip}><${Chip}>2등급 ${(c.places?.tier2 ?? 0).toLocaleString()}</${Chip}></div>
+          <p>${c.wv?.lead ? c.wv.lead : c.wv?.understand ? firstSentences(c.wv.understand, 2) : html`<span class="note">${c.wiki?.en ? "가이드 개요 없음(위키백과 문서 있음)" : "가이드 개요 없음"}</span>`}</p>
           <div class="note">주요 범주: ${top.map(([k, v]) => `${catName(k)} ${v}`).join(" · ") || "—"}</div>
           <div class="note">숙박 밀도 ${dens}(중심 3km 안 ${c.lodging_3km}곳)${mode ? ` · 가격대 ${mode} 多` : ""}${c.transit_feeds?.length ? ` · 대중교통 피드 ${c.transit_feeds.length}` : ""}</div>
-          ${c.wv?.understand && html`<div class="src">출처: Wikivoyage "${c.wv.en}" (CC BY-SA 4.0). 한국어 요약은 E5 생성 뒤 표시</div>`}
+          ${(c.hl || []).length > 0 && html`<div class="note">대표 명소: ${c.hl.map((h) => h.n.ko || h.n.en || h.n.local).join(" · ")}</div>`}
+          ${(c.wv?.lead || c.wv?.understand) && html`<div class="src">출처: Wikivoyage "${c.wv.en}" (CC BY-SA 4.0). 한국어 요약은 E5 생성 뒤 표시</div>`}
           <div style="margin-top:8px"><button class="btn secondary" onClick=${() => onExplore(c.id)}>후보 보기 ▶</button></div>
         </div></div>`;
     })}

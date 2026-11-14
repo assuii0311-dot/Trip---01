@@ -1,6 +1,6 @@
 """E1 파이프라인 실행. 소스 읽기 → 매칭 → 통합 → 귀속 → 등급 → 정적 파일 생성 (docs/engines/E1-data-pipeline.md 3절).
 
-실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl>] [--views <views.jsonl>] [--airports <airports_wd.jsonl>] [--bbox S,W,N,E]
+실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl>] [--views <views.jsonl>] [--airports <airports_wd.jsonl>] [--islands <섬 폴리곤 JSONL...>] [--islands-wd <islands_wd.jsonl>] [--bbox S,W,N,E]
 데이터 루트 아래: wikidata/, osm/out/pois.jsonl, e1/wv_en, e1/wv_es
 """
 import argparse
@@ -14,6 +14,8 @@ import sys
 import time
 
 from . import airports as airport_mod
+from . import destinations as dest_mod
+from . import islands as island_mod
 from . import config as C
 from . import sources
 from .geo import Boundaries, Nearest, assign_admin, assign_city
@@ -38,7 +40,7 @@ def in_bbox(lat, lon, bbox):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root"); ap.add_argument("out")
-    ap.add_argument("--labels"); ap.add_argument("--boundaries"); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--bbox")
+    ap.add_argument("--labels"); ap.add_argument("--boundaries"); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--islands", nargs="*", default=[]); ap.add_argument("--islands-wd"); ap.add_argument("--bbox")
     ap.add_argument("--gtfs-catalog", default=str(ROOT / "poc/results/gtfs_catalog.json"))
     a = ap.parse_args()
     root, out = pathlib.Path(a.root), pathlib.Path(a.out)
@@ -174,12 +176,39 @@ def main():
         cities.append({
             "id": q, "n": {"local": name_l.get("es") or name_l.get("en"), "es": name_l.get("es"), "en": name_l.get("en"), "ko": name_l.get("ko"), "ca": name_l.get("ca"), "eu": name_l.get("eu"), "gl": name_l.get("gl")},
             "lat": center[0], "lon": center[1], "pop": it["pop"], "stratum": stratum, "region": {"community": (com or {}).get("wikidata"), "province": (prov or {}).get("wikidata"), "p131": it["p131"]},
-            "wv": {"en": wvp, "understand": (page_en.get(wvp) or {}).get("understand") if wvp else None, "listings": wv_n, "pages": sorted(pages_of.get(wvp, set())) if wvp else []},
+            "wv": {"en": wvp, "lead": dest_mod.first_sentences((page_en.get(wvp) or {}).get("lead")) if wvp else None, "understand": (page_en.get(wvp) or {}).get("understand") if wvp else None, "listings": wv_n, "pages": sorted(pages_of.get(wvp, set())) if wvp else []},
             "wiki": it["wiki"], "sl": it["sitelinks"], "pv": pv, "places": {"tier1": len(t1), "tier2": len(ps) - len(t1), "cat": dict(cat_dist), "foreign": sum(1 for p in t1 if (p["pop"]["en_share"] or 0) >= 0.5 and p["pop"]["sl"] >= 10)},
             "lodging_3km": lodging_3km, "districts": sorted([{"id": d["id"], "n": d.get("name"), "lat": d["lat"], "lon": d["lon"], "kind": d["value"], "lodging": d["lodging"]} for d in dist_by_city.get(q, [])], key=lambda x: -x["lodging"])[:30],
             "price_profile": price_profile.get(q), "transit_feeds": feeds_by_muni.get(q, []), "taxi_fare": C.TAXI_FARES.get(q),
         })
     log(f"도시 {len(cities):,}건")
+    # 여행지(E1 4절 14~16항, D-030): 섬 단위, 참고 등급, 취향 중심, 대표 명소
+    osm_isl = island_mod.load_osm_islands(a.islands)
+    isl_wd = {r["qid"]: r for r in (json.loads(l) for l in open(a.islands_wd, encoding="utf-8") if l.strip())} if a.islands_wd and pathlib.Path(a.islands_wd).exists() else {}
+    def subtree(title):
+        out, grew = {title}, True
+        while grew:
+            grew = False
+            for t, par in parent_en.items():
+                if par in out and t not in out:
+                    out.add(t); grew = True
+        return out
+    isl_in = []
+    for i, members in sorted(island_mod.assign_members(osm_isl, cities).items()):
+        o = osm_isl[i]; w = isl_wd.get(o.get("wikidata") or "") or {}
+        title = island_mod.eligible(o, w, set(page_en))
+        if not title:
+            continue
+        qid = o["wikidata"] if (o.get("wikidata") or "").startswith("Q") else "osm-" + o["osm_id"]
+        one = members[0] if len(members) == 1 else None
+        pg, sub = page_en[title], subtree(title)
+        isl_in.append({"id": qid, "members": [c["id"] for c in members],
+                       "n": {"local": o["name"], "es": w.get("label_es") or o.get("name_es") or o["name"], "en": w.get("label_en") or o.get("name_en") or title, "ko": w.get("label_ko") or (one["n"].get("ko") if one else None)},
+                       "wv": {"en": title, "lead": dest_mod.first_sentences(pg.get("lead")), "understand": pg.get("understand"), "listings": sum(1 for r in list_en if r["page"] in sub)},
+                       "wiki": {"en": w.get("enwiki"), "es": w.get("eswiki")}, "pv": views.get(qid) or (one.get("pv") if one else None)})
+    island_recs, dest_report = dest_mod.build_destinations(cities, by_city, isl_in)
+    cities += island_recs
+    log(f"여행지 {dest_report['destinations']}곳(등급 {dest_report['tiers']}, 선정 {dest_report['via']}), 섬 {dest_report['islands']}곳(소속 지자체 {dest_report['island_members']}), 섬 폴리곤 {len(osm_isl)}건")
     # 지역: 행정 경계 4·6 + Wikivoyage 지역 문서
     regions = []
     if boundaries:
@@ -224,13 +253,14 @@ def main():
         dump_gz(out / "sources" / f"{sh}.json.gz", d)
     # 공항(E1 4절 13항, D-029): Wikidata IATA 공항 + OSM 공항 + 도시
     wd_air = airport_mod.load_rows(a.airports) if a.airports and pathlib.Path(a.airports).exists() else []
-    air_out = airport_mod.build_airports(wd_air, airports, cities) if wd_air else []
+    air_out = airport_mod.build_airports(wd_air, airports, [c for c in cities if c.get("kind") != "island"]) if wd_air else []  # 공항의 소속 도시는 지자체로 정한다(D-029)
     log(f"공항 {len(air_out)}곳(IATA 보유 {len(wd_air)}건 입력), OSM 연결 {sum(1 for x in air_out if x['osm'])}, 도시 추정 {sum(1 for x in air_out if x['city']['guess'])}" if wd_air else "공항 입력(--airports) 없음: 빈 목록")
     sizes["airports"] = dump_gz(out / "airports.json.gz", air_out)
     attribution = {"generated": time.strftime("%Y-%m-%d"), "sources": C.ATTRIBUTION, "data_license": "data/LICENSE-DATA.md", "counts": {"places": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "cities": len(cities), "regions": len(regions)}}
     (out / "attribution.json").write_text(json.dumps(attribution, ensure_ascii=False, indent=1), encoding="utf-8")
     cv = collections.Counter(p["cv"] for p in places); ver = collections.Counter(p["ver"] for p in places); cs = collections.Counter(p["cs"] for p in places); cityhow = {k: v for k, v in dropped.items() if k.startswith("city_")}
-    report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "inputs": {"wikidata": len(wd), "osm_places": len(osm_places), "wv_en": len(list_en), "wv_es": len(list_es), "pageviews": len(views), "boundaries": boundaries.count if boundaries else 0, "airports_wd": len(wd_air)},
+    report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "inputs": {"wikidata": len(wd), "osm_places": len(osm_places), "wv_en": len(list_en), "wv_es": len(list_es), "pageviews": len(views), "boundaries": boundaries.count if boundaries else 0, "airports_wd": len(wd_air), "islands_osm": len(osm_isl), "islands_wd": len(isl_wd)},
+              "destinations": dest_report,
               "match": mstats, "places": {"total": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "crossval": dict(cv), "verified": {str(k): v for k, v in ver.items()}, "coord_source": dict(cs), "city_assignment": cityhow},
               "categories_tier1": dict(cat_counts), "names": {"ko": sum(1 for p in tier1 if p["n"].get("ko")), "en": sum(1 for p in tier1 if p["n"].get("en")), "es": sum(1 for p in tier1 if p["n"].get("es"))},
               "fields_tier1": {"hours": sum(1 for p in tier1 if p["hrs"]), "price": sum(1 for p in tier1 if p["price"]), "desc_wv": sum(1 for p in tier1 if any(d["src"] == "wikivoyage" for d in p["desc"])), "pageviews": sum(1 for p in tier1 if p["pop"]["pv"])},

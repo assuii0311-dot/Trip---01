@@ -15,10 +15,18 @@
 <venv>/bin/python -I pipeline/e1/osm_boundaries.py <spain.osm.pbf> <루트>/e1/boundaries.jsonl
 # 3) 라벨·설명·위키 제목 (SPARQL, 100개 묶음 초당 1회, 약 25분. 중단 후 재개 가능)
 <venv>/bin/python -I pipeline/e1/wikidata_labels.py <루트>/wikidata <루트>/e1/labels.jsonl
-# 4) 페이지뷰 월평균 (월간 덤프 하나당 약 40분)
-<venv>/bin/python -I pipeline/run.py e1.pageviews <루트>/e1/views.jsonl <루트>/wikidata/sitelinks.jsonl <루트>/e1/labels.jsonl -- <덤프1.bz2> <덤프2.bz2> ...
-# 5) 통합과 파일 생성 (전체 약 10분, 추정). --bbox S,W,N,E 로 범위를 줄여 시험할 수 있다
-<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --boundaries <루트>/e1/boundaries.jsonl --views <루트>/e1/views.jsonl
+# 4) 공항(D-029)과 섬(D-030). 섬 폴리곤은 스페인 추출본과 카나리아 추출본에서 따로 뽑는다(openstreetmap.fr 스페인 추출본에 카나리아 제도가 없다)
+<venv>/bin/python -I pipeline/run.py e1.airports <루트>/e1/airports_wd.jsonl
+<venv>/bin/python -I pipeline/e1/osm_islands.py <spain.osm.pbf> <루트>/e1/islands_osm.jsonl            # 약 2분 30초
+<venv>/bin/python -I pipeline/e1/osm_islands.py <canarias.osm.pbf> <루트>/e1/islands_osm_canarias.jsonl
+<venv>/bin/python -I pipeline/run.py e1.islands <루트>/e1/islands_wd.jsonl <루트>/e1/islands_osm.jsonl <루트>/e1/islands_osm_canarias.jsonl
+# 5) 페이지뷰 월평균 (월간 덤프 하나당 약 20분). 섬 문서 제목(islands_wd.jsonl)도 함께 넣는다
+<venv>/bin/python -I pipeline/run.py e1.pageviews <루트>/e1/views.jsonl <루트>/wikidata/sitelinks.jsonl <루트>/e1/labels.jsonl <루트>/e1/islands_wd.jsonl -- <덤프1.bz2> <덤프2.bz2> ...
+# 6) 통합과 파일 생성 (전체 약 5분). --bbox S,W,N,E 로 범위를 줄여 시험할 수 있다
+<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --boundaries <루트>/e1/boundaries.jsonl --views <루트>/e1/views.jsonl \
+  --airports <루트>/e1/airports_wd.jsonl --islands <루트>/e1/islands_osm.jsonl <루트>/e1/islands_osm_canarias.jsonl --islands-wd <루트>/e1/islands_wd.jsonl
+# 7) 여행지 목록 검수표(D-030). 검수 결과는 pipeline/e1/config.py의 DEST_OVERRIDES에 반영하고 6)을 다시 돌린다
+python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.gz data/airports.json.gz <출력.md>
 ```
 
 `pipeline/run.py`는 격리 모드(`-I`)에서 패키지를 찾기 위한 실행기다.
@@ -27,13 +35,13 @@
 
 | 파일 | 내용 |
 |---|---|
-| cities.json.gz | 지자체 8,000여 건: 명칭, 좌표, 인구, 층, 행정 소속, 가이드 문서와 개요, 장소 수, 숙박 밀도, 구역, 가격대 분포, 교통 피드, 택시 요금표 |
+| cities.json.gz | 지자체 8,000여 건과 섬 여행지(kind island, 소속 지자체 members): 명칭, 좌표, 인구, 층, 행정 소속, 가이드 문서와 소개 문장·개요, 장소 수, 숙박 밀도, 구역, 가격대 분포, 교통 피드, 택시 요금표. 여행지 필드(D-030): dest(참고 등급·순위·선정 근거), focus(취향 중심 범주), hl(대표 명소), island(소속 섬) |
 | regions.json.gz | 자치주·주(OSM 행정 경계)와 Wikivoyage 지역 문서 |
 | categories.json.gz | 상위 범주 12개와 대응표, 범주별 1등급 수와 예시 |
 | places_tier1.json.gz | 1등급 장소 전체 |
 | places_tier2/<city>.json.gz | 2등급 장소를 도시별로 |
 | sources/<xx>.json.gz | Wikivoyage 목록 본문(설명 출처). 키 `장소ID|언어|문서|목록번호`, 샤드는 md5(장소ID)의 앞 두 자리 |
-| airports.json.gz | OSM 공항 |
+| airports.json.gz | IATA 코드가 있는 공항(D-029): 영문·현지어·한국어 이름, 소속 도시, 좌표, 연 이용객 |
 | attribution.json | 출처·라이선스·생성일·건수 |
 | crossval_report.json | 입력 건수, 매칭 통계, 교차검증·검증·좌표 출처·도시 귀속 분포, 필드 보유율, 파일 크기 |
 

@@ -24,6 +24,7 @@ def hav(a, b, c, d):
 
 
 def pick_cities(cities, airports):
+    cities = [c for c in cities if c.get("kind") != "island"]  # 섬 단위 여행지 레코드(D-030)는 행렬 대상이 아니다
     by_pop = sorted([c for c in cities if c.get("pop")], key=lambda c: -c["pop"])[:TOP_N]
     ids = {c["id"] for c in by_pop}
     # 공항에서 가장 가까운 지자체를 추가(섬 공항 포함)

@@ -7,8 +7,8 @@ const root = document.getElementById("app");
 const loader = makeLoader("data/");
 (async () => {
   try {
-    const [attribution, cities, categoriesFile, airports, tier1] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1()]);
-    const data = { attribution, cities, categories: categoriesFile.categories, airports, tier1, tier2cache: new Map() };
+    const [attribution, cities, categoriesFile, airports, tier1, regions] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1(), loader.regions().catch(() => [])]);
+    const data = { attribution, cities, categories: categoriesFile.categories, airports, tier1, regions, tier2cache: new Map() };
     render(h(App, { data, loader }), root);
   } catch (e) {
     root.innerHTML = `<div class="boot">데이터를 읽지 못했습니다. ${String(e.message || e)}<br><span class="note">기준 데이터(data/)가 배포되어 있는지 확인하세요.</span></div>`;
