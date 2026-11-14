@@ -1,7 +1,8 @@
 """E3 사전 계산 2: 도시 안 도보 쌍. 1등급 장소(사이트링크 1개 이상 또는 가이드 수록) 중 2km 안 쌍의 도보 시간·거리를 로컬 경로 엔진 행렬로 계산한다 (E3 4절 1항, D-025 (b)).
 
 출력 travel/<city>.json.gz: {ids:[...], pairs:[[i, j, walk_min, dist_m], ...]} (i<j, 양방향 동일로 본다). 출발지마다 가까운 80곳까지.
-실행: python -I pipeline/run.py e3.intracity <타일 디렉터리> <places_tier1.json.gz> --out <travel 디렉터리> [--min-places 2] [--max-targets 80]
+실행: python -I pipeline/run.py e3.intracity <타일 디렉터리> <places_tier1.json.gz> --out <travel 디렉터리> [--min-places 2] [--max-targets 80] [--bbox S,W,N,E] [--cities ID,ID,...]
+--bbox는 그 범위 안에 장소가 있는 도시만, --cities는 지정한 도시만 계산한다. 타일을 추출본별로 만들었을 때(스페인 본토, 카나리아. D-031) 추출본마다 따로 돌리는 데 쓴다.
 """
 import argparse
 import collections
@@ -22,7 +23,7 @@ def hav(a, b, c, d):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("tiles"); ap.add_argument("tier1"); ap.add_argument("--out", required=True); ap.add_argument("--min-places", type=int, default=2); ap.add_argument("--max-targets", type=int, default=80); ap.add_argument("--only")
+    ap = argparse.ArgumentParser(); ap.add_argument("tiles"); ap.add_argument("tier1"); ap.add_argument("--out", required=True); ap.add_argument("--min-places", type=int, default=2); ap.add_argument("--max-targets", type=int, default=80); ap.add_argument("--only"); ap.add_argument("--bbox"); ap.add_argument("--cities")
     a = ap.parse_args(); t0 = time.time()
     from valhalla import Actor, get_config
     cfg = get_config(tile_dir=a.tiles, tile_extract="")
@@ -30,16 +31,27 @@ def main():
     actor = Actor(cfg)
     places = json.load(gzip.open(a.tier1, "rt", encoding="utf-8"))
     by_city = collections.defaultdict(list)
+    bbox = [float(x) for x in a.bbox.split(",")] if a.bbox else None
+    only = set(a.cities.split(",")) if a.cities else None
     for p in places:
+        if bbox and not (bbox[0] <= p["lat"] <= bbox[2] and bbox[1] <= p["lon"] <= bbox[3]):
+            continue
+        if only and p["city"] not in only:
+            continue
         if p["city"] and (p["pop"]["sl"] >= 1 or p["src"]["wv"]):
             by_city[p["city"]].append(p)
     out_dir = pathlib.Path(a.out); out_dir.mkdir(parents=True, exist_ok=True)
-    done = 0; total_pairs = 0; skipped = 0
+    done = 0; total_pairs = 0; skipped = 0; reset = 0
     cities = sorted(by_city.items(), key=lambda kv: -len(kv[1]))
     for q, ps in cities:
         if a.only and q != a.only:
             continue
         if len(ps) < a.min_places:
+            # 대상 장소가 모자란 도시는 건너뛴다. 다만 예전 실행의 파일이 남아 있으면 낡은 값이 쓰이지 않게 빈 쌍으로 다시 쓴다
+            if (out_dir / f"{q}.json.gz").exists():
+                with gzip.open(out_dir / f"{q}.json.gz", "wt", encoding="utf-8") as f:
+                    json.dump({"ids": sorted(p["id"] for p in ps), "pairs": [], "correction": WALK_CORRECTION}, f, separators=(",", ":"))
+                reset += 1
             skipped += 1; continue
         ps.sort(key=lambda p: p["id"])
         n = len(ps); cell = 0.02; grid = collections.defaultdict(list)
@@ -72,7 +84,7 @@ def main():
         done += 1; total_pairs += len(pairs)
         if done % 50 == 0 or n >= 300:
             print(f"  {done}번째 {q}: 장소 {n}, 쌍 {len(pairs):,} ({time.time() - t0:.0f}초)", flush=True)
-    print(f"  완료: 도시 {done}개, 쌍 {total_pairs:,}, 건너뜀(장소 {a.min_places}곳 미만) {skipped}, {time.time() - t0:.0f}초", flush=True)
+    print(f"  완료: 도시 {done}개, 쌍 {total_pairs:,}, 건너뜀(장소 {a.min_places}곳 미만) {skipped}(그중 기존 파일을 빈 쌍으로 다시 씀 {reset}), {time.time() - t0:.0f}초", flush=True)
 
 
 if __name__ == "__main__":

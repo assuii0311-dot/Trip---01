@@ -1,6 +1,6 @@
 """E1 파이프라인 실행. 소스 읽기 → 매칭 → 통합 → 귀속 → 등급 → 정적 파일 생성 (docs/engines/E1-data-pipeline.md 3절).
 
-실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl>] [--views <views.jsonl>] [--airports <airports_wd.jsonl>] [--islands <섬 폴리곤 JSONL...>] [--islands-wd <islands_wd.jsonl>] [--bbox S,W,N,E]
+실행: python -I -m pipeline.e1.build <데이터 루트> <출력 디렉터리(data/)> [--labels <labels.jsonl>] [--boundaries <boundaries.jsonl...>] [--osm-extra <pois.jsonl...>] [--views <views.jsonl>] [--airports <airports_wd.jsonl>] [--islands <섬 폴리곤 JSONL...>] [--islands-wd <islands_wd.jsonl>] [--bbox S,W,N,E]
 데이터 루트 아래: wikidata/, osm/out/pois.jsonl, e1/wv_en, e1/wv_es
 """
 import argparse
@@ -40,7 +40,7 @@ def in_bbox(lat, lon, bbox):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root"); ap.add_argument("out")
-    ap.add_argument("--labels"); ap.add_argument("--boundaries"); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--islands", nargs="*", default=[]); ap.add_argument("--islands-wd"); ap.add_argument("--bbox")
+    ap.add_argument("--labels"); ap.add_argument("--boundaries", nargs="*", default=[]); ap.add_argument("--osm-extra", nargs="*", default=[]); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--islands", nargs="*", default=[]); ap.add_argument("--islands-wd"); ap.add_argument("--bbox")
     ap.add_argument("--gtfs-catalog", default=str(ROOT / "poc/results/gtfs_catalog.json"))
     a = ap.parse_args()
     root, out = pathlib.Path(a.root), pathlib.Path(a.out)
@@ -50,7 +50,7 @@ def main():
 
     wd = sources.load_wikidata(root / "wikidata", a.labels)
     log(f"Wikidata {len(wd):,}건")
-    osm_places, settlements, districts, transit, airports = sources.load_osm(root / "osm/out/pois.jsonl")
+    osm_places, settlements, districts, transit, airports = sources.load_osm([root / "osm/out/pois.jsonl", *a.osm_extra])  # 스페인 추출본 + 추가 추출본(카나리아, D-031)
     log(f"OSM 장소 {len(osm_places):,}, 정착지 {len(settlements):,}, 구역 {len(districts):,}, 교통 {len(transit):,}, 공항 {len(airports):,}")
     pages_en, list_en = sources.load_wikivoyage(root / "e1/wv_en", "en")
     pages_es, list_es = sources.load_wikivoyage(root / "e1/wv_es", "es")
@@ -67,7 +67,9 @@ def main():
     # 지자체(도시) 기준: Wikidata 스페인 지자체 클래스
     munis = {q: it for q, it in wd.items() if "Q2074737" in it["classes"] and it["coord"]} if not bbox else {q: it for q, it in sources.load_wikidata(root / "wikidata", a.labels).items() if "Q2074737" in it["classes"] and it["coord"]}
     nearest = Nearest([{"qid": q, "lat": it["coord"][0], "lon": it["coord"][1]} for q, it in munis.items()])
-    boundaries = Boundaries(a.boundaries) if a.boundaries and pathlib.Path(a.boundaries).exists() else None
+    bpaths = [p for p in a.boundaries if pathlib.Path(p).exists()]
+    boundaries = Boundaries(bpaths) if bpaths else None
+    known = set(munis)
     log(f"지자체 {len(munis):,}건, 행정 경계 {boundaries.count if boundaries else 0}건")
     qid_by_name = {}
     for q, it in munis.items():
@@ -83,7 +85,7 @@ def main():
         p = place_from_group(g, views)
         if not p:
             dropped["no_place"] += 1; continue
-        city, how = assign_city(boundaries, nearest, p["lat"], p["lon"], qid_by_ine, qid_by_name)
+        city, how = assign_city(boundaries, nearest, p["lat"], p["lon"], qid_by_ine, qid_by_name, known)
         p["city"] = city
         dropped[f"city_{how}"] += 1
         places.append(p)
@@ -132,7 +134,7 @@ def main():
             if bd:
                 bd["lodging"] += 1
     for d in districts:
-        d["city"], _ = assign_city(boundaries, nearest, d["lat"], d["lon"], qid_by_ine, qid_by_name)
+        d["city"], _ = assign_city(boundaries, nearest, d["lat"], d["lon"], qid_by_ine, qid_by_name, known)
     dist_by_city = collections.defaultdict(list)
     for d in districts:
         if d["city"]:

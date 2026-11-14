@@ -74,11 +74,22 @@ def load_wikidata(wd_dir, labels_path=None):
 OSM_KEEP_FIELDS = ("name", "name:es", "name:en", "name:ko", "name:ca", "name:eu", "name:gl", "wikidata", "wikipedia", "opening_hours", "fee", "charge", "website", "phone", "cuisine", "description", "population", "reservation", "addr:city")
 
 
-def load_osm(pois_path):
-    """OSM 장소를 장소·정착지·구역·교통·공항으로 나눈다."""
+def iter_osm(paths):
+    """추출 결과 파일 여러 개를 순서대로 읽는다. 같은 OSM ID는 먼저 나온 것만 쓴다(추출본 경계에 걸친 객체가 양쪽에 들어 있다)."""
+    seen = set()
+    for path in ([paths] if isinstance(paths, (str, pathlib.Path)) else list(paths)):
+        for line in open(path, encoding="utf-8"):
+            o = json.loads(line)
+            if o["id"] in seen:
+                continue
+            seen.add(o["id"])
+            yield o
+
+
+def load_osm(pois_paths):
+    """OSM 장소를 장소·정착지·구역·교통·공항으로 나눈다. pois_paths는 파일 하나 또는 여러 개(스페인 추출본 + 카나리아 추출본, D-031)."""
     places, settlements, districts, transit, airports = [], [], [], [], []
-    for line in open(pois_path, encoding="utf-8"):
-        o = json.loads(line)
+    for o in iter_osm(pois_paths):
         key, val = o["key"], o["value"]
         rec = {"id": o["id"], "lat": round(float(o["lat"]), 6), "lon": round(float(o["lon"]), 6), "key": key, "value": val}
         for f in OSM_KEEP_FIELDS:
