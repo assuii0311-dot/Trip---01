@@ -41,7 +41,7 @@
 | wv.lead | 소개 문장(가이드 문서 머리글의 앞 두 문장, 영문) | 영문 Wikivoyage | 가이드 문서가 있는 지자체 369곳과 섬 11곳 |
 | focus | 취향 중심 범주(최대 2개, 숙박 제외 11개 범주) | E1 4절 16항 계산값(추정) | 후보 전체 |
 | hl | 대표 명소 3곳의 ID와 이름 | E1 4절 16항 | 후보 전체 |
-| dest | 여행지 목록 정보: tier(참고 등급 1~3), rank(순위), via(rank·unesco·island·manual), unesco(유네스코 장소 수), signals(세 신호 값). 목록 밖 후보는 null | E1 4절 15항 | 여행지 112곳 |
+| dest | 여행지 목록 정보: tier(참고 등급 1~3), rank(순위), via(rank·unesco·island·manual), unesco(유네스코 장소 수), signals(세 신호 값). 목록 밖 후보는 null | E1 4절 15항 | 여행지 111곳 |
 | island | 소속 섬의 ID(섬에 속한 지자체만) | OSM 섬 폴리곤 | 155곳 |
 | kind, members, capital | 섬 레코드에만 있다. kind는 island, members는 소속 지자체 ID(인구 순), capital은 인구가 가장 많은 지자체. 나머지 필드는 도시와 같은 모양 | E1 4절 14항 | 섬 11곳 |
 
