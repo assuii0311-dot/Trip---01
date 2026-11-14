@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { destinationList, filterDestinations, searchOthers, nearestAirport, regionOptions, fmtPop } from "../../app/src/util/destinations.js";
-import { memberIds, inDest, makeDestOf, destName, isIsland } from "../../app/src/data/dest.js";
+import { memberIds, inDest, makeDestOf, destName, isIsland, applyDestinationKo } from "../../app/src/data/dest.js";
 
 // 고정 입력: 2026-11-14 빌드 결과의 모양을 축약
 const C = [
@@ -50,4 +50,13 @@ test("섬 여행지: 소속 지자체, 장소 포함 여부, 장소 → 여행�
   const direct = makeDestOf(C, ["Q8828", "Q8826"]);
   assert.equal(direct({ city: "Q8826" }), "Q8826"); // 지자체를 직접 골랐으면 그 지자체가 우선
   assert.equal(direct({ city: "Q1" }), "Q8828");
+});
+test("E5 여행지 한국어 소개 붙이기: 요약, 생성 이름, 입력 불변(D-032)", () => {
+  const cities = [{ id: "Q8810", n: { ko: "그라나다", en: "Granada" } }, { id: "Q492735", n: { ko: null, en: "Fuengirola" } }, { id: "Qx", n: { en: "X" } }];
+  const e5 = { items: { Q8810: { summary: "그라나다는 도시다.", name_ko: "무시", sources: [{ title: "Granada", url: "u" }], confidence: "보통", generated: "2026-11-14" }, Q492735: { summary: "푸엔히롤라는 도시다.", name_ko: "푸엔히롤라", sources: [], confidence: "보통" } } };
+  const out = applyDestinationKo(cities, e5);
+  assert.equal(out[0].ko.summary, "그라나다는 도시다."); assert.equal(out[0].n.ko, "그라나다"); assert.equal(out[0].n.ko_src, undefined); // 이름이 있으면 그대로
+  assert.equal(out[1].n.ko, "푸엔히롤라"); assert.equal(out[1].n.ko_src, "generated"); assert.equal(destName(out[1]), "푸엔히롤라");
+  assert.equal(out[2], cities[2]); assert.equal(cities[1].n.ko, null); // 입력은 바꾸지 않는다
+  assert.deepEqual(applyDestinationKo(cities, null), cities); assert.deepEqual(applyDestinationKo(cities, {}), cities);
 });

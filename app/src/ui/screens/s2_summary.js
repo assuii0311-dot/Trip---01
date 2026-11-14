@@ -23,11 +23,11 @@ export function S2Summary({ trip, cities, categories, prof, onReselect, onExplor
         <div class="body">
           <div class="title">${destName(c)} <span class="note">${c.n.es && c.n.es !== destName(c) ? c.n.es : ""}</span></div>
           <div class="chips meta">${isIsland(c) && html`<${Chip} kind="user">🏝 섬 · 지자체 ${c.members.length}곳</${Chip}>`}${(c.focus || []).map((f, i) => html`<${Chip} kind=${prof.weights[f] >= 1 ? "on" : "user"}>${CAT_ICON[f] || ""} ${catName(f)}${i === 0 ? " 중심" : ""}</${Chip}>`)}<${Chip} kind="star">★ 대표 명소 ${c.places?.foreign ?? 0}</${Chip}><${Chip}>1등급 ${(c.places?.tier1 ?? 0).toLocaleString()}</${Chip}><${Chip}>2등급 ${(c.places?.tier2 ?? 0).toLocaleString()}</${Chip}></div>
-          <p>${c.wv?.lead ? c.wv.lead : c.wv?.understand ? firstSentences(c.wv.understand, 2) : html`<span class="note">${c.wiki?.en ? "가이드 개요 없음(위키백과 문서 있음)" : "가이드 개요 없음"}</span>`}</p>
+          <p>${c.ko?.summary ? c.ko.summary : c.wv?.lead ? c.wv.lead : c.wv?.understand ? firstSentences(c.wv.understand, 2) : html`<span class="note">${c.wiki?.en ? "가이드 개요 없음(위키백과 문서 있음)" : "가이드 개요 없음"}</span>`}</p>
           <div class="note">주요 범주: ${top.map(([k, v]) => `${catName(k)} ${v}`).join(" · ") || "—"}</div>
           <div class="note">숙박 밀도 ${dens}(중심 3km 안 ${c.lodging_3km}곳)${mode ? ` · 가격대 ${mode} 多` : ""}${c.transit_feeds?.length ? ` · 대중교통 피드 ${c.transit_feeds.length}` : ""}</div>
           ${(c.hl || []).length > 0 && html`<div class="note">대표 명소: ${c.hl.map((h) => h.n.ko || h.n.en || h.n.local).join(" · ")}</div>`}
-          ${(c.wv?.lead || c.wv?.understand) && html`<div class="src">출처: Wikivoyage "${c.wv.en}" (CC BY-SA 4.0). 한국어 요약은 E5 생성 뒤 표시</div>`}
+          ${(c.ko?.summary || c.wv?.lead || c.wv?.understand) && html`<div class="src">출처: <a href=${"https://en.wikivoyage.org/wiki/" + encodeURIComponent((c.wv?.en || "").replace(/ /g, "_"))} target="_blank" rel="noopener">Wikivoyage "${c.wv?.en}"</a> (CC BY-SA 4.0). ${c.ko?.summary ? "한국어 요약은 이 가이드를 바탕으로 만든 생성본입니다(E5, 신뢰도 " + (c.ko.confidence || "보통") + ")." : "한국어 요약은 E5 생성 뒤 표시"}${c.n?.ko_src === "generated" ? " 한글 이름도 생성한 표기입니다." : ""}</div>`}
           <div style="margin-top:8px"><button class="btn secondary" onClick=${() => onExplore(c.id)}>후보 보기 ▶</button></div>
         </div></div>`;
     })}

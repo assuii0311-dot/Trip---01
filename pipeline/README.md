@@ -29,7 +29,7 @@
   --boundaries <루트>/e1/boundaries.jsonl <루트>/e1/boundaries_canarias.jsonl --osm-extra <루트>/osm_canarias/out/pois.jsonl \
   --airports <루트>/e1/airports_wd.jsonl --islands <루트>/e1/islands_osm.jsonl <루트>/e1/islands_osm_canarias.jsonl --islands-wd <루트>/e1/islands_wd.jsonl
 # 7) 여행지 목록 검수표(D-030). 검수 결과는 pipeline/e1/config.py의 DEST_OVERRIDES에 반영하고 6)을 다시 돌린다
-python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.gz data/airports.json.gz <출력.md>
+python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.gz data/airports.json.gz <출력.md> [data/e5/destinations.json.gz]
 ```
 
 `pipeline/run.py`는 격리 모드(`-I`)에서 패키지를 찾기 위한 실행기다.
@@ -47,6 +47,15 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 
 대상 장소가 2곳 미만이 된 도시는 건너뛰되, 예전 파일이 남아 있으면 빈 쌍으로 다시 쓴다.
 
+## 실행 순서 (E5 여행지 한국어 소개)
+
+생성은 개발 세션에서 하고(E5 4절 2항) 결과를 `pipeline/e5/content/destinations_ko.jsonl`에 둔다. 아래 명령은 검증과 내보내기만 한다.
+
+```
+# 새로 생성했거나 출처와 다시 대조한 뒤에는 --stamp로 출처 해시를 적는다. 검증 실패나 낡은 항목이 있으면 종료 코드 1
+<venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz [--stamp]
+```
+
 ## 산출물 (`data/`)
 
 | 파일 | 내용 |
@@ -57,6 +66,7 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 | places_tier1.json.gz | 1등급 장소 전체 |
 | places_tier2/<city>.json.gz | 2등급 장소를 도시별로 |
 | sources/<xx>.json.gz | Wikivoyage 목록 본문(설명 출처). 키 `장소ID|언어|문서|목록번호`, 샤드는 md5(장소ID)의 앞 두 자리 |
+| e5/destinations.json.gz | 여행지 한국어 요약과 생성한 한글 이름(D-032). 출처 문서, 신뢰도, 생성일 포함 |
 | airports.json.gz | IATA 코드가 있는 공항(D-029): 영문·현지어·한국어 이름, 소속 도시, 좌표, 연 이용객 |
 | attribution.json | 출처·라이선스·생성일·건수 |
 | crossval_report.json | 입력 건수, 매칭 통계, 교차검증·검증·좌표 출처·도시 귀속 분포, 필드 보유율, 파일 크기 |

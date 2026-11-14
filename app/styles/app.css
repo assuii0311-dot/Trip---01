@@ -36,6 +36,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .card.dest { margin: 0 0 8px; }
 .card.dest .lead { font-size: 14px; color: #374151; margin: 6px 0 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .card.dest .pick { min-width: 44px; padding: 4px 10px; flex: none; }
+.card.dest .lead.ko { display: block; overflow: visible; color: var(--fg); } /* 한국어 요약은 200자 이내라 자르지 않는다 */
 .chips.focusfilter, .chips.picked { margin-top: 6px; }
 .chips.focusfilter button.chip { min-height: 36px; }
 .destlist { padding-bottom: 72px; }

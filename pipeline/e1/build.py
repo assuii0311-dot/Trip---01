@@ -205,7 +205,7 @@ def main():
         one = members[0] if len(members) == 1 else None
         pg, sub = page_en[title], subtree(title)
         isl_in.append({"id": qid, "members": [c["id"] for c in members],
-                       "n": {"local": o["name"], "es": w.get("label_es") or o.get("name_es") or o["name"], "en": w.get("label_en") or o.get("name_en") or title, "ko": w.get("label_ko") or (one["n"].get("ko") if one else None)},
+                       "n": {"local": o["name"], "es": w.get("label_es") or o.get("name_es") or o["name"], "en": w.get("label_en") or o.get("name_en") or title, "ko": w.get("kowiki") or w.get("label_ko") or (one["n"].get("ko") if one else None)},
                        "wv": {"en": title, "lead": dest_mod.first_sentences(pg.get("lead")), "understand": pg.get("understand"), "listings": sum(1 for r in list_en if r["page"] in sub)},
                        "wiki": {"en": w.get("enwiki"), "es": w.get("eswiki")}, "pv": views.get(qid) or (one.get("pv") if one else None)})
     island_recs, dest_report = dest_mod.build_destinations(cities, by_city, isl_in)

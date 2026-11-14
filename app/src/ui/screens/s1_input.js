@@ -36,7 +36,7 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
   const towns = isIsland(c) ? c.members.slice(0, 4).map((id) => destName(cities.find((x) => x.id === id))).filter(Boolean) : [];
   return html`<div class=${"card dest " + (selected ? "sel" : "")} data-id=${c.id}>
     <div class="body">
-      <div class="title">${destName(c)} <span class="note">${c.n?.en && c.n.en !== destName(c) ? c.n.en : c.n?.es && c.n.es !== destName(c) ? c.n.es : ""}</span></div>
+      <div class="title">${destName(c)} <span class="note">${c.n?.en && c.n.en !== destName(c) ? c.n.en : c.n?.es && c.n.es !== destName(c) ? c.n.es : ""}${c.n?.ko_src === "generated" ? " · 한글 표기 생성" : ""}</span></div>
       <div class="chips meta">
         ${isIsland(c) && html`<span class="chip user">🏝 섬</span>`}
         ${(c.focus || []).map((f, i) => html`<span class=${"chip " + (tastes.includes(f) ? "on" : "user")}>${CAT_ICON[f] || ""} ${catName(f)}${i === 0 ? " 중심" : ""}</span>`)}
@@ -46,7 +46,7 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
       ${(c.hl || []).length > 0 && html`<div class="sub">대표 명소: ${c.hl.map((h) => h.n.ko || h.n.en || h.n.local).join(" · ")}</div>`}
       ${towns.length > 0 && html`<div class="sub">주요 도시: ${towns.join(" · ")}${c.members.length > towns.length ? ` 외 ${c.members.length - towns.length}곳` : ""}</div>`}
       ${meta && html`<div class="note">${meta}</div>`}
-      ${c.wv?.lead && html`<p class="lead">${c.wv.lead}</p>`}
+      ${c.ko?.summary ? html`<p class="lead ko">${c.ko.summary}</p>` : c.wv?.lead && html`<p class="lead">${c.wv.lead}</p>`}
     </div>
     <button class="btn secondary pick" disabled=${ro} aria-label=${selected ? "선택 해제" : "선택"} aria-pressed=${selected} onClick=${() => onToggle(c.id)}>${selected ? "✓" : "+"}</button>
   </div>`;
@@ -96,7 +96,7 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
         ${shown.length === 0 && others.length === 0 && html`<div class="empty">조건에 맞는 여행지가 없습니다.</div>`}
         ${others.length > 0 && html`<h2 style="margin:12px 0 8px">목록 밖 지자체</h2><p class="note">여행지 목록에는 없지만 이름으로 찾은 곳입니다. 섬에 속한 곳은 섬 여행지에 포함되어 있고, 그 밖의 곳은 데이터가 적을 수 있습니다.</p>
           ${others.map((c) => html`<${DestCard} key=${c.id} c=${c} selected=${trip.cities.includes(c.id)} ro=${ro} tastes=${trip.tastes} catName=${catName} airports=${airports} cities=${cities} onToggle=${toggleCity} />`)}`}
-        <div class="src">소개 문장: Wikivoyage 영문 가이드(CC BY-SA 4.0). 한국어 소개는 설명 생성(E5) 뒤 제공합니다. 취향 표시와 참고 등급은 데이터로 계산한 값입니다(추정, E1 4절 15·16항).</div>
+        <div class="src">소개: Wikivoyage 영문 가이드(CC BY-SA 4.0)를 바탕으로 만든 한국어 요약입니다(생성본, E5). 요약이 없는 곳은 영문 원문을 보입니다. 취향 표시와 참고 등급은 데이터로 계산한 값입니다(추정, E1 4절 15·16항).</div>
       </div>
       <div class="stepnav"><button class="btn secondary" onClick=${() => setStep(1)}>◀ 이전</button><button class="btn" onClick=${() => { setShowErr(true); if (!err.cities) { setShowErr(false); setStep(3); } }}>선택 ${trip.cities.length}곳 · 다음 ▶</button></div>`}
     ${step === 3 && html`

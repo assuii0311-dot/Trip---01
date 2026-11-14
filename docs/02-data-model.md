@@ -56,6 +56,17 @@
 | pax, pax_year | 연 이용객과 연도 | Wikidata P3872 | 이용객 없음 17건 |
 | osm, heliport | OSM ID, 헬리포트 여부 | OSM(wikidata 태그 일치), Wikidata 분류 | OSM 연결 33건 |
 
+### 여행지 한국어 소개 (E5, D-032)
+
+파일 `data/e5/destinations.json.gz`. 앱이 읽어 도시 레코드에 붙인다(ko 필드, 생성 이름은 n.ko와 n.ko_src=generated).
+
+| 필드 | 설명 | 출처 | 커버리지(사실, 2026-11-14) |
+|---|---|---|---|
+| items.<id>.summary | 한국어 요약 2~3문장, 200자 이내 | 영문 Wikivoyage 가이드 머리글·Understand를 바탕으로 한 생성본 | 여행지 111곳 전부(평균 136자, 최대 179자) |
+| items.<id>.name_ko | 생성한 한글 이름(한국어 이름이 없는 여행지만) | E5 4절 4항 | 17건 |
+| items.<id>.sources, confidence, basis, generated | 출처 문서(제목, 언어, URL, 라이선스), 신뢰도(보통), 근거(text), 생성일 | E5 | 111건 |
+| license, attribution | CC BY-SA 4.0과 화면 표기 문구 | D-021 ⑦ | |
+
 ### Place (장소)
 
 | 필드 | 설명 | 출처 | 커버리지(사실) |
