@@ -5,6 +5,7 @@ import { dateList, unassigned, lodgingCheck } from "../../state/plan.js";
 import { placeName } from "../../data/places.js";
 import { lodgingZones } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
+import { inDest, makeDestOf, destName } from "../../data/dest.js";
 
 export function S4Arrange({ plan, cities, byId, prof, nights, onAssign, onMove, onSetLodging, onAddCustom, onOpenDetail, onGenerate }) {
   const dates = dateList(plan.trip);
@@ -12,16 +13,17 @@ export function S4Arrange({ plan, cities, byId, prof, nights, onAssign, onMove, 
   const get = (id) => byId.get(id) || plan.custom[id];
   const [custom, setCustom] = useState({ name: "", lat: "", lon: "", city: plan.trip.cities[0] || "" });
   const [tab, setTab] = useState("place");
-  const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.es : id; };
+  const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? destName(c) : id; };
   const check = lodgingCheck(plan);
+  const destOf = makeDestOf(cities, plan.trip.cities); // 섬을 골랐으면 그 섬의 지자체에 있는 장소를 섬으로 묶는다(D-030)
   const byCity = {};
-  for (const id of plan.selection) { const p = get(id); if (p) (byCity[p.city || "?"] ||= []).push(p); }
+  for (const id of plan.selection) { const p = get(id); if (p) (byCity[destOf(p) || p.city || "?"] ||= []).push(p); }
   return html`<div>
     <div class="toolbar"><div class="seg" style="flex:1"><button class=${tab === "place" ? "on" : ""} onClick=${() => setTab("place")}>장소 배치 (${plan.selection.length})</button><button class=${tab === "lodging" ? "on" : ""} onClick=${() => setTab("lodging")}>숙박 ${check.ok ? "✓" : "⚠"}</button></div></div>
     ${tab === "lodging" ? html`<div class="section">
       <p class="note">기간 ${dates.length}일, 숙박 ${check.total}박. 도시별 일수 합이 ${check.total}박이어야 합니다(현재 ${check.nights}박). 제안 일수는 추천 장소 수 ÷ 하루 ${prof.dayCapacity}곳(E2).</p>
       ${plan.trip.cities.length === 0 && html`<${Empty}>입력에서 여행 도시를 먼저 고르세요.</${Empty}>`}
-      ${plan.trip.cities.map((cid) => { const c = cities.find((x) => x.id === cid); if (!c) return null; const l = plan.lodging[cid] || {}; const focus = plan.selection.map(get).filter((p) => p && p.city === cid); const z = lodgingZones(c, focus);
+      ${plan.trip.cities.map((cid) => { const c = cities.find((x) => x.id === cid); if (!c) return null; const l = plan.lodging[cid] || {}; const focus = plan.selection.map(get).filter((p) => p && inDest(p, c)); const z = lodgingZones(c, focus);
         return html`<div class="card" key=${cid}><div class="body"><div class="title">${cityName(cid)} <span class="note">제안 ${nights[cid] || 1}박</span></div>
           <div class="row" style="margin:6px 0"><label class="note">숙박 일수</label><input type="number" min="0" max="30" style="width:80px;min-height:40px" value=${l.nights ?? nights[cid] ?? 1} onInput=${(e) => onSetLodging(cid, { nights: Number(e.target.value) })} /></div>
           <div class="note">추천 구역(선택·추천 장소 중심 1.5km 안, 숙박 수 순)</div>

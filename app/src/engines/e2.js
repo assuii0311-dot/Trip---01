@@ -100,9 +100,11 @@ export function lodgingZones(city, focusPlaces) {
   const pts = focusPlaces.length ? focusPlaces : [{ lat: city.lat, lon: city.lon }];
   const med = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
   const lat = med(pts.map((p) => p.lat)), lon = med(pts.map((p) => p.lon));
-  const zones = (city.districts || []).map((d) => ({ ...d, dist: hav(lat, lon, d.lat, d.lon) })).filter((d) => d.dist <= 1500)
+  // 섬 여행지(D-030)는 장소가 섬 전체에 흩어져 있으므로 거리 제한 없이 숙박이 많은 구역을 제안한다
+  const island = city.kind === "island";
+  const zones = (city.districts || []).map((d) => ({ ...d, dist: hav(lat, lon, d.lat, d.lon) })).filter((d) => island ? d.lodging > 0 : d.dist <= 1500)
     .sort((a, b) => b.lodging - a.lodging || a.dist - b.dist).slice(0, 3)
-    .map((d) => ({ id: d.id, name: d.n, kind: d.kind, lodging: d.lodging, dist: Math.round(d.dist), reason: `숙박 ${d.lodging}곳 · 추천 장소 중심에서 ${Math.round(d.dist)}m` }));
+    .map((d) => ({ id: d.id, name: d.n, kind: d.kind, lodging: d.lodging, dist: Math.round(d.dist), reason: `숙박 ${d.lodging}곳 · 추천 장소 중심에서 ${d.dist >= 1000 ? (d.dist / 1000).toFixed(1) + "km" : Math.round(d.dist) + "m"}` }));
   return { center: { lat, lon }, zones, fallback: zones.length === 0 ? { lat: city.lat, lon: city.lon, radius: 1000, reason: "구역 데이터 없음. 도시 중심 반경 1km" } : null };
 }
 

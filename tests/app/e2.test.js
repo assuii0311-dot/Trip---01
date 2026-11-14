@@ -61,3 +61,9 @@ test("reservationHint: 유료 박물관+유산 → 권장, 고가 식당 → 권
   assert.equal(reservationHint(P[4]).level, "none");
   assert.equal(reservationHint({ cat: ["cafe"], pop: {}, osm_tags: { reservation: "required" } }).level, "required");
 });
+test("lodgingZones: 섬 여행지는 거리 제한 없이 숙박 많은 구역(D-030)", () => {
+  const isl = { kind: "island", lat: 39.57, lon: 2.65, districts: [{ id: "d1", n: "Palma Centre", lat: 39.57, lon: 2.65, kind: "suburb", lodging: 40 }, { id: "d2", n: "Alcúdia", lat: 39.85, lon: 3.12, kind: "suburb", lodging: 90 }, { id: "d3", n: "Empty", lat: 39.6, lon: 2.7, kind: "suburb", lodging: 0 }] };
+  const z = lodgingZones(isl, [{ lat: 39.57, lon: 2.65 }]);
+  assert.deepEqual(z.zones.map((x) => x.id), ["d2", "d1"]); assert.ok(z.zones[0].reason.includes("km")); assert.equal(z.fallback, null);
+  assert.deepEqual(lodgingZones({ ...isl, kind: undefined }, [{ lat: 39.57, lon: 2.65 }]).zones.map((x) => x.id), ["d1"]);
+});

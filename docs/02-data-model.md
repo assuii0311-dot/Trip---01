@@ -38,6 +38,23 @@
 | transit_feeds | 이용 가능한 GTFS 피드 목록 | Mobility Database, Renfe | 주요 도시 18건 |
 | taxi_fare | 기본요금, km당, 최소 요금 | 도시 요금표(수동 입력) | 바르셀로나만 확인 |
 | pageviews | 언어별 월평균 조회수 | Wikimedia 월간 덤프 | 도시 문서 대부분 |
+| wv.lead | 소개 문장(가이드 문서 머리글의 앞 두 문장, 영문) | 영문 Wikivoyage | 가이드 문서가 있는 지자체 369곳과 섬 11곳 |
+| focus | 취향 중심 범주(최대 2개, 숙박 제외 11개 범주) | E1 4절 16항 계산값(추정) | 후보 전체 |
+| hl | 대표 명소 3곳의 ID와 이름 | E1 4절 16항 | 후보 전체 |
+| dest | 여행지 목록 정보: tier(참고 등급 1~3), rank(순위), via(rank·unesco·island·manual), unesco(유네스코 장소 수), signals(세 신호 값). 목록 밖 후보는 null | E1 4절 15항 | 여행지 111곳 |
+| island | 소속 섬의 ID(섬에 속한 지자체만) | OSM 섬 폴리곤 | 155곳 |
+| kind, members, capital | 섬 레코드에만 있다. kind는 island, members는 소속 지자체 ID(인구 순), capital은 인구가 가장 많은 지자체. 나머지 필드는 도시와 같은 모양 | E1 4절 14항 | 섬 11곳 |
+
+### Airport (공항, D-029)
+
+| 필드 | 설명 | 출처 | 커버리지(사실, 2026-10-26) |
+|---|---|---|---|
+| id, iata, icao | 키(QID)와 공항 코드 | Wikidata P238·P239 | IATA 보유 항목 67건 중 공항 분류 60곳 안팎 |
+| n.en, n.local, n.es, n.ko | 영문·현지어·스페인어·한국어 이름 | OSM name:en·name, Wikidata 라벨 | 한국어는 36건 |
+| city.id, city.en, city.ko, city.guess | 소속 도시 ID와 영문·한국어 명칭, 추정 여부 | Wikidata P931(도시·섬), 없으면 20km 안 인구 2만 이상 도시 | P931 없음 9건 |
+| lat, lon | 좌표 | OSM 우선, 없으면 Wikidata | 100% |
+| pax, pax_year | 연 이용객과 연도 | Wikidata P3872 | 이용객 없음 17건 |
+| osm, heliport | OSM ID, 헬리포트 여부 | OSM(wikidata 태그 일치), Wikidata 분류 | OSM 연결 33건 |
 
 ### Place (장소)
 
@@ -83,7 +100,7 @@
 
 | 개체 | 필드 | 비고 |
 |---|---|---|
-| Trip | 기간, 도시 목록, 공항, 출발·도착 시각, 인원, 여행 형태(R-02), 취향(R-03), 버전, Key 해시 | R-01 ~ R-03 |
+| Trip | 기간, 여행지 목록(도시 또는 섬의 ID. D-030), 공항, 출발·도착 시각, 인원, 여행 형태(R-02), 취향(R-03), 버전, Key 해시 | R-01 ~ R-03 |
 | Selection | 선택 장소 place_id 목록, 직접 추가 장소(명칭·좌표) | R-07 |
 | Day / Item | 날짜, 순서, place_id, 시작·종료 예정 시각, 이동 수단, 확인 상태(영업시간 확인 등), 메모 | R-08, R-14 |
 | Lodging | 도시, 일수, 지역, 예약 정보 | R-10, R-19 |

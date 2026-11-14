@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""앱 흐름 점검(와이어프레임 검증 항목). 이 환경의 Chromium으로 로컬 사이트를 열어 S1 → S3 → S6 흐름과 콘솔 오류를 확인한다.
+"""앱 흐름 점검(와이어프레임 검증 항목). 이 환경의 Chromium으로 로컬 사이트를 열어 S1(기본 정보 → 여행지 → 공항·형태 → 취향) → S8 흐름과 섬 여행지 흐름, 콘솔 오류를 확인한다.
 실행: <venv>/bin/python -I scripts/flow_check.py <주소> <스크린샷 디렉터리>
 """
 import json
@@ -29,12 +29,24 @@ def main():
               res["boot_html"] = page.inner_html("#app")[:600]; print(json.dumps(res, ensure_ascii=False, indent=1)); b.close(); return
           res["steps"]["boot_s"] = round(time.time() - t, 2)
           page.screenshot(path=str(shots / "s1.png"))
-          # S1: 기간, 도시 검색, 인원 → 다음
+          # S1 ①: 나라(고정)·기간·인원 → 다음
           dates = page.locator("input[type=date]"); dates.nth(0).fill("2027-05-01"); dates.nth(1).fill("2027-05-10")
-          page.fill("input[placeholder*='도시 이름']", "madrid"); page.wait_for_selector(".chips button.chip", timeout=5000)
-          res["steps"]["city_hits"] = [x.strip()[:40] for x in page.locator(".chips button.chip").all_inner_texts()][:4]; page.locator(".chips button.chip").first.click()
-          res["steps"]["city_chip"] = page.locator(".chip.on").first.inner_text()
-          page.click("text=다음 ▶"); page.wait_for_selector(".seg", timeout=5000); res["steps"]["s1_step2"] = True
+          page.click("text=다음 ▶"); page.wait_for_selector(".destlist .card.dest", timeout=10000)
+          # S1 ②: 여행지 카드(D-030). 목록 수, 섬 필터, 취향 필터, 검색 → 선택
+          res["steps"]["dest_cards"] = page.locator(".destlist .card.dest").count()
+          res["steps"]["dest_first"] = page.locator(".destlist .card.dest").first.inner_text().replace("\n", " | ")[:260]
+          page.click(".seg button:has-text('섬')"); time.sleep(0.3); res["steps"]["dest_islands"] = page.locator(".destlist .card.dest").count(); page.click(".seg button:has-text('전체')")
+          page.locator(".focusfilter button.chip:has-text('해변')").click(); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.locator(".focusfilter button.chip:has-text('해변')").click()
+          page.fill("input[placeholder*='여행지 검색']", "madrid"); time.sleep(0.4)
+          res["steps"]["city_hits"] = [x.strip().split("\n")[0][:40] for x in page.locator(".destlist .card.dest .title").all_inner_texts()][:4]
+          page.locator(".destlist .card.dest .pick").first.click(); time.sleep(0.2)
+          res["steps"]["city_chip"] = page.locator(".picked .chip.on").first.inner_text()
+          page.screenshot(path=str(shots / "s1_dest.png"))
+          page.click(".stepnav .btn:has-text('다음')"); page.wait_for_selector(".airport", timeout=5000); res["steps"]["s1_step3"] = True
+          # S1 ③ 공항(D-029): 검색 → 첫 제안 선택, 여행 형태
+          page.locator("input[placeholder*='공항 검색']").first.fill("madrid"); page.wait_for_selector(".airport .chips button.chip", timeout=5000)
+          res["steps"]["airport_hits"] = [x.strip()[:70] for x in page.locator(".airport .chips button.chip").all_inner_texts()][:3]; page.locator(".airport .chips button.chip").first.click()
+          res["steps"]["airport_in"] = page.locator(".airport .chip.on").first.inner_text()
           page.click("text=다음 ▶"); page.wait_for_selector(".cats", timeout=5000)
           cats = page.locator(".catcard"); res["steps"]["categories"] = cats.count(); cats.nth(2).click(); cats.nth(0).click()
           page.screenshot(path=str(shots / "s1_tastes.png"))
@@ -76,6 +88,32 @@ def main():
           res["steps"]["gh_check"] = page.locator("p.note:has-text('연결됨')").inner_text()[:80]
           page.screenshot(path=str(shots / "s8.png"))
           res["steps"]["tabs"] = page.locator("nav.tabs button").count()
+          # --- 섬 여행지 흐름(D-030): 마요르카섬 선택 → 요약 → 추천·전체 후보 → 장소 선택 → 숙박 구역 → 일정 생성
+          ctx2 = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, locale="ko-KR"); pg = ctx2.new_page(); isl = {}
+          isl["missing_files_404"] = 0  # 이동 시간 파일이 없는 지자체의 404는 세기만 한다(직선 추정으로 대체되는 정상 동작)
+          def on_console(m):
+              if m.type != "error": return
+              if "404" in m.text: isl["missing_files_404"] += 1
+              else: res["console_errors"].append("island: " + m.text)
+          pg.on("console", on_console)
+          pg.on("pageerror", lambda e: res["console_errors"].append(f"island pageerror: {e}"))
+          pg.goto(url, wait_until="networkidle", timeout=60000); pg.wait_for_selector(".steps", timeout=30000)
+          d2 = pg.locator("input[type=date]"); d2.nth(0).fill("2027-06-01"); d2.nth(1).fill("2027-06-05"); pg.click("text=다음 ▶"); pg.wait_for_selector(".destlist .card.dest", timeout=10000)
+          pg.fill("input[placeholder*='여행지 검색']", "mallorca"); time.sleep(0.4); isl["card"] = pg.locator(".destlist .card.dest").first.inner_text().replace("\n", " | ")[:300]
+          pg.locator(".destlist .card.dest .pick").first.click(); pg.screenshot(path=str(shots / "island_s1.png"))
+          pg.click(".stepnav .btn:has-text('다음')"); pg.wait_for_selector(".airport", timeout=5000)
+          pg.locator("input[placeholder*='공항 검색']").first.focus(); pg.wait_for_selector(".airport .chips button.chip", timeout=5000); isl["airport_first"] = pg.locator(".airport .chips button.chip").first.inner_text().split("\n")[0]
+          pg.click("text=다음 ▶"); pg.wait_for_selector(".cats", timeout=5000); pg.click("text=탐색으로 ▶"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          isl["summary"] = pg.locator(".card").first.inner_text().replace("\n", " | ")[:260]; pg.screenshot(path=str(shots / "island_s2.png"))
+          pg.locator(".card .btn").first.click(); pg.wait_for_selector(".seg", timeout=10000); time.sleep(3)
+          isl["rec_cards"] = pg.locator(".card").count(); isl["rec_note"] = pg.locator("p.note").first.inner_text()[:110]
+          picks = pg.locator(".card button[aria-label='선택']"); [picks.nth(i).click() for i in range(min(5, picks.count()))]
+          pg.click("button:has-text('전체 후보')"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1.5); isl["all_note"] = pg.locator(".note").first.inner_text()[:110]; pg.screenshot(path=str(shots / "island_s3.png"))
+          pg.click("nav.tabs button:has-text('일정')"); pg.wait_for_selector("select[aria-label='날짜']", timeout=10000); isl["arrange_groups"] = pg.locator(".section h2").all_inner_texts()[:3]
+          pg.click("button:has-text('숙박')"); pg.wait_for_selector("input[type=number]", timeout=5000); isl["lodging_zones"] = [x[:30] for x in pg.locator(".chips button.chip").all_inner_texts()][:3]
+          pg.click("button:has-text('장소 배치')"); pg.click("button:has-text('일정 생성')"); pg.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
+          isl["itin_note"] = pg.locator("p.note").first.inner_text()[:120]; isl["itin_items"] = pg.locator(".card .title").count(); pg.screenshot(path=str(shots / "island_s5.png"))
+          res["island"] = isl; ctx2.close()
       finally:
         try: page.screenshot(path=str(shots / "last.png"))
         except Exception: pass

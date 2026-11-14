@@ -96,12 +96,16 @@ export function intercityLeg(fromCity, toCity, inter, { airports = [] } = {}) {
   const options = [];
   const car = ia >= 0 && ib >= 0 ? inter.car_min[ia][ib] : null;
   const dist = hav(fromCity.lat, fromCity.lon, toCity.lat, toCity.lon);
-  if (car != null) options.push({ mode: "car", min: car, km: inter.car_km[ia][ib], confidence: "computed" });
+  // 서로 다른 섬이거나 섬과 본토 사이면(D-030) 차량으로 갈 수 없으므로 비행기와 배만 제시한다
+  const islandOf = (c) => (c.kind === "island" ? c.id : c.island || null);
+  const sea = islandOf(fromCity) !== islandOf(toCity);
+  if (sea) { /* 차량 없음 */ }
+  else if (car != null) options.push({ mode: "car", min: car, km: inter.car_km[ia][ib], confidence: "computed" });
   else options.push({ mode: "car", min: Math.round(dist * PARAMS.carDetour / 1000 / 80 * 60), km: Math.round(dist * PARAMS.carDetour / 1000), confidence: "estimate", note: "행렬 밖 도시. 직선 추정" });
   const tr = ia >= 0 && ib >= 0 ? inter.train_min[ia][ib] : null;
   if (tr != null) options.push({ mode: "train", min: tr, perDay: inter.trains_per_day[ia][ib], confidence: "computed", note: "Renfe 직통 최단 운행(역 접근 제외)" });
-  if (dist > 250000 || car == null) options.push({ mode: "flight", min: Math.round(dist / 1000 / PARAMS.flightKmh * 60 + PARAMS.flightProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "거리 기반 추정(D-021 ②)" });
-  if (car == null) options.push({ mode: "ferry", min: Math.round(dist / 1000 / PARAMS.ferryKmh * 60 + PARAMS.ferryProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "항로 존재 여부 미확인. 거리 기반 추정" });
+  if (dist > 250000 || car == null || sea) options.push({ mode: "flight", min: Math.round(dist / 1000 / PARAMS.flightKmh * 60 + PARAMS.flightProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "거리 기반 추정(D-021 ②)" });
+  if (car == null || sea) options.push({ mode: "ferry", min: Math.round(dist / 1000 / PARAMS.ferryKmh * 60 + PARAMS.ferryProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "항로 존재 여부 미확인. 거리 기반 추정" });
   const best = [...options].sort((x, y) => x.min - y.min)[0];
   return { best, alternatives: options.filter((o) => o !== best).sort((x, y) => x.min - y.min).slice(0, 2), options };
 }

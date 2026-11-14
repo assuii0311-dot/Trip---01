@@ -1,6 +1,6 @@
 """Wikivoyage 덤프에서 스페인 하위 문서와 목록을 전체 필드로 추출한다 (E1 2절). PoC의 poc/wikivoyage_parse.py를 재사용한다.
 
-출력: pages.jsonl {lang, title, kind, parent, depth, understand, sleep_tiers, eat_tiers}
+출력: pages.jsonl {lang, title, kind, parent, depth, lead, understand, sleep_tiers, eat_tiers}. lead는 첫 소제목 앞의 문서 머리글(여행지 소개 한 줄용, E1 4절 15항)
       listings.jsonl {lang, page, idx, type, raw_type, section, tier, name, alt, lat, lon, wikidata, content, price, hours, url, phone, address}
 실행: python -I -m pipeline.e1.wikivoyage <lang> <덤프.bz2> <출력 디렉터리>
 """
@@ -21,6 +21,8 @@ TEMPLATE_RE = re.compile(r"\{\{[^{}]*\}\}")
 REF_RE = re.compile(r"<ref[^>]*>.*?</ref>|<ref[^>]*/>", re.S)
 TAG_RE = re.compile(r"<[^>]+>")
 BOLD_RE = re.compile(r"'{2,}")
+MAGIC_RE = re.compile(r"__[A-Z]+__")
+EXTLINK_RE = re.compile(r"\[https?://[^\s\]]+\s*([^\]]*)\]")  # [주소 글자] → 글자. 머리글(lead)에만 적용한다
 
 
 def plain(wikitext, limit=4000):
@@ -94,6 +96,7 @@ def main():
             kind = (W.page_status(text) or ("", ""))[1] if hasattr(W, "page_status") else ""
             und = plain(section_text(text, UNDERSTAND[lang]))
             h2 = [(m.start(), m.group(1).strip().lower()) for m in W.H2_RE.finditer(text)]
+            lead = plain(EXTLINK_RE.sub(r"\1", MAGIC_RE.sub("", text[:h2[0][0]] if h2 else text)), 800).replace("\u200b", "")
             h3 = [(m.start(), m.group(1).strip().lower()) for m in W.H3_RE.finditer(text)]
             tiers = {"sleep": False, "eat": False}
             pos = idx = 0
@@ -118,7 +121,7 @@ def main():
                        "address": clean_name(params.get("address")) or None}
                 if rec["name"]:
                     fl.write(json.dumps(rec, ensure_ascii=False) + "\n"); n_list += 1; idx += 1
-            fp.write(json.dumps({"lang": lang, "title": title, "kind": kind, "parent": parents.get(title), "depth": depth.get(title, 0), "understand": und, "sleep_tiers": tiers["sleep"], "eat_tiers": tiers["eat"]}, ensure_ascii=False) + "\n")
+            fp.write(json.dumps({"lang": lang, "title": title, "kind": kind, "parent": parents.get(title), "depth": depth.get(title, 0), "lead": lead, "understand": und, "sleep_tiers": tiers["sleep"], "eat_tiers": tiers["eat"]}, ensure_ascii=False) + "\n")
             n_pages += 1
     print(f"  {lang}: 문서 {n_pages}건, 목록 {n_list}건 → {out}", flush=True)
 
