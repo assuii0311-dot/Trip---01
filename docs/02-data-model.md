@@ -76,7 +76,7 @@
 | summary | 한국어 요약, 200자 이내 | Wikivoyage 목록 본문, 위키백과 머리 문단, Wikidata 설명을 바탕으로 한 생성본 | 대표 모수 30곳(평균 122자) |
 | detail | 상세 단락 목록(2~4개, 합계 1,200자 이내). 출처가 짧으면 빈 목록 | 같음 | 13곳(평균 352자) |
 | name_ko | 생성한 한글 이름(한국어 이름이 없는 장소만). 색인의 names에도 들어간다 | E5 4절 4항 | 27곳 |
-| confidence, source_count, basis | 신뢰도(글 출처 2종이면 높음, 1종이면 보통), 글 출처 종류 수, 근거(text) | E5 4절 9항 | 높음 4, 보통 26 |
+| confidence, source_count, basis | 신뢰도(글 출처 2종이면 높음, 1종이면 보통), 글 출처 종류 수, 근거(text) | E5 4절 9항 | 높음 7, 보통 23 |
 | sources, attribution, generated | 출처 목록(종류, 언어, 문서 제목, 라이선스, URL), 화면 표기 문구, 생성일 | D-021 ⑦ | 30곳 |
 | index.json: place_shards, names, places | 설명이 있는 샤드 목록, 생성한 한글 이름, 장소 수 | E5 | 샤드 5개 |
 
