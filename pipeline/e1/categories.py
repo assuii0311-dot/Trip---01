@@ -27,9 +27,8 @@ def wv_categories(ltype, raw_type):
 def wd_categories(classes, has_heritage):
     """Wikidata 클래스 집합을 범주로. 유산 지정만 있는 항목은 heritage."""
     cats = []
-    for q in classes:
-        cat = C.WD_CLASS_CATEGORY.get(q)
-        if cat and cat not in cats:
+    for q, cat in C.WD_CLASS_CATEGORY.items():  # 대응표에 적힌 순서로 본다. 집합(classes)을 그대로 돌면 실행마다 순서가 달라진다
+        if q in classes and cat and cat not in cats:
             cats.append(cat)
     if not cats and has_heritage and not (classes & C.WD_SETTLEMENT_CLASSES):
         cats.append("heritage")

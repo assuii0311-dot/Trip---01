@@ -10,6 +10,8 @@ from pipeline.e1 import categories as cat  # noqa: E402
 from pipeline.e1.airports import build_airports, parse_rows  # noqa: E402
 from pipeline.e1 import destinations as dest  # noqa: E402
 from pipeline.e1 import islands as isl  # noqa: E402
+from pipeline.e1 import sources  # noqa: E402
+from pipeline.e1.geo import Boundaries, assign_city  # noqa: E402
 from pipeline.e1 import config as C  # noqa: E402
 from pipeline.e1.match import build_groups, hav, sim  # noqa: E402
 from pipeline.e1.merge import parse_price, place_from_group  # noqa: E402
@@ -303,3 +305,41 @@ def test_build_destinations_tiers_islands_unesco_overrides(monkeypatch):
     _, rep2 = dest.build_destinations(cities2, {}, [], overrides={"exclude": ["A"], "include": {"G": 3}, "tier": {"B": 2}})
     by2 = {c["id"]: c for c in cities2}
     assert "dest" not in by2["A"] and by2["B"]["dest"]["tier"] == 2 and by2["B"]["dest"]["via"] == "manual" and by2["G"]["dest"]["via"] == "manual" and rep2["destinations"] == 4
+
+
+# --- 카나리아 추출본 병합과 결정성(D-031) ---
+def test_load_osm_multiple_extracts_skip_duplicate_ids(tmp_path):
+    a, b = tmp_path / "spain.jsonl", tmp_path / "canarias.jsonl"
+    a.write_text("\n".join(json.dumps(r) for r in [osm_poi("n1", 40.0, -3.0, "Museo A"), osm_poi("n2", 28.47, -16.24, "Terminal", key="amenity", value="ferry_terminal")]) + "\n", encoding="utf-8")
+    b.write_text("\n".join(json.dumps(r) for r in [osm_poi("n2", 28.47, -16.24, "Terminal (중복)", key="amenity", value="ferry_terminal"), osm_poi("n3", 28.1, -15.4, "Museo Canario"),
+                                                    osm_poi("n4", 28.05, -16.57, "Aeropuerto de Tenerife Sur", key="aeroway", value="aerodrome")]) + "\n", encoding="utf-8")
+    places, settlements, districts, transit, airports = sources.load_osm([a, b])
+    assert [p["id"] for p in places] == ["n1", "n2", "n3"] and places[1]["name"] == "Terminal" and [x["id"] for x in airports] == ["n4"]
+    assert [p["id"] for p in sources.load_osm(a)[0]] == ["n1", "n2"]  # 파일 하나만 줘도 된다
+
+
+def test_boundaries_overlap_is_deterministic_and_prefers_known_municipality(tmp_path):
+    from shapely.geometry import box
+    rows = [{"osm_id": "r1", "admin_level": "8", "name": "Segovia", "wikidata": "Qseg", "wkb": box(0, 0, 10, 10).wkb_hex},
+            {"osm_id": "r2", "admin_level": "8", "name": "Revenga", "wikidata": "Qsub", "wkb": box(1, 1, 2, 2).wkb_hex},      # 지자체 안의 하위 행정 단위
+            {"osm_id": "w3", "admin_level": "8", "name": None, "wikidata": None, "wkb": box(1.4, 1.4, 1.6, 1.6).wkb_hex},    # 이름도 태그도 없는 작은 경계
+            {"osm_id": "r4", "admin_level": "8", "name": "Estavar", "wikidata": "Qfr", "wkb": box(20, 20, 21, 21).wkb_hex}]  # 국경 밖 지자체
+    f1, f2 = tmp_path / "b1.jsonl", tmp_path / "b2.jsonl"
+    f1.write_text("\n".join(json.dumps(r) for r in rows[:2]) + "\n", encoding="utf-8")
+    f2.write_text("\n".join(json.dumps(r) for r in [rows[1]] + rows[2:]) + "\n", encoding="utf-8")  # r2는 두 파일에 다 있다
+    class NoNear:
+        def find(self, lat, lon): return None, None
+    for paths in ([f1, f2], [f2, f1]):  # 파일 순서가 달라도 결과가 같다
+        bd = Boundaries(paths)
+        assert bd.count == 4 and [r["osm_id"] for r in bd.lookup_all("8", 1.5, 1.5)] == ["w3", "r2", "r1"]
+        assert assign_city(bd, NoNear(), 1.5, 1.5, {}, {}, {"Qseg"}) == ("Qseg", "polygon")   # 지자체 목록에 있는 경계가 먼저
+        assert assign_city(bd, NoNear(), 1.5, 1.5, {}, {}, None) == ("Qsub", "polygon")        # 목록을 안 주면 면적이 작은 순
+        assert assign_city(bd, NoNear(), 20.5, 20.5, {}, {}, {"Qseg"}) == ("Qfr", "polygon")    # 목록에 없는 경계뿐이면 태그 값을 그대로(이전 동작)
+        assert assign_city(bd, NoNear(), 50.0, 50.0, {}, {}, {"Qseg"}) == (None, "none")
+
+
+def test_wd_categories_order_does_not_depend_on_set_order():
+    expected = ["museum", "religious", "heritage"]  # 대응표(config)에 적힌 순서
+    for classes in ({"Q839954", "Q16970", "Q33506"}, {"Q33506", "Q839954", "Q16970"}, set(reversed(["Q839954", "Q16970", "Q33506"]))):
+        assert cat.wd_categories(classes, False) == expected
+    assert cat.wd_categories({"Q2074737"}, True) == [] and cat.wd_categories(set(), True) == ["heritage"]
