@@ -8,11 +8,13 @@
 
 ```
 # 0) 원시 데이터: <루트>/wikidata/*.jsonl, P1435.jsonl, sitelinks.jsonl (poc/wikidata_*.py), <루트>/osm/out/pois.jsonl (poc/osm_extract.py)
+#    OSM은 스페인 추출본과 카나리아 추출본 두 개다(D-031). 카나리아는 poc/osm_extract.py <canarias.osm.pbf> <루트>/osm_canarias/out 으로 따로 뽑는다
 # 1) Wikivoyage 전체 필드 추출 (약 2분)
 <venv>/bin/python -I pipeline/run.py e1.wikivoyage en <enwikivoyage 덤프.bz2> <루트>/e1/wv_en
 <venv>/bin/python -I pipeline/run.py e1.wikivoyage es <eswikivoyage 덤프.bz2> <루트>/e1/wv_es
 # 2) 행정 경계 (약 4분, 메모리 1GB)
 <venv>/bin/python -I pipeline/e1/osm_boundaries.py <spain.osm.pbf> <루트>/e1/boundaries.jsonl
+<venv>/bin/python -I pipeline/e1/osm_boundaries.py <canarias.osm.pbf> <루트>/e1/boundaries_canarias.jsonl
 # 3) 라벨·설명·위키 제목 (SPARQL, 100개 묶음 초당 1회, 약 25분. 중단 후 재개 가능)
 <venv>/bin/python -I pipeline/e1/wikidata_labels.py <루트>/wikidata <루트>/e1/labels.jsonl
 # 4) 공항(D-029)과 섬(D-030). 섬 폴리곤은 스페인 추출본과 카나리아 추출본에서 따로 뽑는다(openstreetmap.fr 스페인 추출본에 카나리아 제도가 없다)
@@ -23,13 +25,27 @@
 # 5) 페이지뷰 월평균 (월간 덤프 하나당 약 20분). 섬 문서 제목(islands_wd.jsonl)도 함께 넣는다
 <venv>/bin/python -I pipeline/run.py e1.pageviews <루트>/e1/views.jsonl <루트>/wikidata/sitelinks.jsonl <루트>/e1/labels.jsonl <루트>/e1/islands_wd.jsonl -- <덤프1.bz2> <덤프2.bz2> ...
 # 6) 통합과 파일 생성 (전체 약 5분). --bbox S,W,N,E 로 범위를 줄여 시험할 수 있다
-<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --boundaries <루트>/e1/boundaries.jsonl --views <루트>/e1/views.jsonl \
+<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --views <루트>/e1/views.jsonl \
+  --boundaries <루트>/e1/boundaries.jsonl <루트>/e1/boundaries_canarias.jsonl --osm-extra <루트>/osm_canarias/out/pois.jsonl \
   --airports <루트>/e1/airports_wd.jsonl --islands <루트>/e1/islands_osm.jsonl <루트>/e1/islands_osm_canarias.jsonl --islands-wd <루트>/e1/islands_wd.jsonl
 # 7) 여행지 목록 검수표(D-030). 검수 결과는 pipeline/e1/config.py의 DEST_OVERRIDES에 반영하고 6)을 다시 돌린다
 python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.gz data/airports.json.gz <출력.md>
 ```
 
 `pipeline/run.py`는 격리 모드(`-I`)에서 패키지를 찾기 위한 실행기다.
+
+## 실행 순서 (E3 도보 쌍)
+
+경로 타일은 추출본별로 만든다(`poc/README.md`의 로컬 경로 엔진 실행 방법). 도보 쌍은 타일마다 지역을 나눠 계산한다.
+
+```
+# 본토·발레아레스: 스페인 추출본 타일. 일부 도시만 다시 계산하려면 --cities ID,ID,...
+<venv>/bin/python -I pipeline/run.py e3.intracity <스페인 타일> data/places_tier1.json.gz --out data/travel --bbox 35,-10,44.5,5
+# 카나리아: 카나리아 추출본 타일
+<venv>/bin/python -I pipeline/run.py e3.intracity <카나리아 타일> data/places_tier1.json.gz --out data/travel --bbox 27,-19,30,-13
+```
+
+대상 장소가 2곳 미만이 된 도시는 건너뛰되, 예전 파일이 남아 있으면 빈 쌍으로 다시 쓴다.
 
 ## 산출물 (`data/`)
 
