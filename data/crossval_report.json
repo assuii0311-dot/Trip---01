@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-14 09:20",
+ "generated": "2026-11-14 15:50",
  "inputs": {
   "wikidata": 133362,
   "osm_places": 498578,
@@ -89,8 +89,8 @@
  },
  "files": {
   "cities": {
-   "raw_bytes": 7390830,
-   "gz_bytes": 1201140
+   "raw_bytes": 7390829,
+   "gz_bytes": 1201136
   },
   "regions": {
    "raw_bytes": 96803,
@@ -110,5 +110,5 @@
   }
  },
  "tier2_gz_bytes": 18275603,
- "elapsed_s": 179
+ "elapsed_s": 152
 }

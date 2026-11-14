@@ -25,3 +25,17 @@ export function makeDestOf(cities, tripCityIds) {
   }
   return (p) => (p && exact.has(p.city) ? p.city : (p && via.get(p.city)) || null);
 }
+
+/**
+ * E5가 만든 여행지 한국어 소개를 도시 레코드에 붙인다(E5 4절 8항, D-032). 새 배열을 돌려주고 입력은 바꾸지 않는다.
+ * 붙는 필드: ko{summary, sources, confidence, generated}. 한국어 이름이 없는 여행지는 생성한 이름을 n.ko에 넣고 n.ko_src를 "generated"로 표시한다.
+ */
+export function applyDestinationKo(cities, e5) {
+  const items = (e5 && e5.items) || {};
+  return cities.map((c) => {
+    const it = items[c.id];
+    if (!it) return c;
+    const n = !c.n?.ko && it.name_ko ? { ...c.n, ko: it.name_ko, ko_src: "generated" } : c.n;
+    return { ...c, n, ko: { summary: it.summary, sources: it.sources || [], confidence: it.confidence, generated: it.generated } };
+  });
+}

@@ -31,6 +31,7 @@ export function makeLoader(base = "data/", fetchFn = globalThis.fetch) {
     attribution: () => load("attribution.json"),
     cities: () => load("cities.json.gz"),
     regions: () => load("regions.json.gz"),
+    e5Destinations: () => load("e5/destinations.json.gz"),
     categories: () => load("categories.json.gz"),
     airports: () => load("airports.json.gz"),
     tier1: () => load("places_tier1.json.gz"),

@@ -35,6 +35,7 @@ def main():
           # S1 ②: 여행지 카드(D-030). 목록 수, 섬 필터, 취향 필터, 검색 → 선택
           res["steps"]["dest_cards"] = page.locator(".destlist .card.dest").count()
           res["steps"]["dest_first"] = page.locator(".destlist .card.dest").first.inner_text().replace("\n", " | ")[:260]
+          res["steps"]["dest_ko_summaries"] = page.locator(".destlist .card.dest .lead.ko").count()  # E5 한국어 소개(D-032)
           page.click(".seg button:has-text('섬')"); time.sleep(0.3); res["steps"]["dest_islands"] = page.locator(".destlist .card.dest").count(); page.click(".seg button:has-text('전체')")
           page.locator(".focusfilter button.chip:has-text('해변')").click(); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.locator(".focusfilter button.chip:has-text('해변')").click()
           page.fill("input[placeholder*='여행지 검색']", "madrid"); time.sleep(0.4)

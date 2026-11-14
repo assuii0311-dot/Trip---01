@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """여행지 목록 검수표를 만든다(D-030). data/cities.json.gz의 dest·focus·hl·wv.lead를 읽어 마크다운 표로 쓴다.
 검수 결과는 pipeline/e1/config.py의 DEST_OVERRIDES(제외·포함·등급 고정)에 반영하고 데이터를 다시 만든다.
-실행: python3 -I scripts/destinations_report.py <cities.json.gz> <regions.json.gz> <airports.json.gz> <출력.md>
+실행: python3 -I scripts/destinations_report.py <cities.json.gz> <regions.json.gz> <airports.json.gz> <출력.md> [<e5/destinations.json.gz>]
+다섯째 인자를 주면 E5의 한국어 요약과 생성한 한글 이름을 함께 보인다(D-032 검수용).
 """
 import gzip
 import json
@@ -23,8 +24,11 @@ def main():
     regions = {r["id"]: r for r in json.load(gzip.open(sys.argv[2], "rt", encoding="utf-8"))}
     airports = [a for a in json.load(gzip.open(sys.argv[3], "rt", encoding="utf-8")) if (a.get("pax") or 0) >= 100000]
     by_id = {c["id"]: c for c in cities}
+    e5 = json.load(gzip.open(sys.argv[5], "rt", encoding="utf-8"))["items"] if len(sys.argv) > 5 else {}
     dest = sorted((c for c in cities if c.get("dest")), key=lambda c: (c["dest"]["tier"], c["dest"]["rank"]))
-    name = lambda c: f"{c['n'].get('ko') or ''} ({c['n'].get('en') or c['n'].get('es') or c['n'].get('local')})".strip()
+    def name(c):
+        gen = (e5.get(c["id"]) or {}).get("name_ko") if not c["n"].get("ko") else None
+        return f"{c['n'].get('ko') or (gen + ' [생성]' if gen else '')} ({c['n'].get('en') or c['n'].get('es') or c['n'].get('local')})".strip()
     region = lambda c: (regions.get((c.get("region") or {}).get("community") or "") or {}).get("n", {}).get("local") or ("섬(자치주 경계 없음)" if c.get("kind") == "island" else "")
     def airport(c):
         best = min(airports, key=lambda a: hav(c["lat"], c["lon"], a["lat"], a["lon"]))
@@ -34,13 +38,13 @@ def main():
          "- 검수 방법: 빼야 할 곳, 넣어야 할 곳, 등급을 바꿀 곳을 알려 주면 `pipeline/e1/config.py`의 DEST_OVERRIDES에 반영한다.", ""]
     for tier in (1, 2, 3):
         rows = [c for c in dest if c["dest"]["tier"] == tier]
-        L += [f"## 참고 {tier}등급 ({len(rows)}곳)", "", "| 순위 | 여행지 | 종류 | 지역 | 인구 | 취향 중심 | 대표 명소 | 대표 명소 수 | 가이드 목록 | 영문 월조회 | 유네스코 | 가까운 공항 | 선정 | 소개(영문 가이드 첫 문장) |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        L += [f"## 참고 {tier}등급 ({len(rows)}곳)", "", "| 순위 | 여행지 | 종류 | 지역 | 인구 | 취향 중심 | 대표 명소 | 대표 명소 수 | 가이드 목록 | 영문 월조회 | 유네스코 | 가까운 공항 | 선정 | 한국어 소개(생성본) | 영문 가이드 첫 문장 |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for c in rows:
             d = c["dest"]; s = d["signals"]
             kind = f"섬(지자체 {len(c['members'])}곳)" if c.get("kind") == "island" else "도시"
             hl = ", ".join(h["n"].get("ko") or h["n"].get("en") or h["n"].get("local") for h in c.get("hl") or [])
             lead = (c["wv"].get("lead") or "").split(". ")[0].replace("|", "/")[:140]
-            L.append(f"| {d['rank']} | {name(c)} | {kind} | {region(c)} | {c.get('pop') or 0:,} | {'·'.join(KO[f] for f in c.get('focus') or []) or '—'} | {hl} | {s['foreign']} | {s['listings']} | {s['pv_en']:,} | {d['unesco'] or ''} | {airport(c)} | {VIA[d['via']]} | {lead} |")
+            L.append(f"| {d['rank']} | {name(c)} | {kind} | {region(c)} | {c.get('pop') or 0:,} | {'·'.join(KO[f] for f in c.get('focus') or []) or '—'} | {hl} | {s['foreign']} | {s['listings']} | {s['pv_en']:,} | {d['unesco'] or ''} | {airport(c)} | {VIA[d['via']]} | {((e5.get(c['id']) or {}).get('summary') or '').replace('|', '/')} | {lead} |")
         L.append("")
     isl = [c for c in dest if c.get("kind") == "island"]
     L += ["## 섬 여행지와 소속 지자체", "", "| 섬 | 소속 지자체(인구 순) |", "|---|---|"]

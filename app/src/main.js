@@ -2,12 +2,14 @@
 import { h, render } from "./lib.js";
 import { App } from "./ui/app.js";
 import { makeLoader } from "./data/loader.js";
+import { applyDestinationKo } from "./data/dest.js";
 
 const root = document.getElementById("app");
 const loader = makeLoader("data/");
 (async () => {
   try {
-    const [attribution, cities, categoriesFile, airports, tier1, regions] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1(), loader.regions().catch(() => [])]);
+    const [attribution, cities0, categoriesFile, airports, tier1, regions, e5] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1(), loader.regions().catch(() => []), loader.e5Destinations().catch(() => null)]);
+    const cities = applyDestinationKo(cities0, e5); // 여행지 한국어 소개와 생성 이름(E5). 파일이 없으면 영문 소개를 그대로 쓴다
     const data = { attribution, cities, categories: categoriesFile.categories, airports, tier1, regions, tier2cache: new Map() };
     render(h(App, { data, loader }), root);
   } catch (e) {
