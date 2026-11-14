@@ -41,12 +41,17 @@ def main():
         if p["city"] and (p["pop"]["sl"] >= 1 or p["src"]["wv"]):
             by_city[p["city"]].append(p)
     out_dir = pathlib.Path(a.out); out_dir.mkdir(parents=True, exist_ok=True)
-    done = 0; total_pairs = 0; skipped = 0
+    done = 0; total_pairs = 0; skipped = 0; reset = 0
     cities = sorted(by_city.items(), key=lambda kv: -len(kv[1]))
     for q, ps in cities:
         if a.only and q != a.only:
             continue
         if len(ps) < a.min_places:
+            # 대상 장소가 모자란 도시는 건너뛴다. 다만 예전 실행의 파일이 남아 있으면 낡은 값이 쓰이지 않게 빈 쌍으로 다시 쓴다
+            if (out_dir / f"{q}.json.gz").exists():
+                with gzip.open(out_dir / f"{q}.json.gz", "wt", encoding="utf-8") as f:
+                    json.dump({"ids": sorted(p["id"] for p in ps), "pairs": [], "correction": WALK_CORRECTION}, f, separators=(",", ":"))
+                reset += 1
             skipped += 1; continue
         ps.sort(key=lambda p: p["id"])
         n = len(ps); cell = 0.02; grid = collections.defaultdict(list)
@@ -79,7 +84,7 @@ def main():
         done += 1; total_pairs += len(pairs)
         if done % 50 == 0 or n >= 300:
             print(f"  {done}번째 {q}: 장소 {n}, 쌍 {len(pairs):,} ({time.time() - t0:.0f}초)", flush=True)
-    print(f"  완료: 도시 {done}개, 쌍 {total_pairs:,}, 건너뜀(장소 {a.min_places}곳 미만) {skipped}, {time.time() - t0:.0f}초", flush=True)
+    print(f"  완료: 도시 {done}개, 쌍 {total_pairs:,}, 건너뜀(장소 {a.min_places}곳 미만) {skipped}(그중 기존 파일을 빈 쌍으로 다시 씀 {reset}), {time.time() - t0:.0f}초", flush=True)
 
 
 if __name__ == "__main__":
