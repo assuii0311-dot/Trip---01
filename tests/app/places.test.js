@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hav, filterPlaces, sortByProminence, isForeignLandmark, placeName, altNames, firstSentences } from "../../app/src/data/places.js";
+import { hav, filterPlaces, sortByProminence, isForeignLandmark, placeName, altNames, firstSentences, applyPlaceKo, hasPlaceKoShard } from "../../app/src/data/places.js";
 
 const P = [
   { id: "Q160112", city: "Q2807", tier: 1, cat: ["museum"], n: { local: "Museo del Prado", es: "Museo del Prado", en: "Museo del Prado", ko: "프라도 미술관" }, pop: { sl: 80, pv: { en: 14055, es: 8710 }, en_share: 0.617 }, lat: 40.4139, lon: -3.6922 },
@@ -24,3 +24,12 @@ test("placeName/altNames: 한국어 우선, 카탈루냐어 지역은 현지 · 
   assert.equal(placeName(P[1]), "Café Pepe"); assert.equal(altNames(P[1]), "");
 });
 test("firstSentences: 앞 두 문장", () => { assert.equal(firstSentences("One. Two! Three?"), "One. Two!"); assert.equal(firstSentences(""), ""); });
+test("applyPlaceKo: 한국어 이름이 없는 장소에만 생성 이름을 붙이고 입력은 바꾸지 않는다 (D-033)", () => {
+  const index = { names: { "osm:n1": "카페 페페", Q160112: "프라도 국립 미술관" }, place_shards: ["00", "a3"] };
+  const out = applyPlaceKo(P, index);
+  assert.equal(placeName(out[1]), "카페 페페"); assert.equal(out[1].n.ko_src, "generated"); assert.equal(altNames(out[1]), "Café Pepe");
+  assert.equal(placeName(out[0]), "프라도 미술관"); assert.equal(out[0], P[0]); assert.equal(out[2], P[2]);
+  assert.equal(P[1].n.ko, undefined);
+  assert.deepEqual(applyPlaceKo(P, null), P);
+  assert.ok(hasPlaceKoShard(index, "a3")); assert.ok(!hasPlaceKoShard(index, "ff")); assert.ok(!hasPlaceKoShard(null, "00")); assert.ok(!hasPlaceKoShard({}, "00"));
+});

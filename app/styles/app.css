@@ -77,6 +77,12 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .src { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 12px; }
+.desc-h { font-size: 17px; margin: 12px 0 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.desc-h .speak { margin-left: auto; min-height: 36px; padding: 4px 12px; font-size: 14px; }
+.desc-ko p { margin: 6px 0; line-height: 1.65; }
+.desc-ko details { margin: 8px 0; }
+.desc-ko summary { min-height: 36px; display: flex; align-items: center; color: var(--accent); font-weight: 500; cursor: pointer; }
+.desc-ko .note a { word-break: break-all; }
 .empty { padding: 32px 16px; color: var(--muted); text-align: center; }
 .note { font-size: 13px; color: var(--muted); }
 a { color: var(--accent); }

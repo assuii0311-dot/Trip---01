@@ -6,8 +6,8 @@
 |---|---|---|---|
 | OpenStreetMap | [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) | OSM에서 온 장소·구역·공항 레코드와 좌표, 명칭, 태그, 그리고 섬 폴리곤으로 판정한 지자체의 소속 섬(`cities.json.gz`의 `island`, `members`). 이 데이터베이스의 OSM 파생 부분은 ODbL로 공개한다 | © OpenStreetMap contributors |
 | Wikidata | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) | QID, 라벨, 설명, 분류, 유산 지정, 사이트링크 | 권장 |
-| Wikivoyage (영어, 스페인어) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `sources/` 샤드의 목록 본문, 도시·섬의 소개 문장과 개요(`cities.json.gz`의 `wv.lead`, `wv.understand`), 그 가이드를 바탕으로 만든 여행지 한국어 요약(`e5/destinations.json.gz`, 생성본), 영업시간·가격 참고값. 이 텍스트와 그 파생물은 CC BY-SA 4.0으로 공유한다 | Wikivoyage 기여자, 문서 링크 |
-| Wikipedia | CC BY-SA 4.0 | 문서 제목(링크). 본문 발췌는 포함하지 않았다 | 위키백과 기여자 |
+| Wikivoyage (영어, 스페인어) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `sources/` 샤드의 목록 본문, 도시·섬의 소개 문장과 개요(`cities.json.gz`의 `wv.lead`, `wv.understand`), 그 가이드를 바탕으로 만든 여행지 한국어 요약(`e5/destinations.json.gz`, 생성본)과 목록 본문을 바탕으로 만든 장소 한국어 설명(`e5/places/`, 생성본), 영업시간·가격 참고값. 이 텍스트와 그 파생물은 CC BY-SA 4.0으로 공유한다 | Wikivoyage 기여자, 문서 링크 |
+| Wikipedia | CC BY-SA 4.0 | 문서 제목(링크)과, 머리 문단을 바탕으로 만든 장소 한국어 설명(`e5/places/`, 생성본). 본문 발췌 원문은 포함하지 않았다. 이 생성본은 CC BY-SA 4.0으로 공유한다 | 위키백과 기여자, 항목마다 문서 링크 |
 | Wikimedia 페이지뷰 | CC0 1.0 | 조회수 집계 | |
 | Mobility Database 카탈로그 | 피드별(대부분 MITRAMS 공개 데이터 라이선스) | `cities.json.gz`의 `transit_feeds` 메타데이터 | Powered by MITRAMS |
 | AMB 택시 요금표 | 공공 정보 | `cities.json.gz`의 `taxi_fare`(바르셀로나) | 출처 URL |

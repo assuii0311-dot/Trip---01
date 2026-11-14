@@ -17,5 +17,6 @@ test("makeLoader: 메모리 캐시와 404 처리", async () => {
   const a = await L.load("cities.json.gz"); const b = await L.load("cities.json.gz");
   assert.equal(calls, 1); assert.equal(a, b);
   assert.deepEqual(await L.tier2("missing"), []);
+  assert.deepEqual(await L.e5PlaceShard("missing"), {}); // 설명 샤드가 없으면 빈 객체(E5)
   await assert.rejects(L.load("missing.json.gz"));
 });
