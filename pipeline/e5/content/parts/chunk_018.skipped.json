@@ -1,0 +1,10 @@
+[
+ {
+  "id": "Q41150",
+  "reason": "names의 local·es·en·gl은 'Santiago Apóstol(o)/Saint James the Apostle'(사도 성 야고보)인데 출처(위키백과 es·en·ko, 위키데이터)는 모두 순례길 전체(Camino de Santiago)를 설명한다. 이 장소가 순례길 자체인지 사도 야고보의 이름이 붙은 다른 시설인지 출처만으로 확인되지 않는다."
+ },
+ {
+  "id": "Q205136",
+  "reason": "names의 local·es·gl은 'Capela do Santo André/Capilla de San Andrés'(산 안드레스 예배당)이고 범주도 religious뿐인데 출처(위키백과 es·en·ko, 위키보야지)는 모두 산티아고데콤포스텔라 대성당 전체를 설명한다. 출처에 산 안드레스 예배당은 나오지 않아 같은 곳인지 확인되지 않는다."
+ }
+]
