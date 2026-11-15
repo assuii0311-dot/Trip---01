@@ -1,0 +1,14 @@
+[
+ {
+  "id": "osm:w292403084",
+  "reason": "장소 이름(Hotel ILUNION Barcelona)과 출처 항목 이름(Confortel Barcelona)이 달라 같은 호텔인지 출처만으로 확인할 수 없다. 내용도 창이 작고 객실이 어둡다는 평가가 대부분이다."
+ },
+ {
+  "id": "wv:en:Barcelona/Eixample:41",
+  "reason": "출처가 'Clean, friendly and good value'라는 평가뿐이고 무엇인지 알 수 있는 내용이 없다."
+ },
+ {
+  "id": "wv:en:Barcelona/Eixample:56",
+  "reason": "출처가 1박 가격 안내뿐이고 무엇인지 알 수 있는 내용이 없다."
+ }
+]
