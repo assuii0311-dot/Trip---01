@@ -7,7 +7,8 @@ import { recommend, cityAlternatives } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
 import { inDest, destName, isIsland } from "../../data/dest.js";
 
-export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, initialCity }) {
+export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, initialCity, role = "local" }) {
+  const canPick = role !== "viewer"; // 공유자는 열람만(R-22). 서브 수립자의 선택은 제안으로 보내진다
   const tripCities = trip.cities.length ? trip.cities : cities.filter((c) => c.stratum === "big").sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 10).map((c) => c.id);
   const [cityId, setCityId] = useState(initialCity || tripCities[0] || null);
   const [tab, setTab] = useState(trip.cities.length ? "rec" : "all");
@@ -56,7 +57,7 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
           <div class="ico">${CAT_ICON[r.p.cat[0]] || "📍"}</div>
           <div class="body"><div class="title">${placeName(r.p)}</div>${altNames(r.p) && html`<div class="sub">${altNames(r.p)}</div>`}
             <div class="meta chips">${r.landmark ? html`<${Chip} kind="star">★ 대표 명소</${Chip}>` : html`<${Chip} kind="est">그 밖의 장소</${Chip}>`}${r.p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}<${Chip} kind="ok">${r.score.toFixed(2)} · ${r.reasons.join(", ")}</${Chip}>${r.p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}</div></div>
-          <button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(r.p.id); }}>${selection.includes(r.p.id) ? "✓" : "+"}</button></div>`)}
+          ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(r.p.id); }}>${selection.includes(r.p.id) ? "✓" : "+"}</button>`}</div>`)}
         ${altOpen && alts && html`<div class="sheet" role="dialog" aria-label="대안"><button class="close" aria-label="닫기" onClick=${() => setAltOpen(false)}>✕</button>
           <h2>도시 기준 대안</h2><p class="note">전체 일정 기준 대안(도시 조합·일수)은 묶음 5(이동 시간) 뒤에 제공됩니다. 장소 기준 대안은 장소 상세에 있습니다.</p>
           ${[["landmark", "★ 대표 명소 중심 세트"], ["other", "그 밖의 장소 중심 세트"]].map(([k, title]) => html`<h3 style="font-size:17px;margin:12px 0 4px">${title}</h3>${alts[k].map((r) => html`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1">${CAT_ICON[r.p.cat[0]] || ""} ${placeName(r.p)} <span class="note">${r.score.toFixed(2)}</span></span><button class="btn secondary" style="min-height:36px;padding:4px 10px" onClick=${() => onToggleSelect(r.p.id)}>${selection.includes(r.p.id) ? "✓" : "+"}</button></div>`)}`)}
@@ -68,7 +69,7 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
           <div class="ico">${CAT_ICON[p.cat[0]] || "📍"}</div>
           <div class="body"><div class="title">${placeName(p)}</div>${altNames(p) && html`<div class="sub">${altNames(p)}</div>`}
             <div class="meta chips">${isForeignLandmark(p) && html`<${Chip} kind="star">★ 대표 명소</${Chip}>`}${p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}${p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}${p.ver === false && html`<${Chip} kind="x">◌ 검증 안 됨</${Chip}>`}${p.tier === 1 && html`<${Chip} kind="est">1등급</${Chip}>`}</div></div>
-          <button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(p.id); }}>${selection.includes(p.id) ? "✓" : "+"}</button></div>`)}`}
+          ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(p.id); }}>${selection.includes(p.id) ? "✓" : "+"}</button>`}</div>`)}`}
     </div>
     <div class=${"map " + (mapOpen ? "" : "collapsed")} ref=${mapEl}></div>
   </div>`;

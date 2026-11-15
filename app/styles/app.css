@@ -77,6 +77,17 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .src { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 12px; }
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 30; background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.sheet.proposal { top: auto; z-index: 20; max-height: 80vh; }
+.sheet.proposal .what { font-size: 17px; font-weight: 600; margin: 8px 0; }
+.sheet.proposal textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+.proposals h2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.proposals h2 .btn { margin-left: auto; }
+.btn.small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+.card.proposal { margin: 0 0 8px; }
+.card.proposal.approved, .card.proposal.rejected { opacity: .7; }
+.chip .x { border: 0; background: none; color: inherit; font: inherit; padding: 0 0 0 4px; min-width: 24px; min-height: 24px; }
+.memo { margin: 4px 0; font-size: 15px; }
 .desc-h { font-size: 17px; margin: 12px 0 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .desc-h .speak { margin-left: auto; min-height: 36px; padding: 4px 12px; font-size: 14px; }
 .desc-ko p { margin: 6px 0; line-height: 1.65; }

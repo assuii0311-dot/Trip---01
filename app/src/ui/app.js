@@ -12,6 +12,7 @@ import { dateList } from "../state/plan.js";
 import { S6Detail } from "./screens/s6_detail.js";
 import { S7Share } from "./screens/s7_share.js";
 import { S8Settings } from "./screens/s8_settings.js";
+import { ProposalSheet } from "./components/proposal_sheet.js";
 import { CostPanel } from "./components/cost_panel.js";
 import { estimateCost } from "../engines/e6.js";
 import { profile, cityNights } from "../engines/e2.js";
@@ -19,10 +20,16 @@ import { tripDays } from "../state/store.js";
 import { loadPlan, savePlan, toggleSelect as planToggle, assignDay, moveInDay, addCustomPlace, setLodging } from "../state/plan.js";
 import { makeGitHub } from "../engines/e7/github.js";
 import { makeSync, parseRepo } from "../engines/e7/sync.js";
+import { validateKey } from "../engines/e7/crypto.js";
+import { resolveRole, can, cleanSubs, ROLE_LABEL } from "../engines/e7/roles.js";
+import { makeProposal, applyProposal, describeProposal } from "../engines/e7/proposals.js";
+import { placeName } from "../data/places.js";
 import { memberIds, makeDestOf, destName } from "../data/dest.js";
 
 const TABS = [["input", "입력", "📝"], ["explore", "탐색", "🧭"], ["plan", "일정", "📅"], ["share", "공유", "🤝"], ["settings", "설정", "⚙️"]];
 const CFG_KEY = "trip01.sync.v1";
+const SYNCMETA_KEY = "trip01.syncmeta.v1"; // 마지막으로 읽은 버전, 저장 안 된 변경 여부, meta.json(암호화 매개값)
+const MINE_KEY = "trip01.plan.mine.v1"; // 충돌 때 보존한 내 변경
 const DAY_CAPACITY = 4; // E4 (e) 하루 수용 3~4곳
 const AUTOSAVE_MS = 120000; // E7 (g) 유휴 2분
 
@@ -40,21 +47,40 @@ export function App({ data, loader }) {
   const [cfg, setCfgState] = useState(() => { try { return JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch { return {}; } });
   const [sync, setSyncState] = useState({ connected: false, dirty: false });
   const [conflict, setConflict] = useState(null);
+  const [proposals, setProposals] = useState({ list: [], loaded: false, unreadable: 0 }); // 제안 목록(메인·서브)
+  const [proposalDraft, setProposalDraft] = useState(null); // 서브가 보내려는 제안 {kind, target, value}
+  const [notice, setNotice] = useState(null); // 화면 아래 알림
+  const [hasMine, setHasMine] = useState(() => { try { return !!localStorage.getItem(MINE_KEY); } catch { return false; } });
   const syncRef = useRef(sync); syncRef.current = sync;
   const planRef = useRef(plan); planRef.current = plan;
+  const cfgRef = useRef(cfg); cfgRef.current = cfg;
+  const propCache = useRef(null); const accountCache = useRef({});
   const gh = useRef(makeGitHub()).current; const syncer = useRef(makeSync(gh)).current;
+  // 역할(E7 4절 2항): 토큰의 계정을 본문의 역할 목록과 대조한다. 연결 전에는 기기 안에서 자유롭게 편집한다
+  const role = resolveRole({ connected: sync.connected, hasToken: !!cfg.token, account: sync.account, roles: sync.roles });
+  const roleRef = useRef(role); roleRef.current = role;
+  const canEdit = can(role, "edit");
+  const deny = () => setNotice(roleRef.current === "sub" ? "서브 수립자는 계획을 직접 바꿀 수 없습니다. 장소의 선택·날짜·체류 시간·메모는 제안으로 보낼 수 있습니다." : "공유자는 열람만 할 수 있습니다.");
 
-  const setCfg = (c) => { setCfgState(c); try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch {} };
-  const setPlan = (next) => { const p = typeof next === "function" ? next(planRef.current) : next; setPlanState(p); savePlan(localStorage, p); if (syncRef.current.connected) setSyncState((s) => ({ ...s, dirty: true })); };
+  const setCfg = (c) => { cfgRef.current = c; setCfgState(c); try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch {} };
+  const setPlan = (next) => {
+    if (!can(roleRef.current, "edit")) { deny(); return; } // 역할에 없는 편집은 반영하지 않는다(R-22)
+    const p = typeof next === "function" ? next(planRef.current) : next; setPlanState(p); savePlan(localStorage, p); if (syncRef.current.connected) setSyncState((s) => ({ ...s, dirty: true }));
+  };
   const setTrip = (t) => setPlan((p) => ({ ...p, trip: t }));
-  const toggleSelect = (id) => setPlan((p) => planToggle(p, id));
+  // 서브 수립자의 편집 동작은 제안으로 바뀐다(와이어프레임 S4, E7 4절 6항)
+  const placeTarget = (id) => { const pl = getPlace(id); return { placeId: id, name: pl ? placeName(pl) : id, ...(String(id).startsWith("user:") && pl ? { place: pl } : {}) }; };
+  const dayOfPlace = (id) => Object.keys(planRef.current.days).find((d) => (planRef.current.days[d] || []).includes(id)) || null;
+  const propose = (kind, target = {}, value = {}) => { setNotice(null); setProposalDraft({ kind, target, value }); };
+  const toggleSelect = (id) => { if (roleRef.current === "sub") return propose(planRef.current.selection.includes(id) ? "remove" : "add", placeTarget(id)); setPlan((p) => planToggle(p, id)); };
+  const assignPlace = (id, d) => { if (roleRef.current === "sub") return propose("move", placeTarget(id), { date: d || null, from: dayOfPlace(id) }); setPlan((p) => assignDay(p, id, d)); };
+  const setDwell = (id, v) => { if (roleRef.current === "sub") return propose("dwell", placeTarget(id), { minutes: Number(v) }); setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } })); };
   const byId = new Map(data.tier1.map((p) => [p.id, p]));
   const getPlace = (id) => byId.get(id) || data.tier2cache.get(id) || plan.custom[id];
   const prof = profile(plan.trip, data.categories, DAY_CAPACITY);
   const nightsTotal = Math.max(0, tripDays(plan.trip) - 1);
   const recCounts = Object.fromEntries(plan.trip.cities.map((id) => [id, (data.cities.find((c) => c.id === id)?.places?.tier1) || 1]));
   const nights = cityNights(recCounts, nightsTotal, DAY_CAPACITY);
-  const role = cfg.token ? "메인 수립자" : sync.connected ? "공유자(열람)" : "로컬(미연결)";
   const detail = detailId ? getPlace(detailId) : null;
   const openDetail = (id) => setDetailId(id);
   const cityById = (id) => data.cities.find((c) => c.id === id);
@@ -98,6 +124,7 @@ export function App({ data, loader }) {
     return out;
   }
   async function runGenerate(onlyDate = null) {
+    if (!can(roleRef.current, "edit")) { deny(); return; }
     setGenBusy(true);
     try {
       const plan0 = planRef.current; const days = buildDays(plan0);
@@ -117,67 +144,152 @@ export function App({ data, loader }) {
     } catch (e) { alert("일정 생성 실패: " + (e.message || e)); } finally { setGenBusy(false); }
   }
 
-  // --- E7 ---
-  const repoOf = () => { const r = parseRepo(cfg.repo); if (!r) throw new Error("저장소 주소를 확인하세요."); return r; };
-  const onCheck = async () => { const { owner, repo } = repoOf(); const r = await gh.repo(owner, repo, cfg.token || undefined); setSyncState((s) => ({ ...s, rate: r.rate })); return `연결됨: ${owner}/${repo} (기본 브랜치 ${r.data.default_branch}, ${r.data.private ? "비공개" : "공개"})`; };
+  // --- E7: 여행 저장소 연결, 읽기·쓰기, 역할, 제안(E7 설계 4절) ---
+  const repoOf = () => { const r = parseRepo(cfgRef.current.repo); if (!r) throw new Error("저장소 주소를 확인하세요."); return r; };
+  const readMeta = () => { try { return JSON.parse(localStorage.getItem(SYNCMETA_KEY) || "null"); } catch { return null; } };
+  /** 토큰의 GitHub 계정(호출 1회, 토큰이 같으면 다시 묻지 않는다). 확인하지 못하면 null */
+  const whoAmI = async () => {
+    const token = cfgRef.current.token; if (!token) return null;
+    if (accountCache.current.token === token) return accountCache.current.login;
+    try { const login = (await gh.user(token)).data.login; accountCache.current = { token, login }; return login; } catch { return null; }
+  };
+  const onCheck = async () => { const { owner, repo } = repoOf(); const r = await gh.repo(owner, repo, cfgRef.current.token || undefined); setSyncState((s) => ({ ...s, rate: r.rate })); return `연결됨: ${owner}/${repo} (기본 브랜치 ${r.data.default_branch}, ${r.data.private ? "비공개" : "공개"})`; };
   const onInit = async () => {
-    const { owner, repo } = repoOf();
-    let account = null; try { account = (await gh.user(cfg.token)).data.login; } catch {}
-    const r = await syncer.init({ owner, repo, token: cfg.token, passphrase: cfg.key, account });
-    const body = { ...r.body, plan: planRef.current };
-    const s = await syncer.save({ owner, repo, token: cfg.token, key: r.key, body, baseCommit: r.commit, fileSha: r.sha, message: "저장: 초기 계획" });
-    setSyncState({ connected: true, dirty: false, key: r.key, meta: r.meta, commit: s.commit, sha: s.sha, date: new Date().toISOString(), role: "main", account, stale: false });
+    const { owner, repo } = repoOf(); const c = cfgRef.current;
+    const account = await whoAmI();
+    if (!account) throw new Error("토큰으로 GitHub 계정을 확인하지 못했습니다. 토큰을 확인하세요.");
+    const r = await syncer.init({ owner, repo, token: c.token, passphrase: c.key, account });
+    const body = { ...r.body, plan: planRef.current, applied: [] };
+    const s = await syncer.save({ owner, repo, token: c.token, key: r.key, body, baseCommit: r.commit, fileSha: r.sha, message: "저장: 초기 계획" });
+    propCache.current = null; setProposals({ list: [], loaded: true, unreadable: 0 });
+    setSyncState({ connected: true, dirty: false, key: r.key, meta: r.meta, commit: s.commit, sha: s.sha, date: new Date().toISOString(), account, roles: body.roles, applied: [], stale: false });
     return "초기화와 첫 저장 완료";
   };
-  const onLoad = async () => {
+  /** 제안 목록 새로 읽기(메인·서브). 디렉터리 1회 + 바뀐 파일만큼 호출한다 */
+  const refreshProposals = async (st = syncRef.current, r0 = roleRef.current) => {
+    if (!st.connected || !can(r0, "viewProposals")) { setProposals({ list: [], loaded: false, unreadable: 0 }); return "제안은 메인·서브 수립자만 볼 수 있습니다."; }
     const { owner, repo } = repoOf();
-    const r = await syncer.load({ owner, repo, token: cfg.token || undefined, passphrase: cfg.key, cachedKey: syncRef.current.key, cachedMeta: syncRef.current.meta });
-    if (r.notModified) return "변경 없음(최신)";
-    if (r.body.plan) { setPlanState(r.body.plan); savePlan(localStorage, r.body.plan); }
-    setSyncState({ connected: true, dirty: false, key: r.key, meta: r.meta, commit: r.commit, sha: r.sha, date: r.date, etag: r.etag, role: cfg.token ? "main" : "viewer", account: r.body.roles?.main, stale: false });
-    return `불러옴: ${r.commit.slice(0, 7)}`;
+    const r = await syncer.listProposals({ owner, repo, token: cfgRef.current.token, key: st.key, known: propCache.current });
+    propCache.current = r.cache; setProposals({ list: r.proposals, loaded: true, unreadable: r.unreadable });
+    return `제안 ${r.proposals.length}건`;
   };
-  const doSave = async (force = false) => {
-    const { owner, repo } = repoOf(); const s0 = syncRef.current;
-    const body = { roles: { main: s0.account || null, sub: [] }, plan: planRef.current };
-    const r = await syncer.save({ owner, repo, token: cfg.token, key: s0.key, body, baseCommit: force ? null : s0.commit, fileSha: force ? (await gh.getFile(owner, repo, "trip.json.enc", { token: cfg.token })).sha : s0.sha, message: "저장" });
+  /** 읽기(4절 3항). keepDraft: 저장 안 된 내 변경이 기기에 있으면 본문을 덮어쓰지 않고 기준 버전만 맞춘다 */
+  const onLoad = async ({ keepDraft = null } = {}) => {
+    const { owner, repo } = repoOf(); const c = cfgRef.current; const s0 = syncRef.current;
+    const args = { owner, repo, token: c.token || undefined, passphrase: c.key, cachedKey: s0.key, cachedMeta: s0.meta || readMeta()?.meta };
+    let r;
+    try { r = await syncer.load(args); }
+    catch (e) { if (!args.cachedMeta || !/복호화 실패/.test(e.message || "")) throw e; r = await syncer.load({ ...args, cachedKey: undefined, cachedMeta: undefined }); } // 저장소를 다시 초기화했으면 meta가 바뀐다
+    const account = await whoAmI();
+    const roles = r.body.roles || { main: null, sub: [] };
+    const next = { connected: true, dirty: false, key: r.key, meta: r.meta, commit: r.commit, sha: r.sha, date: r.date, etag: r.etag, account, roles, applied: r.body.applied || [], stale: false };
+    const nextRole = resolveRole({ connected: true, hasToken: !!c.token, account, roles });
+    if (keepDraft && can(nextRole, "edit")) { next.dirty = true; if (keepDraft.commit !== r.commit) { next.commit = keepDraft.commit; next.stale = true; } }
+    else if (r.body.plan) { setPlanState(r.body.plan); savePlan(localStorage, r.body.plan); }
+    setSyncState(next);
+    propCache.current = null;
+    if (can(nextRole, "viewProposals")) refreshProposals(next, nextRole).catch(() => {});
+    else setProposals({ list: [], loaded: false, unreadable: 0 });
+    return `불러옴: ${r.commit.slice(0, 7)} · ${ROLE_LABEL[nextRole]}${c.token && !account ? " (토큰으로 계정을 확인하지 못했습니다)" : ""}${next.dirty ? " · 저장 안 된 내 변경 유지" : ""}`;
+  };
+  /** 쓰기(4절 4~5항, 메인만). opts.plan을 주면 저장에 성공한 뒤에만 기기의 계획을 바꾼다(승인 반영) */
+  const doSave = async (force = false, opts = {}) => {
+    if (!can(roleRef.current, "save")) throw new Error("저장은 메인 수립자만 할 수 있습니다.");
+    const { owner, repo } = repoOf(); const c = cfgRef.current; const s0 = syncRef.current;
+    const roles = opts.roles || { main: s0.roles?.main || s0.account || null, sub: s0.roles?.sub || [] };
+    const applied = opts.applied || s0.applied || [];
+    const body = { roles, plan: opts.plan || planRef.current, applied };
+    const r = await syncer.save({ owner, repo, token: c.token, key: s0.key, body, baseCommit: force ? null : s0.commit, fileSha: force ? (await gh.getFile(owner, repo, "trip.json.enc", { token: c.token })).sha : s0.sha, message: opts.message || "저장" });
     if (r.conflict) { setConflict({ latest: r.latest, date: r.date }); throw new Error("다른 기기에서 먼저 저장했습니다. 처리 방법을 고르세요."); }
-    setSyncState((s) => ({ ...s, dirty: false, commit: r.commit, sha: r.sha, date: new Date().toISOString(), stale: false }));
+    if (opts.plan) { setPlanState(opts.plan); savePlan(localStorage, opts.plan); }
+    setSyncState((s) => ({ ...s, dirty: false, commit: r.commit, sha: r.sha, date: new Date().toISOString(), stale: false, roles, applied }));
     return `저장됨: ${r.commit.slice(0, 7)}`;
   };
   const onSave = () => doSave(false);
-  const onDisconnect = () => setSyncState({ connected: false, dirty: false });
-  // 자동 저장(유휴 2분)과 화면 복귀 시 최신 확인
+  const onDisconnect = () => { setSyncState({ connected: false, dirty: false }); setProposals({ list: [], loaded: false, unreadable: 0 }); propCache.current = null; try { localStorage.removeItem(SYNCMETA_KEY); } catch {} };
+  /** 서브 계정 목록 바꾸기(메인). 본문에 암호화되어 저장된다 */
+  const onSetSubs = async (logins) => { const s0 = syncRef.current; const main = s0.roles?.main || s0.account; return doSave(false, { roles: { main, sub: cleanSubs(main, logins) }, message: "저장: 역할 변경" }); };
+  /** 제안 보내기(서브). 본문 파일은 건드리지 않는다 */
+  const submitProposal = async (draft, memo) => {
+    if (!can(roleRef.current, "propose")) throw new Error("제안은 서브 수립자만 보낼 수 있습니다.");
+    const { owner, repo } = repoOf(); const s0 = syncRef.current;
+    const proposal = makeProposal({ author: s0.account, kind: draft.kind, target: draft.target, value: draft.value, memo, base: s0.commit, now: new Date().toISOString() });
+    await syncer.createProposal({ owner, repo, token: cfgRef.current.token, key: s0.key, proposal });
+    setProposalDraft(null); setNotice("제안을 보냈습니다. 메인 수립자가 승인하면 계획에 반영됩니다.");
+    refreshProposals().catch(() => {});
+  };
+  /** 승인·거절(메인). 승인은 본문에 반영한 커밋 → 제안 상태 커밋 순서다. 이미 반영된 제안은 상태만 바꾼다 */
+  const onDecide = async (p, status, note = "") => {
+    if (!can(roleRef.current, "decide")) throw new Error("승인·거절은 메인 수립자만 할 수 있습니다.");
+    const { owner, repo } = repoOf(); const s0 = syncRef.current;
+    if (status === "approved" && !(s0.applied || []).includes(p.id)) {
+      const r = applyProposal(planRef.current, p);
+      if (!r.ok) throw new Error(`계획에 반영할 수 없습니다: ${r.reason}`);
+      await doSave(false, { plan: r.plan, applied: [...(s0.applied || []), p.id], message: `승인 반영: ${p.id}` });
+    }
+    const d = await syncer.decide({ owner, repo, token: cfgRef.current.token, key: s0.key, proposal: p, status, by: s0.account, note });
+    await refreshProposals().catch(() => {});
+    if (d.conflict) throw new Error("다른 기기에서 이미 처리한 제안입니다. 목록을 새로 읽었습니다.");
+    return status === "approved" ? "승인해 계획에 반영했습니다. 일정표는 다시 생성하면 바뀝니다." : "거절했습니다.";
+  };
+  const onRestoreMine = () => { try { const mine = JSON.parse(localStorage.getItem(MINE_KEY) || "null"); if (!mine) return; setPlan(mine); if (can(roleRef.current, "edit")) { localStorage.removeItem(MINE_KEY); setHasMine(false); setNotice("보존한 내 변경을 다시 적용했습니다. 저장하면 저장소에 반영됩니다."); } } catch {} };
+  const onDropMine = () => { try { localStorage.removeItem(MINE_KEY); } catch {} setHasMine(false); };
+  // 마지막으로 읽은 버전과 저장 안 된 변경 여부를 기기에 적어 둔다(다음에 열 때 내 변경을 덮어쓰지 않기 위해)
+  useEffect(() => { if (!sync.connected) return; try { localStorage.setItem(SYNCMETA_KEY, JSON.stringify({ commit: sync.commit, dirty: !!sync.dirty, meta: sync.meta })); } catch {} }, [sync.connected, sync.commit, sync.dirty]);
+  // 앱을 열 때(4절 3항, R-21): 공유 링크의 ?repo=를 읽고, 저장소와 Key가 있으면 최신 계획을 읽는다
   useEffect(() => {
-    if (!sync.connected || !sync.dirty || !cfg.token) return;
+    let c = cfgRef.current;
+    try {
+      const q = new URLSearchParams(location.search).get("repo");
+      if (q && parseRepo(q) && q !== c.repo) { c = { repo: q }; setCfg(c); try { localStorage.removeItem(SYNCMETA_KEY); } catch {} } // 다른 여행의 Key·토큰은 쓰지 않는다
+    } catch {}
+    if (!parseRepo(c.repo)) return;
+    if (!c.key || validateKey(c.key)) { setTab("settings"); setNotice("공유받은 여행입니다. Key를 입력하고 불러오기를 누르세요."); return; }
+    const m = readMeta();
+    onLoad({ keepDraft: m && m.dirty ? m : null }).then((msg) => setNotice(msg)).catch((e) => setNotice(`여행 저장소를 읽지 못했습니다: ${e.message || e}`));
+  }, []);
+  // 자동 저장(유휴 2분, 메인)과 화면 복귀 시 최신 확인
+  useEffect(() => {
+    if (!sync.connected || !sync.dirty || role !== "main") return;
     const t = setTimeout(() => { doSave(false).catch(() => {}); }, AUTOSAVE_MS);
     return () => clearTimeout(t);
-  }, [sync.dirty, sync.connected, plan]);
+  }, [sync.dirty, sync.connected, plan, role]);
   useEffect(() => {
-    const onVis = async () => { if (document.visibilityState !== "visible" || !syncRef.current.connected) return; try { const { owner, repo } = repoOf(); const l = await gh.latestCommit(owner, repo, "trip.json.enc", cfg.token || undefined); if (l.sha && l.sha !== syncRef.current.commit) setSyncState((s) => ({ ...s, stale: true })); } catch {} };
+    const onVis = async () => {
+      if (document.visibilityState !== "visible" || !syncRef.current.connected) return;
+      try {
+        const { owner, repo } = repoOf(); const l = await gh.latestCommit(owner, repo, "trip.json.enc", cfgRef.current.token || undefined);
+        if (l.sha && l.sha !== syncRef.current.commit) { if (syncRef.current.dirty) setSyncState((s) => ({ ...s, stale: true })); else await onLoad(); } // 내 변경이 없으면 바로 최신으로 바꾼다
+        else if (can(roleRef.current, "viewProposals")) await refreshProposals();
+      } catch {}
+    };
     document.addEventListener("visibilitychange", onVis); return () => document.removeEventListener("visibilitychange", onVis);
   }, [cfg.repo, cfg.token]);
+  useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(null), 6000); return () => clearTimeout(t); }, [notice]);
+  const pendingCount = proposals.list.filter((x) => x.status === "pending").length;
 
   const titles = { input: "입력", explore: exploreTab === "summary" ? "요약" : "탐색·추천", plan: planTab === "arrange" ? "선택·배치" : "일정표", share: "공유", settings: "설정" };
   return html`
     <header class="top"><h1>${titles[tab]}</h1>
       ${tab === "explore" && html`<button class="chip" onClick=${() => setExploreTab(exploreTab === "summary" ? "explore" : "summary")}>${exploreTab === "summary" ? "탐색 ▶" : "◀ 요약"}</button>`}
       ${tab === "plan" && html`<button class="chip" onClick=${() => setPlanTab(planTab === "arrange" ? "itinerary" : "arrange")}>${planTab === "arrange" ? "일정표 ▶" : "◀ 배치"}</button>`}
-      ${sync.connected ? html`<button class=${"chip " + (sync.dirty ? "warn" : sync.stale ? "warn" : "ok")} title="버전" onClick=${() => { setTab("settings"); }}>${sync.commit ? sync.commit.slice(0, 7) : "—"}${sync.dirty ? " · 저장 필요" : sync.stale ? " · 오래됨" : " · 최신"}</button>` : html`<span class="version" title="데이터 갱신일">데이터 ${data.attribution.generated}</span>`}
+      ${sync.connected ? html`<button class=${"chip " + (sync.dirty ? "warn" : sync.stale ? "warn" : "ok")} title="버전" onClick=${() => { setTab("settings"); }}>${sync.commit ? sync.commit.slice(0, 7) : "—"}${sync.dirty ? " · 저장 필요" : sync.stale ? " · 오래됨" : " · 최신"}${role === "sub" ? " · 서브" : role === "viewer" ? " · 열람" : ""}${role === "main" && pendingCount ? ` · 제안 ${pendingCount}` : ""}</button>` : html`<span class="version" title="데이터 갱신일">데이터 ${data.attribution.generated}</span>`}
     </header>
     <main class="main">
-      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${cfg.token || !sync.connected ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
+      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${canEdit ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
       ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} onReselect=${() => setTab("input")} onExplore=${(cid) => { setExploreCity(cid); setExploreTab("explore"); }} />`}
-      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} />`}
-      ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${(id, d) => setPlan((p) => assignDay(p, id, d))} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} />`}
-      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${(id, v) => setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } }))} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { setPlan((pl) => assignDay(pl, id, d)); setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} />`}
+      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} role=${role} />`}
+      ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${assignPlace} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} role=${role} />`}
+      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${setDwell} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { assignPlace(id, d); if (canEdit) setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} role=${role} />`}
     ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: cityById, trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
-      ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} />`}
-      ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${onLoad} onSave=${onSave} onDisconnect=${onDisconnect} />`}
+      ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} role=${role} account=${sync.account} proposals=${proposals} onRefreshProposals=${() => refreshProposals()} onDecide=${onDecide} onProposeMemo=${() => propose("memo")} />`}
+      ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${() => onLoad()} onSave=${onSave} onDisconnect=${onDisconnect} onSetSubs=${onSetSubs} hasMine=${hasMine} onRestoreMine=${onRestoreMine} onDropMine=${onDropMine} />`}
     </main>
-    ${detail && html`<${S6Detail} place=${detail} categories=${data.categories} loader=${loader} e5Index=${data.e5Index} onClose=${() => setDetailId(null)} selected=${plan.selection.includes(detail.id)} onToggleSelect=${() => toggleSelect(detail.id)} cityPlaces=${cityPlacesOf(detail.city)} prof=${prof} reservation=${plan.reservations[detail.id]} onSetReservation=${(v) => setPlan((p) => ({ ...p, reservations: { ...p.reservations, [detail.id]: v } }))} onOpenDetail=${openDetail} />`}
+    ${detail && html`<${S6Detail} place=${detail} categories=${data.categories} loader=${loader} e5Index=${data.e5Index} onClose=${() => setDetailId(null)} selected=${plan.selection.includes(detail.id)} onToggleSelect=${role === "viewer" ? null : () => toggleSelect(detail.id)} cityPlaces=${cityPlacesOf(detail.city)} prof=${prof} reservation=${plan.reservations[detail.id]} onSetReservation=${canEdit ? (v) => setPlan((p) => ({ ...p, reservations: { ...p.reservations, [detail.id]: v } })) : null} onOpenDetail=${openDetail} role=${role} notes=${(plan.notes || []).filter((n) => n.placeId === detail.id)} onProposeMemo=${role === "sub" ? () => propose("memo", placeTarget(detail.id)) : null} />`}
     ${conflict && html`<div class="sheet" role="dialog" aria-label="저장 충돌"><h2>저장 충돌</h2><p>다른 기기에서 먼저 저장했습니다${conflict.date ? ` (${new Date(conflict.date).toLocaleString("ko-KR")})` : ""}. 어떻게 할까요?</p>
-      <div class="row"><button class="btn" onClick=${async () => { const mine = planRef.current; try { await onLoad(); localStorage.setItem("trip01.plan.mine.v1", JSON.stringify(mine)); } catch {} setConflict(null); }}>최신 불러오기 (내 변경은 기기에 보존)</button>
+      <div class="row"><button class="btn" onClick=${async () => { const mine = planRef.current; try { await onLoad(); localStorage.setItem(MINE_KEY, JSON.stringify(mine)); setHasMine(true); setNotice("최신 계획을 불러왔습니다. 내 변경은 설정 화면에서 다시 적용할 수 있습니다."); } catch {} setConflict(null); }}>최신 불러오기 (내 변경은 기기에 보존)</button>
       <button class="btn secondary" onClick=${async () => { if (confirm("정말 내 변경으로 덮어쓸까요? 상대의 변경이 사라집니다.")) { try { await doSave(true); } catch {} setConflict(null); } }}>덮어쓰기</button></div></div>`}
+    ${proposalDraft && html`<${ProposalSheet} draft=${proposalDraft} dates=${dateList(plan.trip)} describe=${(d) => describeProposal({ ...d, memo: d.memo || "" }, (id) => { const pl = getPlace(id); return pl ? placeName(pl) : null; }, dayOfPlace)} onSubmit=${submitProposal} onClose=${() => setProposalDraft(null)} />`}
+    ${notice && html`<div class="toast" role="status" onClick=${() => setNotice(null)}>${notice}</div>`}
     <nav class="tabs" aria-label="주 탐색">${TABS.map(([k, label, ico]) => html`<button class=${tab === k ? "on" : ""} onClick=${() => { setTab(k); setDetailId(null); }} aria-current=${tab === k ? "page" : undefined}><span class="ico" aria-hidden="true">${ico}</span>${label}</button>`)}</nav>`;
 }
