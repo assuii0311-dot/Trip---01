@@ -1,0 +1,42 @@
+[
+ {
+  "id": "osm:n5168232722",
+  "reason": "장소 이름(Travel Bar)과 출처 항목 이름(Travellers Nest Bar)이 달라 같은 곳인지 출처만으로 확인할 수 없다."
+ },
+ {
+  "id": "osm:n5584460625",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소는 식당 Quim de la Boqueria인데 출처는 보케리아 시장 전체(Mercado de La Boqueria)의 가게들을 설명한다."
+ },
+ {
+  "id": "osm:n5796867774",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소 이름은 Gran Hotel Havana인데 출처 항목 이름은 Hotel Granvia이고, 같은 묶음에 Hotel Granvia(osm:n7083925257)가 따로 있다."
+ },
+ {
+  "id": "osm:n5924253688",
+  "reason": "출처 글이 다른 장소를 설명하는 것으로 보인다. 장소 이름은 Hotel Pelayo Barcelona인데 출처 항목 이름은 Expo Hotel Barcelona(객실 425개, 산츠역 근처)다."
+ },
+ {
+  "id": "osm:n6071071077",
+  "reason": "장소 이름(Hotel Limonaia)과 출처 항목 이름(Hotel Omm)이 달라 같은 호텔인지 출처만으로 확인할 수 없다."
+ },
+ {
+  "id": "osm:n6586975170",
+  "reason": "출처 글이 다른 장소를 설명하는 것으로 보인다. 장소 이름은 Hostal Live Barcelona인데 출처 항목 이름은 Hotel Soho Barcelona(2006년에 지은 디자인 호텔)다."
+ },
+ {
+  "id": "osm:n6743230338",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소 이름은 Tamara Restaurant인데 출처는 식당 'Gaig'를 설명한다."
+ },
+ {
+  "id": "osm:n8148351222",
+  "reason": "장소는 Cafe Apolo(카페)인데 출처는 클럽·공연장 Sala Apolo를 설명한다. 같은 곳인지 출처만으로 확인할 수 없다."
+ },
+ {
+  "id": "osm:n824993418",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소 이름은 Le Méridien Barcelona인데 출처 항목 이름은 Citadines Ramblas Barcelona이고 내용도 스튜디오·아파트형 숙소 설명이다."
+ },
+ {
+  "id": "osm:n824310260",
+  "reason": "장소 이름(INNSiDE by Meliá Barcelona Apolo)과 출처 항목 이름(Tryp Barcelona Apolo Hotel)이 달라 같은 호텔인지 출처만으로 확인할 수 없다. 내용도 건물이 낡았다는 평가가 대부분이다."
+ }
+]

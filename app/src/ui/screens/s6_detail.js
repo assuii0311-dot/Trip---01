@@ -9,7 +9,7 @@ import { reservationHint, placeAlternatives } from "../../engines/e2.js";
 
 const CV = { match: ["ok", "일치"], mismatch: ["warn", "불일치"], single: ["x", "단일 출처"], user: ["user", "사용자 추가"] };
 
-export function S6Detail({ place: p, categories, loader, e5Index, onClose, selected, onToggleSelect, cityPlaces = [], prof, reservation, onSetReservation, onOpenDetail, role = "local", notes = [], onProposeMemo, cityName = "" }) {
+export function S6Detail({ place: p, categories, loader, e5Index, onClose, selected, onToggleSelect, cityPlaces = [], prof, reservation, onSetReservation, onOpenDetail, role = "local", notes = [], onProposeMemo, cityName = "", docked = false, alts: altsIn = null }) {
   const [src, setSrc] = useState(null);
   useEffect(() => {
     let alive = true;
@@ -52,8 +52,9 @@ export function S6Detail({ place: p, categories, loader, e5Index, onClose, selec
   const [cvKind, cvLabel] = CV[p.cv] || CV.single;
   const wd = (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "ko") || (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "en");
   const hint = reservationHint(p);
-  const alts = prof ? placeAlternatives(p, cityPlaces, prof.weights) : [];
-  return html`<div class="sheet" role="dialog" aria-label=${name}>
+  const alts = altsIn || (prof ? placeAlternatives(p, cityPlaces, prof.weights) : []);
+  // docked: 지도와 목록이 나란한 화면(아이패드)에서는 목록 칸 위에만 띄워 지도와 대안 표시를 가리지 않는다(D-039)
+  return html`<div class=${"sheet" + (docked ? " docked" : "")} role="dialog" aria-label=${name}>
     <button class="close" aria-label="닫기" onClick=${onClose}>✕</button>
     <h2>${name}${p.n?.ko_src === "generated" && html` <span class="chip x">생성</span>`}</h2>
     ${alt && html`<div class="alt">${alt}</div>`}
@@ -94,7 +95,7 @@ export function S6Detail({ place: p, categories, loader, e5Index, onClose, selec
       ${p.links?.enwiki && html` · <a href=${"https://en.wikipedia.org/wiki/" + encodeURIComponent(p.links.enwiki)} target="_blank" rel="noopener">en.wikipedia</a>`}
       ${p.links?.kowiki && html` · <a href=${"https://ko.wikipedia.org/wiki/" + encodeURIComponent(p.links.kowiki)} target="_blank" rel="noopener">ko.wikipedia</a>`}
       ${p.links?.web && html` · <a href=${p.links.web} target="_blank" rel="noopener">웹사이트</a>`}</div>
-    ${alts.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">대안 장소 <span class="note">같은 범주, 2km 안</span></h3>${alts.map((a) => html`<div class="row" style="padding:4px 0"><a href="#" style="flex:1" onClick=${(e) => { e.preventDefault(); onOpenDetail && onOpenDetail(a.p.id); }}>${CAT_ICON[a.p.cat[0]] || ""} ${placeName(a.p)}</a><span class="note">${Math.round(a.dist)}m · ${a.score.toFixed(2)}</span></div>`)}`}
+    ${alts.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">대안 장소 <span class="note">같은 범주, 2km 안${docked ? " · 지도에 보라색으로 표시" : ""}</span></h3>${alts.map((a) => html`<div class="row" style="padding:4px 0"><a href="#" style="flex:1" onClick=${(e) => { e.preventDefault(); onOpenDetail && onOpenDetail(a.p.id); }}>${CAT_ICON[a.p.cat[0]] || ""} ${placeName(a.p)}</a><span class="note">${Math.round(a.dist)}m · ${a.score.toFixed(2)}</span></div>`)}`}
     ${notes.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">메모</h3>${notes.map((n) => html`<p class="memo">${n.text} <span class="note">— ${n.by}</span></p>`)}`}
     ${(onToggleSelect || onProposeMemo) && html`<div class="row" style="margin-top:16px">
       ${onToggleSelect && html`<button class="btn" onClick=${onToggleSelect}>${role === "sub" ? (selected ? "삭제 제안" : "추가 제안") : selected ? "선택 해제" : "+ 선택"}</button>`}

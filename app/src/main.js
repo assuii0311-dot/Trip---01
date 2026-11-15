@@ -9,10 +9,10 @@ const root = document.getElementById("app");
 const loader = makeLoader("data/");
 (async () => {
   try {
-    const [attribution, cities0, categoriesFile, airports, tier1raw, regions, e5, e5Index] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1(), loader.regions().catch(() => []), loader.e5Destinations().catch(() => null), loader.e5Index().catch(() => null)]);
+    const [attribution, cities0, categoriesFile, airports, tier1raw, regions, e5, e5Index, e5Lines] = await Promise.all([loader.attribution(), loader.cities(), loader.categories(), loader.airports(), loader.tier1(), loader.regions().catch(() => []), loader.e5Destinations().catch(() => null), loader.e5Index().catch(() => null), loader.e5Lines().catch(() => null)]);
     const cities = applyDestinationKo(cities0, e5); // 여행지 한국어 소개와 생성 이름(E5). 파일이 없으면 영문 소개를 그대로 쓴다
-    const tier1 = applyPlaceKo(tier1raw, e5Index); // 장소의 생성 한글 이름(E5). 색인이 없으면 그대로 쓴다
-    const data = { attribution, cities, categories: categoriesFile.categories, airports, tier1, regions, e5Index, tier2cache: new Map() };
+    const tier1 = applyPlaceKo(tier1raw, e5Index, e5Lines); // 장소의 생성 한글 이름과 한 줄 설명(E5). 파일이 없으면 그대로 쓴다
+    const data = { attribution, cities, categories: categoriesFile.categories, airports, tier1, regions, e5Index, e5Lines, tier2cache: new Map() };
     render(h(App, { data, loader }), root);
   } catch (e) {
     root.innerHTML = `<div class="boot">데이터를 읽지 못했습니다. ${String(e.message || e)}<br><span class="note">기준 데이터(data/)가 배포되어 있는지 확인하세요.</span></div>`;

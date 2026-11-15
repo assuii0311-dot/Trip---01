@@ -1,0 +1,30 @@
+[
+ {
+  "id": "osm:n12914396401",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소 이름은 Pensión Coral인데 출처는 'Pensio Alamar'를 설명한다."
+ },
+ {
+  "id": "osm:n1488979955",
+  "reason": "출처 글이 다른 장소를 설명하는 것으로 보인다. 장소 이름은 Citrus인데 출처 항목 이름은 Vinitus이고 내용도 'Tapas and seafood' 한 구절뿐이다."
+ },
+ {
+  "id": "osm:n2500570194",
+  "reason": "출처 글이 다른 장소를 설명한다. 장소는 카페(Bar de la Universitat)인데 출처는 대학교의 건물·도서관·안뜰을 설명한다."
+ },
+ {
+  "id": "osm:n3517276341",
+  "reason": "장소 이름(Mercure Barcelona Condor)과 출처 항목 이름(Mercure Alberta Barcelona)이 달라 같은 호텔인지 출처만으로 확인할 수 없다. 내용도 대부분 객실 상태와 값에 대한 평가다."
+ },
+ {
+  "id": "osm:n3784437554",
+  "reason": "출처 글이 다른 장소를 설명하는 것으로 보인다. 장소 이름은 Hostel Bruc Barcelona인데 출처 항목 이름은 987 Barcelona Hotel이고 내용도 'New modern design hotel, free WiFi'뿐이다."
+ },
+ {
+  "id": "osm:n4253863589",
+  "reason": "출처 글이 다른 장소를 설명하는 것으로 보인다. 장소 이름은 Al Baraka인데 출처 항목 이름은 Alba Granados(현대 스페인 요리 식당)다."
+ },
+ {
+  "id": "osm:n4401234193",
+  "reason": "출처가 'Closed September 2025. Entry to be removed'라는 폐업 알림뿐이고 무엇인지 알 수 있는 내용이 없다."
+ }
+]

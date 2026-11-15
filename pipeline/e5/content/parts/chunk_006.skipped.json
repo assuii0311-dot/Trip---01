@@ -1,0 +1,26 @@
+[
+ {
+  "id": "Q99484779",
+  "reason": "출처 글(위키보야지 es)이 샘(Font de la Portaferrissa)이 아니라 포르타페리사 거리(Carrer de la Portaferrissa)를 설명하고, 샘에 관한 내용이 없다."
+ },
+ {
+  "id": "Q113664131",
+  "reason": "출처가 '위쪽 역'(위키보야지) 한 낱말과 '바르셀로나의 명판'(위키데이터)뿐이고 서로 맞지 않아 무엇인지 쓸 수 없다."
+ },
+ {
+  "id": "osm:n4709153790",
+  "reason": "출처 글이 다른 가게(Xocoa, The Chocolate Factory)를 설명한다. 장소 이름은 Cacao Sampaka다."
+ },
+ {
+  "id": "osm:n4857181693",
+  "reason": "출처 글이 가게(Forn de Vallvidrera, 범주 market)가 아니라 발비드레라 마을을 설명한다."
+ },
+ {
+  "id": "osm:n6295306685",
+  "reason": "출처 글이 가게(Petritxol Xocoa, 범주 market)가 아니라 페트리촐 거리(Carrer Petritxol)를 설명한다."
+ },
+ {
+  "id": "osm:w1105836965",
+  "reason": "출처 글이 벤치(Banc del Park Güell)가 아니라 공원 정문의 건물과 계단, 용 분수를 설명한다."
+ }
+]

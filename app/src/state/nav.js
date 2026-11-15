@@ -4,12 +4,12 @@ export const NAV_KEY = "trip01.nav.v1";
 export const TABS = ["input", "explore", "plan", "share", "settings"];
 export const EXPLORE_TABS = ["summary", "explore"];
 export const PLAN_TABS = ["arrange", "itinerary"];
-export const INPUT_STEPS = 4;
+export const INPUT_STEPS = 3; // 기본 정보 → 취향·여행지 → 공항·여행 형태(D-039)
 
 export function defaultNav() {
   return {
     tab: "input", inputStep: 1, exploreTab: "summary", planTab: "arrange", detail: null,
-    input: { q: "", kind: "all", focus: [], region: "" },
+    input: { q: "", kind: "all", rec: false, region: "" },
     explore: { city: null, list: null, q: "", cats: [], balance: null },
   };
 }
@@ -68,7 +68,7 @@ export function sanitizeNav(raw, { cityIds = [], hasPlace = () => false } = {}) 
     exploreTab: EXPLORE_TABS.includes(r.exploreTab) ? r.exploreTab : d.exploreTab,
     planTab: PLAN_TABS.includes(r.planTab) ? r.planTab : d.planTab,
     detail: typeof r.detail === "string" && hasPlace(r.detail) ? r.detail : null,
-    input: { q: str(ri.q), kind: ["all", "city", "island"].includes(ri.kind) ? ri.kind : "all", focus: strs(ri.focus), region: str(ri.region) },
+    input: { q: str(ri.q), kind: ["all", "city", "island"].includes(ri.kind) ? ri.kind : "all", rec: ri.rec === true, region: str(ri.region) },
     explore: { city: cityIds.includes(re.city) ? re.city : null, list: ["rec", "all"].includes(re.list) ? re.list : null, q: str(re.q), cats: strs(re.cats), balance: ["landmark", "balance", "other"].includes(re.balance) ? re.balance : null },
   };
 }
@@ -83,6 +83,6 @@ export function loadNav(storage) {
 
 /** 걸어 둔 필터 수(검색어 포함). 0이면 '필터 지우기'를 보이지 않는다 */
 export const exploreFilterCount = (e) => (e.q.trim() ? 1 : 0) + e.cats.length;
-export const inputFilterCount = (i) => (i.q.trim() ? 1 : 0) + (i.kind !== "all" ? 1 : 0) + i.focus.length + (i.region ? 1 : 0);
+export const inputFilterCount = (i) => (i.q.trim() ? 1 : 0) + (i.kind !== "all" ? 1 : 0) + (i.rec ? 1 : 0) + (i.region ? 1 : 0);
 export const clearedExplore = () => ({ q: "", cats: [] });
-export const clearedInput = () => ({ q: "", kind: "all", focus: [], region: "" });
+export const clearedInput = () => ({ q: "", kind: "all", rec: false, region: "" });

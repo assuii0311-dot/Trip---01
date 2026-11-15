@@ -3,12 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "../../lib.js";
 import { exploreFilterCount, clearedExplore } from "../../state/nav.js";
 import { html, Chip, Empty } from "../components/ui.js";
 import { createMap } from "../components/map.js";
-import { filterPlaces, sortByProminence, placeName, altNames, isForeignLandmark } from "../../data/places.js";
-import { recommend, cityAlternatives } from "../../engines/e2.js";
+import { filterPlaces, sortByProminence, placeName, altNames, isForeignLandmark, placeLine } from "../../data/places.js";
+import { recommendForDestination, cityAlternatives } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
 import { inDest, destName, isIsland } from "../../data/dest.js";
 
-export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, ui, setUi, role = "local" }) {
+export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, ui, setUi, role = "local", altIds = [] }) {
   const canPick = role !== "viewer"; // 공유자는 열람만(R-22). 서브 수립자의 선택은 제안으로 보내진다
   const tripCities = trip.cities.length ? trip.cities : cities.filter((c) => c.stratum === "big").sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 10).map((c) => c.id);
   // 보던 도시, 추천/전체, 검색어, 범주 필터, 추천 기준은 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
@@ -33,12 +33,13 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
   const all = useMemo(() => tier1.filter((p) => inDest(p, city)).concat(tier2), [tier1, tier2, cityId]); // 섬이면 소속 지자체의 장소를 모두 본다(D-030)
   const shown = useMemo(() => sortByProminence(filterPlaces(all, { cats, query: q })).slice(0, 300), [all, cats, q]);
   const recOpts = { weights: prof.weights, dayCapacity: prof.dayCapacity, nights: nights?.[cityId] || 1, balance };
-  const recs = useMemo(() => (tab === "rec" ? recommend(all.filter((p) => p.tier === 1 || p.cat.some((c) => ["restaurant", "cafe", "market"].includes(c))), recOpts) : []), [all, tab, prof, balance, nights, cityId]);
+  const recs = useMemo(() => (tab === "rec" ? recommendForDestination(all, recOpts) : []), [all, tab, prof, balance, nights, cityId]);
   const alts = useMemo(() => (altOpen ? cityAlternatives(all.filter((p) => p.tier === 1), { ...recOpts, limit: 8 }) : null), [altOpen, all, prof, nights, cityId]);
   const listed = tab === "rec" ? recs.map((r) => r.p) : shown;
   // 지도에는 목록의 장소와 함께 이 여행지에서 이미 고른 장소를 언제나 보인다(목록의 필터에 걸려 빠졌더라도)
   const picked = useMemo(() => new Set(selection), [selection]);
-  const mapList = useMemo(() => { const ids = new Set(listed.map((p) => p.id)); return listed.concat(all.filter((p) => picked.has(p.id) && !ids.has(p.id))); }, [listed, all, picked]);
+  const alt = useMemo(() => new Set(altIds), [altIds.join(",")]); // 열어 본 장소의 대안(D-039). 지도에 따로 표시한다
+  const mapList = useMemo(() => { const ids = new Set(listed.map((p) => p.id)); return listed.concat(all.filter((p) => (picked.has(p.id) || alt.has(p.id)) && !ids.has(p.id))); }, [listed, all, picked, alt]);
   const pickedHere = useMemo(() => all.filter((p) => picked.has(p.id)).length, [all, picked]);
   useEffect(() => {
     if (!mapEl.current || mapRef.current) return;
@@ -46,8 +47,8 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
   }, []);
   useEffect(() => {
     const m = mapRef.current; if (!m) return;
-    m.setPlaces(mapList, { selectedId, isLandmark: isForeignLandmark, picked });
-  }, [mapList, selectedId, picked]);
+    m.setPlaces(mapList, { selectedId, isLandmark: isForeignLandmark, picked, alt });
+  }, [mapList, selectedId, picked, alt]);
   // 지도의 보는 범위는 도시나 목록 조건이 바뀔 때만 옮긴다(장소를 고르거나 상세를 열 때는 그대로 둔다)
   useEffect(() => {
     const m = mapRef.current; if (!m) return;
@@ -67,7 +68,7 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
         <p class="note" style="padding:0 16px">${city ? `${destName(city)} · 추천 ${recs.length}곳(하루 ${prof.dayCapacity}곳 × ${nights?.[cityId] || 1}박 × 1.5)` : ""}${loading ? " · 읽는 중…" : ""} · 점수 = 취향 0.5 + 대표성 0.4 + 유산 0.1</p>
         ${recs.length === 0 ? html`<${Empty}>${loading ? "읽는 중…" : "추천할 장소가 없습니다."}</${Empty}>` : recs.map((r) => html`<div class=${"card " + (selection.includes(r.p.id) ? "sel" : "")} key=${r.p.id} onClick=${() => onOpenDetail(r.p.id)}>
           <div class="ico">${CAT_ICON[r.p.cat[0]] || "📍"}</div>
-          <div class="body"><div class="title">${placeName(r.p)}</div>${altNames(r.p) && html`<div class="sub">${altNames(r.p)}</div>`}
+          <div class="body"><div class="title">${placeName(r.p)}</div>${altNames(r.p) && html`<div class="sub">${altNames(r.p)}</div>`}${(() => { const ln = placeLine(r.p); return ln && html`<div class=${"line " + (ln.lang === "ko" ? "" : "orig")}>${ln.text}</div>`; })()}
             <div class="meta chips">${r.landmark ? html`<${Chip} kind="star">★ 대표 명소</${Chip}>` : html`<${Chip} kind="est">그 밖의 장소</${Chip}>`}${r.p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}<${Chip} kind="ok">${r.score.toFixed(2)} · ${r.reasons.join(", ")}</${Chip}>${r.p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}</div></div>
           ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(r.p.id); }}>${selection.includes(r.p.id) ? "✓" : "+"}</button>`}</div>`)}
         ${altOpen && alts && html`<div class="sheet" role="dialog" aria-label="대안"><button class="close" aria-label="닫기" onClick=${() => setAltOpen(false)}>✕</button>
@@ -79,11 +80,11 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
         <p class="note" style="padding:0 16px">${city ? `${destName(city)} · 1등급 ${city.places?.tier1 ?? 0}곳, 2등급 ${city.places?.tier2 ?? 0}곳` : ""}${loading ? " · 2등급 읽는 중…" : ""} · 표시 ${shown.length}곳${nFilters > 0 ? html` · <button type="button" class="linkbtn" onClick=${() => patch(clearedExplore())}>필터 지우기</button>` : ""}${shown.length === 300 ? " (상위 300)" : ""}</p>
         ${shown.length === 0 ? html`<${Empty}>${loading ? "읽는 중…" : "조건에 맞는 장소가 없습니다."}</${Empty}>` : shown.map((p) => html`<div class=${"card " + (selection.includes(p.id) ? "sel" : "")} key=${p.id} onClick=${() => onOpenDetail(p.id)}>
           <div class="ico">${CAT_ICON[p.cat[0]] || "📍"}</div>
-          <div class="body"><div class="title">${placeName(p)}</div>${altNames(p) && html`<div class="sub">${altNames(p)}</div>`}
+          <div class="body"><div class="title">${placeName(p)}</div>${altNames(p) && html`<div class="sub">${altNames(p)}</div>`}${(() => { const ln = placeLine(p); return ln && html`<div class=${"line " + (ln.lang === "ko" ? "" : "orig")}>${ln.text}</div>`; })()}
             <div class="meta chips">${isForeignLandmark(p) && html`<${Chip} kind="star">★ 대표 명소</${Chip}>`}${p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}${p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}${p.ver === false && html`<${Chip} kind="x">◌ 검증 안 됨</${Chip}>`}${p.tier === 1 && html`<${Chip} kind="est">1등급</${Chip}>`}</div></div>
           ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(p.id); }}>${selection.includes(p.id) ? "✓" : "+"}</button>`}</div>`)}`}
     </div>
     <div class="mapwrap"><div class=${"map " + (mapOpen ? "" : "collapsed")} ref=${mapEl}></div>
-      ${mapOpen && html`<div class="maplegend" aria-label="지도 표시"><span><i class="dot picked"></i>고른 곳 ${pickedHere}</span><span><i class="dot landmark"></i>대표 명소</span><span><i class="dot other"></i>그 밖</span></div>`}</div>
+      ${mapOpen && html`<div class="maplegend" aria-label="지도 표시"><span><i class="dot picked"></i>고른 곳 ${pickedHere}</span>${alt.size > 0 && html`<span><i class="dot alt"></i>대안 ${alt.size}</span>`}<span><i class="dot landmark"></i>대표 명소</span><span><i class="dot other"></i>그 밖</span></div>`}</div>
   </div>`;
 }

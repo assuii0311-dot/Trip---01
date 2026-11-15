@@ -105,6 +105,8 @@ def test_place_build_exports_shards_index_and_generated_names():
     assert mon["detail"] == [] and mon["confidence"] == "보통" and mon["name_ko"] == "하우메 1세 기념비"
     assert index["names"] == {"Q109983399": "하우메 1세 기념비"} and index["places"] == 2 and index["place_shards"] == sorted({pl.shard_of("Q461371"), pl.shard_of("Q109983399")})
     assert rep["count"] == 2 and rep["names"] == 1 and not rep["invalid"] and not rep["stale"]
+    assert pl.one_liners(shards) == {"Q461371": "카사 바트요는 안토니 가우디(Antoni Gaudí)가 고쳐 지은 건물이다.", "Q109983399": "하우메 1세 기념비는 함대의 출항을 기리는 기념물이다."}
+    assert pl.first_sentence("높이는 2,444m다. 돌출 높이는 995m다.") == "높이는 2,444m다." and pl.first_sentence("끝이 없는 글") == "끝이 없는 글" and pl.first_sentence("") == ""
 
 
 def test_place_build_holds_back_stale_invalid_unknown_and_sourceless():
@@ -144,3 +146,44 @@ def test_wikipedia_extract_titles_and_response_mapping():
     data = {"query": {"normalized": [{"from": "casa batlló", "to": "Casa batlló"}], "redirects": [{"from": "Casa batlló", "to": "Casa Batlló"}],
                       "pages": {"1": {"title": "Casa Batlló", "extract": " La Casa Batlló es un edificio. "}, "-1": {"title": "Nada"}}}}
     assert wx.parse_response(data) == {"casa batlló": "La Casa Batlló es un edificio."} and wx.parse_response({}) == {}
+    b = {**PLACE, "id": "Q2", "desc": [{"src": "wikipedia", "lang": "es", "title": "Alhambra"}, {"src": "wikipedia", "lang": "es", "title": "Casa Batlló"}]}
+    assert wx.titles_of([PLACE, b], ["Q2", "Q461371"])["es"] == ["Alhambra", "Casa Batlló"]  # ID 목록의 순서, 중복 없음
+    assert wx.next_delay(1.0, True) == 2.0 and wx.next_delay(8.0, True) == 10.0 and wx.next_delay(2.0, False) == 1.8 and wx.next_delay(1.0, False) == 1.0
+
+
+# --- 전수 생성 도구(E5 4절 10항, D-038)
+from pipeline.e5 import scope as sc  # noqa: E402
+
+
+def test_scope_takes_top_places_per_destination_plus_highlights_once():
+    def place(i, city, sl, cat="heritage", text=True, tier=1):
+        return {"id": f"Q{i}", "tier": tier, "city": city, "cat": [cat], "pop": {"sl": sl, "pv": {"en": i, "es": 0}}, "desc": [{"src": "wikipedia", "lang": "es", "title": f"T{i}"}] if text else [{"src": "wikidata", "lang": "es", "text": "x"}]}
+    cities = [{"id": "A", "dest": {"rank": 2}, "hl": [{"id": "Q5"}]}, {"id": "ISL", "kind": "island", "members": ["A", "B"], "dest": {"rank": 1}, "hl": []}, {"id": "B", "dest": None}, {"id": "C", "dest": None}]
+    places = [place(1, "A", 50), place(2, "A", 40), place(3, "A", 30, text=False), place(4, "A", 20, cat="cafe"), place(5, "A", 1), place(6, "B", 45), place(7, "C", 99), place(8, "A", 60, tier=2)]
+    out = sc.select_scope(places, cities, top=2)
+    assert [(r["id"], r["dest"], r["rank"]) for r in out] == [("Q1", "ISL", 1), ("Q6", "ISL", 2), ("Q2", "A", 2), ("Q5", "A", 3)]  # 섬이 먼저 가져간 Q1은 도시 A에서 다시 나오지 않는다
+    assert [r["hl"] for r in out] == [False, False, False, True] and out == sc.select_scope(list(reversed(places)), cities, top=2)
+    assert [r["id"] for r in sc.select_scope(places, cities, top=3, text_only=True, exclude={"Q1"})] == ["Q6", "Q2", "Q5"]  # 글 출처 없는 Q3과 이미 만든 Q1 제외
+    assert [r["id"] for r in sc.select_scope(places, cities, top=0, all_cats=True)] == ["Q1", "Q6", "Q2", "Q3", "Q5", "Q4"]  # 전부: 볼거리 먼저, 그 밖의 범주(Q4)는 뒤
+
+
+def test_chunks_check_and_merge_for_bulk_generation():
+    b = bundles()
+    cities = [{"id": "Q1492", "n": {"ko": "바르셀로나"}}, {"id": "Q662789", "n": {"es": "Salou"}}]
+    nosrc = {"id": "Qx", "tier": 1, "city": "Q1492", "cat": ["heritage"], "n": {"local": "X"}, "desc": [{"src": "wikidata", "lang": "en", "text": "building"}]}
+    chunks = pl.make_chunks(["Q461371", "Qx", "Q109983399"], [PLACE, MONUMENT, nosrc], cities, {**b, "Qx": pl.source_bundle(nosrc, {}, {})}, size=1)
+    assert [[c["id"] for c in ch] for ch in chunks] == [["Q461371"], ["Q109983399"]]  # 글 출처 없는 Qx는 빠지고 묶음 크기 1
+    one = chunks[0][0]
+    assert one["city"] == "바르셀로나" and one["name_ko_needed"] is False and one["src_md5"] == pl.source_md5(b["Q461371"]) and one["names"]["ko"] == "카사 바트요"
+    assert chunks[1][0]["name_ko_needed"] is True and chunks[1][0]["city"] == "Salou"
+    assert pl.is_ready(MONUMENT, set()) and not pl.is_ready(PLACE, {("es", "Casa Batlló")}) and pl.is_ready(PLACE, {("es", "Casa Batlló"), ("ko", "카사 바트요")})  # 위키백과 문서를 모두 받아 본 장소만 준비됨
+    good = {**REC, "src_md5": one["src_md5"]}
+    assert pl.check_part([good], chunks[0]) == []
+    msgs = [m for _, m in pl.check_part([{**good, "summary_ko": "가우디가 고쳐 지은 건물이다.", "name_ko": "바트요 저택", "src_md5": "x"}, good], chunks[0])]
+    assert any("이름(카사 바트요)으로 시작하지 않음" in m for m in msgs) and any("null이어야" in m for m in msgs) and any("src_md5" in m for m in msgs) and "같은 장소가 두 번 나옴" in msgs
+    assert [m for _, m in pl.check_part([], chunks[1])] == ["결과가 없음(만들거나 skipped에 사유를 적어야 함)"] and pl.check_part([], chunks[1], skipped=["Q109983399"]) == []
+    mon = {"id": "Q109983399", "summary_ko": "하우메 1세 기념비는 함대의 출항(1229년)을 기리는 기념물이다.", "detail_ko": "", "name_ko": None, "src_md5": chunks[1][0]["src_md5"], "generated": "2026-11-15"}
+    assert [m for _, m in pl.check_part([mon], chunks[1])] == ["한글 이름 없음"]
+    assert [m for _, m in pl.check_part([{**mon, "name_ko": "하우메 1세 기념비", "summary_ko": "하우메 1세 기념비는 (함대의 출항을 기리는 기념물이다."}], chunks[1])] == ["괄호 짝이 맞지 않음"]
+    merged, added = pl.merge_parts([good], [("chunk_002.jsonl", [{**mon, "name_ko": "하우메 1세 기념비"}]), ("chunk_001.jsonl", [{**good, "summary_ko": "바뀐 요약이다."}])])
+    assert added == 1 and [r["id"] for r in merged] == ["Q461371", "Q109983399"] and merged[0]["summary_ko"] == good["summary_ko"]  # 이미 있는 장소는 그대로

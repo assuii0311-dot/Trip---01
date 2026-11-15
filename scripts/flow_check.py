@@ -37,7 +37,12 @@ def main():
           res["steps"]["dest_first"] = page.locator(".destlist .card.dest").first.inner_text().replace("\n", " | ")[:260]
           res["steps"]["dest_ko_summaries"] = page.locator(".destlist .card.dest .lead.ko").count()  # E5 한국어 소개(D-032)
           page.click(".seg button:has-text('섬')"); time.sleep(0.3); res["steps"]["dest_islands"] = page.locator(".destlist .card.dest").count(); page.click(".seg button:has-text('전체')")
-          page.locator(".focusfilter button.chip:has-text('해변')").click(); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.locator(".focusfilter button.chip:has-text('해변')").click()
+          # 취향을 고르면 맞는 여행지에 추천이 붙고 위로 온다(D-039). "추천만 보기"로 거른 수를 센다
+          res["steps"]["categories"] = page.locator(".tastes button.taste").count()
+          page.locator(".tastes button.taste:has-text('해변')").click(); time.sleep(0.3); res["steps"]["dest_first_with_beach_taste"] = page.locator(".destlist .card.dest").first.inner_text().split("\n")[0][:30]
+          res["steps"]["dest_recommended"] = page.locator(".destlist .card.dest .chip.rec").count()
+          page.click("button.reconly"); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.click("button.reconly"); page.locator(".tastes button.taste:has-text('해변')").click()
+          tastes = page.locator(".tastes button.taste"); tastes.nth(2).click(); tastes.nth(0).click()
           page.fill("input[placeholder*='여행지 검색']", "madrid"); time.sleep(0.4)
           res["steps"]["city_hits"] = [x.strip().split("\n")[0][:40] for x in page.locator(".destlist .card.dest .title").all_inner_texts()][:4]
           page.locator(".destlist .card.dest .pick").first.click(); time.sleep(0.2)
@@ -48,13 +53,12 @@ def main():
           page.locator("input[placeholder*='공항 검색']").first.fill("madrid"); page.wait_for_selector(".airport .chips button.chip", timeout=5000)
           res["steps"]["airport_hits"] = [x.strip()[:70] for x in page.locator(".airport .chips button.chip").all_inner_texts()][:3]; page.locator(".airport .chips button.chip").first.click()
           res["steps"]["airport_in"] = page.locator(".airport .chip.on").first.inner_text()
-          page.click("text=다음 ▶"); page.wait_for_selector(".cats", timeout=5000)
-          cats = page.locator(".catcard"); res["steps"]["categories"] = cats.count(); cats.nth(2).click(); cats.nth(0).click()
           page.screenshot(path=str(shots / "s1_tastes.png"))
-          page.click("text=탐색으로 ▶"); page.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          page.click("text=장소 고르러 가기"); page.wait_for_selector(".card", timeout=30000); time.sleep(1)
           res["steps"]["summary_cards"] = page.locator(".card").count(); res["steps"]["summary_profile"] = page.locator(".section p").first.inner_text()[:80]
           page.screenshot(path=str(shots / "s2.png"))
-          page.locator(".card .btn").first.click(); page.wait_for_selector(".seg", timeout=10000); time.sleep(2)
+          page.wait_for_selector(".recprev .recrow", timeout=20000); res["steps"]["summary_rec_preview"] = page.locator(".recprev .recrow").count(); res["steps"]["summary_addall"] = page.locator("button.addall").first.inner_text()
+          page.locator(".card .btn.explore").first.click(); page.wait_for_selector(".toolbar .seg", timeout=10000); time.sleep(2)
           res["steps"]["rec_cards"] = page.locator(".card").count(); res["steps"]["rec_first"] = page.locator(".card .title").first.inner_text() if page.locator(".card").count() else None
           res["steps"]["rec_note"] = page.locator("p.note").first.inner_text()[:100]
           page.screenshot(path=str(shots / "s3_rec.png"))
@@ -106,9 +110,9 @@ def main():
           pg.locator(".destlist .card.dest .pick").first.click(); pg.screenshot(path=str(shots / "island_s1.png"))
           pg.click(".stepnav .btn:has-text('다음')"); pg.wait_for_selector(".airport", timeout=5000)
           pg.locator("input[placeholder*='공항 검색']").first.focus(); pg.wait_for_selector(".airport .chips button.chip", timeout=5000); isl["airport_first"] = pg.locator(".airport .chips button.chip").first.inner_text().split("\n")[0]
-          pg.click("text=다음 ▶"); pg.wait_for_selector(".cats", timeout=5000); pg.click("text=탐색으로 ▶"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          pg.click("text=장소 고르러 가기"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1)
           isl["summary"] = pg.locator(".card").first.inner_text().replace("\n", " | ")[:260]; pg.screenshot(path=str(shots / "island_s2.png"))
-          pg.locator(".card .btn").first.click(); pg.wait_for_selector(".seg", timeout=10000); time.sleep(3)
+          pg.locator(".card .btn.explore").first.click(); pg.wait_for_selector(".toolbar .seg", timeout=10000); time.sleep(3)
           isl["rec_cards"] = pg.locator(".card").count(); isl["rec_note"] = pg.locator("p.note").first.inner_text()[:110]
           picks = pg.locator(".card button[aria-label='선택']"); [picks.nth(i).click() for i in range(min(5, picks.count()))]
           pg.click("button:has-text('전체 후보')"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1.5); isl["all_note"] = pg.locator(".note").first.inner_text()[:110]; pg.screenshot(path=str(shots / "island_s3.png"))
@@ -129,8 +133,8 @@ def main():
           d3 = pd.locator("input[type=date]"); d3.nth(0).fill("2027-04-01"); d3.nth(1).fill("2027-04-04"); pd.click("text=다음 ▶"); pd.wait_for_selector(".destlist .card.dest", timeout=10000)
           pd.fill("input[placeholder*='여행지 검색']", "cordoba"); time.sleep(0.4); e5["dest"] = pd.locator(".destlist .card.dest .title").first.inner_text().split("\n")[0][:30]
           pd.locator(".destlist .card.dest .pick").first.click(); pd.click(".stepnav .btn:has-text('다음')"); pd.wait_for_selector(".airport", timeout=5000)
-          pd.click("text=다음 ▶"); pd.wait_for_selector(".cats", timeout=5000); pd.click("text=탐색으로 ▶"); pd.wait_for_selector(".card", timeout=30000); time.sleep(1)
-          pd.locator(".card .btn").first.click(); pd.wait_for_selector(".seg", timeout=10000); time.sleep(1.5)
+          pd.click("text=장소 고르러 가기"); pd.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          pd.locator(".card .btn.explore").first.click(); pd.wait_for_selector(".toolbar .seg", timeout=10000); time.sleep(1.5)
           pd.click("button:has-text('전체 후보')"); pd.wait_for_selector(".card", timeout=30000); time.sleep(1)
           pd.fill("input[placeholder='장소 이름 검색']", "칼리프"); time.sleep(0.5); e5["search_hits"] = pd.locator(".card").count()
           pd.locator(".card").first.click(); pd.wait_for_selector(".sheet .desc-ko", timeout=10000)

@@ -79,6 +79,7 @@
 | confidence, source_count, basis | 신뢰도(글 출처 2종이면 높음, 1종이면 보통), 글 출처 종류 수, 근거(text) | E5 4절 9항 | 높음 7, 보통 23 |
 | sources, attribution, generated | 출처 목록(종류, 언어, 문서 제목, 라이선스, URL), 화면 표기 문구, 생성일 | D-021 ⑦ | 30곳 |
 | index.json: place_shards, names, places | 설명이 있는 샤드 목록, 생성한 한글 이름, 장소 수 | E5 | 샤드 5개 |
+| lines.json.gz: lines.<id> | 한 줄 설명(요약의 첫 문장). 목록 카드와 여행지 카드의 대표 명소에 쓴다(D-039) | E5 | 30곳 |
 
 ### Place (장소)
 

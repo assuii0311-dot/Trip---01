@@ -69,6 +69,12 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 <venv>/bin/python -I pipeline/run.py e5.places dump <루트>/e5/sample.json data/places_tier1.json.gz data/sources <루트>/e5/wiki_extracts.jsonl <루트>/e5/sample_sources.json
 # 4) 검증과 내보내기. 새로 생성했거나 다시 대조한 뒤에는 --stamp로 출처 해시를 적는다. 검증 실패나 낡은 항목이 있으면 종료 코드 1
 <venv>/bin/python -I pipeline/run.py e5.places build pipeline/e5/content/places_ko.jsonl data/places_tier1.json.gz data/sources <루트>/e5/wiki_extracts.jsonl --out data/e5 [--stamp]
+# 전수 생성(D-038): 대상 고르기 → 발췌 받기 → 묶음 나누기 → (작업자가 GUIDE.md를 따라 부분 파일 작성) → 검사 → 병합 → 내보내기
+<venv>/bin/python -I pipeline/run.py e5.scope data/places_tier1.json.gz data/cities.json.gz <루트>/e5/gen/scope.json --top 10 --text-only --exclude pipeline/e5/content/places_ko.jsonl
+<venv>/bin/python -I pipeline/run.py e1.wikipedia_extracts <루트>/e5/gen/scope.json data/places_tier1.json.gz <루트>/e5/wiki_extracts.jsonl
+<venv>/bin/python -I pipeline/run.py e5.places chunks <루트>/e5/gen/scope.json data/places_tier1.json.gz data/cities.json.gz data/sources <루트>/e5/wiki_extracts.jsonl <루트>/e5/gen/chunks
+<venv>/bin/python -I pipeline/run.py e5.places check pipeline/e5/content/parts/chunk_001.jsonl <루트>/e5/gen/chunks/chunk_001.json
+<venv>/bin/python -I pipeline/run.py e5.places merge pipeline/e5/content/places_ko.jsonl pipeline/e5/content/parts
 # 검수표(생성본과 출처 원문을 나란히)
 python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>/e5/sample_sources.json <루트>/e5/sample.json data/cities.json.gz <출력.md>
 ```
@@ -86,6 +92,7 @@ python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>
 | e5/destinations.json.gz | 여행지 한국어 요약과 생성한 한글 이름(D-032). 출처 문서, 신뢰도, 생성일 포함 |
 | e5/places/<xx>.json.gz | 장소 한국어 설명(D-033): 요약, 상세 단락, 생성한 한글 이름, 신뢰도, 출처 목록, 표기 문구. 샤드는 md5(장소ID)의 앞 두 자리 |
 | e5/index.json | 장소 설명이 있는 샤드 목록과 생성한 한글 이름(앱이 시작할 때 읽는다) |
+| e5/lines.json.gz | 장소의 한 줄 설명(요약의 첫 문장, D-039). 앱이 시작할 때 읽어 목록 카드에 쓴다 |
 | airports.json.gz | IATA 코드가 있는 공항(D-029): 영문·현지어·한국어 이름, 소속 도시, 좌표, 연 이용객 |
 | attribution.json | 출처·라이선스·생성일·건수 |
 | crossval_report.json | 입력 건수, 매칭 통계, 교차검증·검증·좌표 출처·도시 귀속 분포, 필드 보유율, 파일 크기 |
