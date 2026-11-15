@@ -19,6 +19,7 @@ import gzip
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 from .destinations import BANNED
@@ -205,6 +206,17 @@ def build(content, places, bundles, generated=None):
     return shards, index, report
 
 
+def first_sentence(summary):
+    """요약의 첫 문장. 목록 카드의 한 줄 설명으로 쓴다(D-039). "다." 뒤가 공백이거나 글의 끝인 첫 자리까지."""
+    m = re.search(r"다\.(?=\s|$)", summary or "")
+    return summary[:m.end()] if m else (summary or "")
+
+
+def one_liners(shards):
+    """{장소 ID: 한 줄 설명}. 내보낸 샤드 전체에서 뽑는다."""
+    return {pid: first_sentence(item["summary"]) for items in shards.values() for pid, item in items.items()}
+
+
 def load_inputs(places_path, sources_dir, extracts_path, ids):
     places = json.load(gzip.open(places_path, "rt", encoding="utf-8"))
     idset = set(ids)
@@ -303,6 +315,7 @@ def main():
     for sh, items in shards.items():
         write_gz(out / "places" / f"{sh}.json.gz", items)
     (out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    write_gz(out / "lines.json.gz", {"format": "trip01-e5-lines", "version": 1, "generated": index["generated"], "license": LICENSE, "lines": one_liners(shards)})
     print(f"장소 설명 {report['count']}건(샤드 {len(shards)}개, 이름 생성 {report['names']}건) → {out}")
     for k in ("invalid", "stale", "unknown", "no_source", "name_ignored"):
         if report[k]:

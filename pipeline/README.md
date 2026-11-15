@@ -92,6 +92,7 @@ python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>
 | e5/destinations.json.gz | 여행지 한국어 요약과 생성한 한글 이름(D-032). 출처 문서, 신뢰도, 생성일 포함 |
 | e5/places/<xx>.json.gz | 장소 한국어 설명(D-033): 요약, 상세 단락, 생성한 한글 이름, 신뢰도, 출처 목록, 표기 문구. 샤드는 md5(장소ID)의 앞 두 자리 |
 | e5/index.json | 장소 설명이 있는 샤드 목록과 생성한 한글 이름(앱이 시작할 때 읽는다) |
+| e5/lines.json.gz | 장소의 한 줄 설명(요약의 첫 문장, D-039). 앱이 시작할 때 읽어 목록 카드에 쓴다 |
 | airports.json.gz | IATA 코드가 있는 공항(D-029): 영문·현지어·한국어 이름, 소속 도시, 좌표, 연 이용객 |
 | attribution.json | 출처·라이선스·생성일·건수 |
 | crossval_report.json | 입력 건수, 매칭 통계, 교차검증·검증·좌표 출처·도시 귀속 분포, 필드 보유율, 파일 크기 |

@@ -60,3 +60,14 @@ test("E5 여행지 한국어 소개 붙이기: 요약, 생성 이름, 입력 불
   assert.equal(out[2], cities[2]); assert.equal(cities[1].n.ko, null); // 입력은 바꾸지 않는다
   assert.deepEqual(applyDestinationKo(cities, null), cities); assert.deepEqual(applyDestinationKo(cities, {}), cities);
 });
+
+import { tasteMatch, sortByTaste } from "../../app/src/util/destinations.js";
+test("tasteMatch/sortByTaste: 고른 취향이 여행지의 중심 범주면 추천, 맞음이 큰 순 (D-039)", () => {
+  const L = [{ id: "A", focus: ["heritage", "museum"] }, { id: "B", focus: ["beach"] }, { id: "C", focus: ["museum", "beach"] }, { id: "D" }];
+  assert.deepEqual(tasteMatch(L[0], ["museum"]), { matched: ["museum"], weight: 1 });
+  assert.deepEqual(tasteMatch(L[2], ["museum", "beach"]), { matched: ["museum", "beach"], weight: 3 });
+  assert.deepEqual(tasteMatch(L[3], ["beach"]), { matched: [], weight: 0 });
+  assert.deepEqual(sortByTaste(L, ["beach"]).map((c) => c.id), ["B", "C", "A", "D"]); // 첫째 중심(2) > 둘째 중심(1) > 없음, 같으면 원래 순서
+  assert.deepEqual(sortByTaste(L, ["museum"]).map((c) => c.id), ["C", "A", "B", "D"]);
+  assert.equal(sortByTaste(L, []), L);
+});

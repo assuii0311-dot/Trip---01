@@ -67,3 +67,11 @@ test("lodgingZones: 섬 여행지는 거리 제한 없이 숙박 많은 구역(D
   assert.deepEqual(z.zones.map((x) => x.id), ["d2", "d1"]); assert.ok(z.zones[0].reason.includes("km")); assert.equal(z.fallback, null);
   assert.deepEqual(lodgingZones({ ...isl, kind: undefined }, [{ lat: 39.57, lon: 2.65 }]).zones.map((x) => x.id), ["d1"]);
 });
+
+import { recommendForDestination, RECOMMEND_TIER2_CATS } from "../../app/src/engines/e2.js";
+test("recommendForDestination: 1등급 전부와 2등급의 식당·카페·시장만 후보 (D-039)", () => {
+  const mk = (id, tier, cat, sl) => ({ id, tier, cat: [cat], pop: { sl, pv: null, en_share: null }, lat: 40, lon: -3, her: [] });
+  const places = [mk("a", 1, "museum", 30), mk("b", 2, "restaurant", 0), mk("c", 2, "shop", 0), mk("d", 2, "cafe", 0)];
+  const ids = recommendForDestination(places, { weights: { museum: 1, restaurant: 1, cafe: 1, shop: 1 }, limit: 10 }).map((r) => r.p.id).sort();
+  assert.deepEqual(ids, ["a", "b", "d"]); assert.ok(RECOMMEND_TIER2_CATS.includes("market"));
+});

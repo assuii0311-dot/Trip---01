@@ -41,6 +41,13 @@ export function toggleSelect(plan, id) {
   return { ...plan, selection, days };
 }
 
+/** 여러 장소를 한 번에 선택에 넣는다(이미 있는 곳은 그대로, 순서 유지). 요약 화면의 "추천 모두 담기"(D-039) */
+export function addSelections(plan, ids) {
+  const have = new Set(plan.selection);
+  const add = ids.filter((id) => !have.has(id) && have.add(id));
+  return add.length ? { ...plan, selection: [...plan.selection, ...add] } : plan;
+}
+
 /** 장소를 날짜에 배치(null이면 미배치). 다른 날에서 제거하고 끝에 붙인다 */
 export function assignDay(plan, id, date) {
   const days = Object.fromEntries(Object.entries(plan.days).map(([d, ids]) => [d, ids.filter((x) => x !== id)]));

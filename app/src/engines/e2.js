@@ -66,6 +66,14 @@ export function recommend(places, { weights, balance = "balance", dayCapacity = 
   return out;
 }
 
+/** 추천에 넣는 2등급 범주(식당·카페·시장). 1등급은 모두 후보다 */
+export const RECOMMEND_TIER2_CATS = ["restaurant", "cafe", "market"];
+
+/** 여행지 하나의 추천 목록. 탐색 화면과 요약 화면이 같은 목록을 쓰도록 후보 고르기를 한곳에 둔다(D-039) */
+export function recommendForDestination(places, opts) {
+  return recommend(places.filter((p) => p.tier === 1 || p.cat.some((c) => RECOMMEND_TIER2_CATS.includes(c))), opts);
+}
+
 /** 도시 수준 대안(R-06): 대표 명소 중심 세트와 그 밖 중심 세트 */
 export function cityAlternatives(places, opts) {
   return { landmark: recommend(places, { ...opts, balance: "landmark" }), other: recommend(places, { ...opts, balance: "other" }) };

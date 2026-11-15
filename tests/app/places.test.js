@@ -33,3 +33,14 @@ test("applyPlaceKo: 한국어 이름이 없는 장소에만 생성 이름을 붙
   assert.deepEqual(applyPlaceKo(P, null), P);
   assert.ok(hasPlaceKoShard(index, "a3")); assert.ok(!hasPlaceKoShard(index, "ff")); assert.ok(!hasPlaceKoShard(null, "00")); assert.ok(!hasPlaceKoShard({}, "00"));
 });
+
+import { placeLine } from "../../app/src/data/places.js";
+test("한 줄 설명: 한국어 생성 설명의 첫 문장이 먼저, 없으면 Wikidata 설명 (D-039)", () => {
+  const lines = { lines: { Q160112: "프라도 미술관은 마드리드에 있는 미술관이다." } };
+  const out = applyPlaceKo(P, { names: { "osm:n1": "카페 페페" } }, lines);
+  assert.equal(out[0].line, "프라도 미술관은 마드리드에 있는 미술관이다."); assert.equal(out[0].n.ko, "프라도 미술관"); assert.equal(out[1].n.ko, "카페 페페"); assert.equal(out[1].line, undefined); assert.equal(out[2], P[2]);
+  assert.deepEqual(placeLine(out[0]), { text: "프라도 미술관은 마드리드에 있는 미술관이다.", lang: "ko" });
+  assert.deepEqual(placeLine({ desc: [{ src: "wikidata", lang: "es", text: "museo" }, { src: "wikidata", lang: "en", text: "museum in Madrid" }] }), { text: "museum in Madrid", lang: "en" });
+  assert.deepEqual(placeLine({ desc: [{ src: "wikidata", lang: "en", text: "museum" }, { src: "wikidata", lang: "ko", text: "미술관" }] }), { text: "미술관", lang: "ko" });
+  assert.equal(placeLine({ desc: [{ src: "wikivoyage", lang: "en", page: "Madrid", idx: 1 }] }), null); assert.equal(placeLine({}), null);
+});

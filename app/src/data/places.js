@@ -53,9 +53,24 @@ export function sortByProminence(places) {
  * E5 색인의 생성 이름을 장소에 붙인다(E5 4절 4항·9항, D-033). 새 배열을 돌려주고 입력은 바꾸지 않는다.
  * 한국어 이름이 이미 있는 장소는 그대로 둔다. 붙인 이름은 n.ko_src를 "generated"로 표시한다.
  */
-export function applyPlaceKo(places, index) {
-  const names = (index && index.names) || {};
-  return places.map((p) => (names[p.id] && !p.n?.ko ? { ...p, n: { ...p.n, ko: names[p.id], ko_src: "generated" } } : p));
+export function applyPlaceKo(places, index, lines = null) {
+  const names = (index && index.names) || {}, ln = (lines && lines.lines) || {};
+  return places.map((p) => {
+    const name = names[p.id] && !p.n?.ko ? names[p.id] : null, line = ln[p.id] || null;
+    if (!name && !line) return p;
+    return { ...p, ...(name ? { n: { ...p.n, ko: name, ko_src: "generated" } } : {}), ...(line ? { line } : {}) };
+  });
+}
+
+/**
+ * 목록 카드의 한 줄 설명(D-039). 한국어 생성 설명의 첫 문장이 있으면 그것, 없으면 Wikidata 설명(한국어 → 영어 → 스페인어).
+ * 반환 {text, lang} 또는 null. lang이 ko가 아니면 화면에서 원문임을 흐리게 보인다.
+ */
+export function placeLine(p) {
+  if (p.line) return { text: p.line, lang: "ko" };
+  const wd = (p.desc || []).filter((d) => d.src === "wikidata" && d.text);
+  for (const lang of ["ko", "en", "es"]) { const d = wd.find((x) => x.lang === lang); if (d) return { text: d.text, lang }; }
+  return null;
 }
 
 /** 그 샤드에 한국어 설명 파일이 있는가(색인에 없는 샤드는 요청하지 않는다) */

@@ -31,3 +31,11 @@ test("이전 키에서 옮겨 오기와 저장", () => {
   assert.equal(savePlan(storage, p), true); assert.deepEqual(loadPlan(storage).selection, ["x"]);
   assert.deepEqual(migrate({ trip: { people: 3 } }).trip.people, 3);
 });
+
+import { addSelections } from "../../app/src/state/plan.js";
+test("addSelections: 여러 곳을 한 번에 담되 이미 있는 곳과 중복은 건너뛴다 (D-039)", () => {
+  const plan = { selection: ["Q1"], days: {}, custom: {} };
+  const out = addSelections(plan, ["Q2", "Q1", "Q3", "Q2"]);
+  assert.deepEqual(out.selection, ["Q1", "Q2", "Q3"]); assert.deepEqual(plan.selection, ["Q1"]);
+  assert.equal(addSelections(plan, ["Q1"]), plan); assert.equal(addSelections(plan, []), plan);
+});

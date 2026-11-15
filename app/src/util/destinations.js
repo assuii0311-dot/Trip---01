@@ -14,7 +14,7 @@ export function destinationList(cities) {
  * 목록 거르기. q: 이름(한·영·서·현지어)과 대표 명소 이름, kind: all|city|island,
  * focus: 취향 범주 ID 배열(하나라도 중심이면 통과), region: 자치주 ID.
  */
-export function filterDestinations(list, { q = "", kind = "all", focus = [], region = "" } = {}) {
+export function filterDestinations(list, { q = "", kind = "all", focus = [], region = "" } = {}) { // focus: "추천만 보기"일 때 고른 취향을 넣는다
   const nq = norm(q.trim());
   return list.filter((c) => {
     if (kind === "island" && c.kind !== "island") return false;
@@ -62,4 +62,20 @@ export function regionOptions(list, regions) {
 export function fmtPop(pop) {
   if (!pop) return "";
   return pop >= 10000 ? `${Math.round(pop / 10000).toLocaleString()}만 명` : `${pop.toLocaleString()}명`;
+}
+
+/**
+ * 고른 취향과 여행지의 맞음(D-039). 여행지의 취향 중심 범주(focus, 많아야 둘) 가운데 고른 것이 있으면 추천이다.
+ * matched: 맞은 범주(중심 순서), weight: 첫째 중심이 맞으면 2, 둘째 중심이 맞으면 1의 합.
+ */
+export function tasteMatch(c, tastes = []) {
+  const focus = c.focus || [];
+  const matched = focus.filter((f) => tastes.includes(f));
+  return { matched, weight: focus.reduce((s, f, i) => s + (tastes.includes(f) ? (i === 0 ? 2 : 1) : 0), 0) };
+}
+
+/** 추천 순으로 늘어놓기: 맞음이 큰 여행지가 먼저, 같으면 원래 순서(참고 등급·순위). 고른 취향이 없으면 그대로 */
+export function sortByTaste(list, tastes = []) {
+  if (!tastes.length) return list;
+  return list.map((c, i) => ({ c, i, w: tasteMatch(c, tastes).weight })).sort((a, b) => b.w - a.w || a.i - b.i).map((x) => x.c);
 }

@@ -10,6 +10,7 @@ test("nav: 화면 주소 만들기와 읽기", () => {
   assert.equal(navToHash(applyNav(n, { tab: "plan", planTab: "itinerary", detail: "osm:n1308942334" })), "#plan/itinerary/p/osm%3An1308942334");
   assert.equal(navToHash(applyNav(n, { tab: "settings" })), "#settings");
   assert.deepEqual(hashToNav("#input/3"), { tab: "input", detail: null, inputStep: 3 });
+  assert.deepEqual(hashToNav("#input/4"), { tab: "input", detail: null }); // 입력은 3단계(D-039)
   assert.deepEqual(hashToNav("#explore/explore/p/osm%3An1308942334"), { tab: "explore", detail: "osm:n1308942334", exploreTab: "explore" });
   assert.deepEqual(hashToNav("#plan/itinerary"), { tab: "plan", detail: null, planTab: "itinerary" });
   assert.deepEqual(hashToNav("#share"), { tab: "share", detail: null });
@@ -31,9 +32,10 @@ test("nav: 부분 변경은 나머지를 지키고 입력을 바꾸지 않는다
 });
 
 test("nav: 저장해 둔 상태를 지금 계획에 맞게 다듬는다", () => {
-  const saved = { tab: "explore", inputStep: 4, exploreTab: "explore", planTab: "itinerary", detail: "Q1", input: { q: "sev", kind: "island", focus: ["beach", 3], region: "Q5783" }, explore: { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" } };
+  const saved = { tab: "explore", inputStep: 3, exploreTab: "explore", planTab: "itinerary", detail: "Q1", input: { q: "sev", kind: "island", rec: true, focus: ["beach", 3], region: "Q5783" }, explore: { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" } };
   const ok = sanitizeNav(saved, { cityIds: ["Q2807", "Q8717"], hasPlace: (id) => id === "Q1" });
-  assert.equal(ok.tab, "explore"); assert.equal(ok.inputStep, 4); assert.equal(ok.detail, "Q1"); assert.deepEqual(ok.input, { q: "sev", kind: "island", focus: ["beach"], region: "Q5783" });
+  assert.equal(ok.tab, "explore"); assert.equal(ok.inputStep, 3); assert.equal(ok.detail, "Q1"); assert.deepEqual(ok.input, { q: "sev", kind: "island", rec: true, region: "Q5783" });
+  assert.equal(sanitizeNav({ ...saved, inputStep: 4 }).inputStep, 1); // 예전 4단계 값은 처음으로
   assert.deepEqual(ok.explore, { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" });
   const moved = sanitizeNav(saved, { cityIds: ["Q2807"] }); // 여행지가 바뀌었으면 보던 도시를 비우고, 열 수 없는 상세는 닫는다
   assert.equal(moved.explore.city, null); assert.equal(moved.detail, null); assert.equal(moved.explore.q, "museo");
@@ -51,7 +53,7 @@ test("nav: 기기에 적고 읽기. 열어 둔 상세는 적지 않는다", () =
 });
 
 test("nav: 걸어 둔 필터 수와 지우기", () => {
-  const n = applyNav(defaultNav(), { explore: { q: " museo ", cats: ["museum", "heritage"] }, input: { q: "ma", kind: "island", focus: ["beach"], region: "Q5783" } });
+  const n = applyNav(defaultNav(), { explore: { q: " museo ", cats: ["museum", "heritage"] }, input: { q: "ma", kind: "island", rec: true, region: "Q5783" } });
   assert.equal(exploreFilterCount(n.explore), 3); assert.equal(inputFilterCount(n.input), 4);
   const c = applyNav(n, { explore: clearedExplore(), input: clearedInput() });
   assert.equal(exploreFilterCount(c.explore), 0); assert.equal(inputFilterCount(c.input), 0);

@@ -33,6 +33,7 @@ export function makeLoader(base = "data/", fetchFn = globalThis.fetch) {
     regions: () => load("regions.json.gz"),
     e5Destinations: () => load("e5/destinations.json.gz"),
     e5Index: () => load("e5/index.json"),
+    e5Lines: () => load("e5/lines.json.gz"),
     e5PlaceShard: (shard) => load(`e5/places/${shard}.json.gz`).catch(() => ({})),
     categories: () => load("categories.json.gz"),
     airports: () => load("airports.json.gz"),

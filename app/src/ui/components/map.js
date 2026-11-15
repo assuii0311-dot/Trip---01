@@ -30,13 +30,13 @@ export function createMap(container, { center = [-3.7038, 40.4168], zoom = 12, o
     const data = { type: "FeatureCollection", features: lastFeatures };
     if (map.getSource("places")) { map.getSource("places").setData(data); return; }
     map.addSource("places", { type: "geojson", data });
-    // 핀: 고른 곳(초록), ★ 대표 명소(금), ● 그 밖(파랑), ◌ 검증 안 됨(회색). 지금 열어 본 곳은 굵은 검은 테두리. 색은 의미에만(04-design-rules, D-036)
-    map.addLayer({ id: "places-circle", type: "circle", source: "places", layout: { "circle-sort-key": ["case", ["get", "selected"], 3, ["get", "picked"], 2, ["get", "landmark"], 1, 0] }, paint: {
-      "circle-radius": ["case", ["get", "selected"], 10, ["get", "picked"], 9, ["get", "landmark"], 8, 6],
-      "circle-color": ["case", ["get", "picked"], "#15803D", ["get", "selected"], "#1E63D6", ["get", "landmark"], "#CA8A04", ["get", "unverified"], "#ffffff", "#60a5fa"],
+    // 핀: 고른 곳(초록), 열어 본 곳의 대안(보라), ★ 대표 명소(금), ● 그 밖(파랑), ◌ 검증 안 됨(회색). 지금 열어 본 곳은 굵은 검은 테두리. 색은 의미에만(04-design-rules, D-036)
+    map.addLayer({ id: "places-circle", type: "circle", source: "places", layout: { "circle-sort-key": ["case", ["get", "selected"], 4, ["get", "alt"], 3, ["get", "picked"], 2, ["get", "landmark"], 1, 0] }, paint: {
+      "circle-radius": ["case", ["get", "selected"], 10, ["get", "alt"], 9, ["get", "picked"], 9, ["get", "landmark"], 8, 6],
+      "circle-color": ["case", ["get", "picked"], "#15803D", ["get", "alt"], "#7C3AED", ["get", "selected"], "#1E63D6", ["get", "landmark"], "#CA8A04", ["get", "unverified"], "#ffffff", "#60a5fa"],
       "circle-stroke-color": ["case", ["get", "selected"], "#111827", ["get", "unverified"], "#6B7280", "#ffffff"], "circle-stroke-width": ["case", ["get", "selected"], 3, 1.5],
     } });
-    map.addLayer({ id: "places-label-picked", type: "symbol", source: "places", minzoom: 11, maxzoom: 14, filter: ["==", ["get", "picked"], true], layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": ["Noto Sans Regular"] }, paint: { "text-color": "#14532d", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
+    map.addLayer({ id: "places-label-picked", type: "symbol", source: "places", minzoom: 11, maxzoom: 14, filter: ["any", ["==", ["get", "picked"], true], ["==", ["get", "alt"], true], ["==", ["get", "selected"], true]], layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": ["Noto Sans Regular"] }, paint: { "text-color": "#14532d", "text-halo-color": "#fff", "text-halo-width": 1.5 } });
     map.addLayer({ id: "places-label", type: "symbol", source: "places", minzoom: 14, layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.2], "text-anchor": "top", "text-font": ["Noto Sans Regular"] }, paint: { "text-halo-color": "#fff", "text-halo-width": 1 } });
     map.on("click", "places-circle", (e) => { const f = e.features && e.features[0]; if (f && onSelect) onSelect(f.properties.id); });
     map.on("mouseenter", "places-circle", () => { map.getCanvas().style.cursor = "pointer"; });
@@ -44,8 +44,8 @@ export function createMap(container, { center = [-3.7038, 40.4168], zoom = 12, o
   }
   return {
     map,
-    setPlaces(places, { selectedId, isLandmark, picked } = {}) {
-      lastFeatures = places.slice(0, 2000).map((p) => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { id: p.id, name: p.n?.ko || p.n?.local || "", selected: p.id === selectedId, picked: !!(picked && picked.has(p.id)), landmark: !!(isLandmark && isLandmark(p)), unverified: p.ver === false } }));
+    setPlaces(places, { selectedId, isLandmark, picked, alt } = {}) {
+      lastFeatures = places.slice(0, 2000).map((p) => ({ type: "Feature", geometry: { type: "Point", coordinates: [p.lon, p.lat] }, properties: { id: p.id, name: p.n?.ko || p.n?.local || "", selected: p.id === selectedId, picked: !!(picked && picked.has(p.id)), alt: !!(alt && alt.has(p.id)), landmark: !!(isLandmark && isLandmark(p)), unverified: p.ver === false } }));
       const run = () => rerender();
       ready ? run() : queue.push(run);
     },

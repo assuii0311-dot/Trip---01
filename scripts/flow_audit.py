@@ -83,10 +83,17 @@ def main():
             if (step_on() or "").startswith("1"):
                 pg.click("text=다음 ▶"); pg.wait_for_selector(".destlist .card.dest", timeout=20000)
             pg.fill("input[placeholder*='여행지 검색']", ""); pg.click(".seg button:has-text('전체')"); wait(300)
-            pg.click(".stepnav .btn:has-text('다음')"); pg.wait_for_selector(".airport", timeout=5000); pg.click("text=다음 ▶"); pg.wait_for_selector(".cats", timeout=5000)
-            cats = pg.locator(".catcard"); cats.nth(0).click(); cats.nth(2).click(); pg.click("text=탐색으로 ▶"); pg.wait_for_selector(".card", timeout=30000); wait(800)
+            tastes = pg.locator(".tastes button.taste")
+            if tastes.count():  # 입력 3단계(D-039): 취향을 여행지 화면에서 고른다
+                tastes.nth(0).click(); tastes.nth(2).click()
+                pg.click(".stepnav .btn:has-text('다음')"); pg.wait_for_selector(".airport", timeout=5000); pg.click("text=장소 고르러 가기")
+            else:  # 예전 4단계
+                pg.click(".stepnav .btn:has-text('다음')"); pg.wait_for_selector(".airport", timeout=5000); pg.click("text=다음 ▶"); pg.wait_for_selector(".cats", timeout=5000)
+                cats = pg.locator(".catcard"); cats.nth(0).click(); cats.nth(2).click(); pg.click("text=탐색으로 ▶")
+            pg.wait_for_selector(".card", timeout=30000); wait(800)
             tab("입력")
             out["a4 입력을 끝낸 뒤 입력 탭에 오면"] = step_on()
+            out["입력 단계 수"] = pg.locator(".steps > *").count()
             tab("탐색")
             bar = pg.locator(".tripbar")
             out["d4 위쪽의 여행 요약"] = bar.inner_text().replace("\n", " | ") if bar.count() else "없음(" + pg.locator("header.top").inner_text().replace("\n", " | ") + ")"
@@ -94,7 +101,8 @@ def main():
                 bar.locator("button").nth(1).click(); wait(500); out["a4 요약 줄의 여행지를 누르면"] = f"{title()} {step_on()}"; tab("탐색")
             # ---- 탐색
             out["b6 요약과 탐색을 오가는 방법"] = "하위 탭: " + " / ".join(pg.locator(".subtabs button").all_inner_texts()) if pg.locator(".subtabs").count() else "상단 칩: " + " ".join(pg.locator("header.top button.chip").all_inner_texts()[:1])
-            pg.locator(".card .btn").nth(1).click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(2500)  # 두 번째 도시
+            ex = ".card .btn.explore" if pg.locator(".card .btn.explore").count() else ".card .btn"  # 도시 카드의 "장소 고르기"
+            pg.locator(ex).nth(1).click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(2500)  # 두 번째 도시
             pg.click("button:has-text('전체 후보')"); pg.wait_for_selector(".card", timeout=30000); wait(1200)
             pg.locator(".toolbar.chips button").nth(2).click(); wait(500); pg.fill("input[placeholder='장소 이름 검색']", "museo"); wait(800); scroll_set(500); y0 = scroll_get()
             before = explore_state()
@@ -130,8 +138,8 @@ def main():
             out["b4 탐색하다 일정 탭에 다녀오면"] = {"화면": title(), **{k: (f"{before[k]} → {after[k]}" if before[k] != after[k] else f"{after[k]} (그대로)") for k in before}, "목록 위치": f"{y1} → {scroll_get()}"}
             sub("도시 요약", "요약"); pg.wait_for_selector(".card", timeout=10000)
             out["b5 요약 화면의 고른 장소"] = pg.locator(".picks").first.inner_text()[:60] if pg.locator(".picks").count() else "표시 없음"
-            for i in range(pg.locator(".card .btn").count()):
-                pg.locator(".card .btn").nth(i).click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(1500)
+            for i in range(pg.locator(ex).count()):
+                pg.locator(ex).nth(i).click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(1500)
                 pg.locator(".toolbar .seg button:has-text('추천')").click(); wait(1800)
                 pk = pg.locator(".card button[aria-label='선택']")
                 for j in range(min(6, pk.count())):
@@ -153,7 +161,7 @@ def main():
             pg.locator(".toolbar button.chip").nth(2).click(); wait(300)
             tab("탐색"); wait(1000)
             if not pg.locator(".toolbar .seg").count():
-                pg.locator(".card .btn").first.click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(1500)
+                pg.locator(ex).first.click(); pg.wait_for_selector(".toolbar .seg", timeout=20000); wait(1500)
             pg.locator(".toolbar .seg button:has-text('추천')").click(); wait(1800)
             pk = pg.locator(".card button[aria-label='선택']")
             for j in range(pk.count()):

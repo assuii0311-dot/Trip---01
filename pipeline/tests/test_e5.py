@@ -105,6 +105,8 @@ def test_place_build_exports_shards_index_and_generated_names():
     assert mon["detail"] == [] and mon["confidence"] == "보통" and mon["name_ko"] == "하우메 1세 기념비"
     assert index["names"] == {"Q109983399": "하우메 1세 기념비"} and index["places"] == 2 and index["place_shards"] == sorted({pl.shard_of("Q461371"), pl.shard_of("Q109983399")})
     assert rep["count"] == 2 and rep["names"] == 1 and not rep["invalid"] and not rep["stale"]
+    assert pl.one_liners(shards) == {"Q461371": "카사 바트요는 안토니 가우디(Antoni Gaudí)가 고쳐 지은 건물이다.", "Q109983399": "하우메 1세 기념비는 함대의 출항을 기리는 기념물이다."}
+    assert pl.first_sentence("높이는 2,444m다. 돌출 높이는 995m다.") == "높이는 2,444m다." and pl.first_sentence("끝이 없는 글") == "끝이 없는 글" and pl.first_sentence("") == ""
 
 
 def test_place_build_holds_back_stale_invalid_unknown_and_sourceless():
