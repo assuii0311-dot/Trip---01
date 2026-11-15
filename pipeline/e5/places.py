@@ -9,7 +9,8 @@
   python -I pipeline/run.py e5.places dump <ID 목록 JSON> <places_tier1.json.gz> <data/sources> <발췌 JSONL> <출력 JSON>      # 생성에 쓸 출처 묶음
   python -I pipeline/run.py e5.places build <내용 JSONL> <places_tier1.json.gz> <data/sources> <발췌 JSONL> --out <data/e5> [--stamp]
 전수 생성(D-038)에서는 대상이 많아 묶음으로 나눠 만든다.
-  python -I pipeline/run.py e5.places chunks <ID 목록 JSON> <places_tier1.json.gz> <cities.json.gz> <data/sources> <발췌 JSONL> <묶음 디렉터리> [--size 40]
+  python -I pipeline/run.py e5.places chunks <ID 목록 JSON> <places_tier1.json.gz> <cities.json.gz> <data/sources> <발췌 JSONL> <묶음 디렉터리> [--size 40] [--ready-only] [--limit N]
+      # 이미 묶음에 들어간 장소는 건너뛰고 번호를 이어 붙인다. --ready-only는 위키백과 발췌를 모두 받은 장소만 넣는다(수집과 생성을 나란히 돌릴 때)
   python -I pipeline/run.py e5.places check <부분 JSONL> <묶음 JSON>      # 한 묶음의 생성 결과 검사. 문제가 있으면 종료 코드 1
   python -I pipeline/run.py e5.places merge <내용 JSONL> <부분 디렉터리>   # 검사를 통과한 부분 파일을 내용 파일에 붙인다(이미 있는 장소는 그대로)
 """
@@ -88,6 +89,11 @@ def validate(rec):
 CHUNK_TEXT_MAX = 2200   # 묶음 파일에 싣는 출처 하나의 글자 수 한도(해시는 전문으로 계산한다)
 CHUNK_CHARS_MAX = 48000  # 한 묶음의 출처 글자 수 한도
 HERITAGE = {"Q23712": "bic", "Q9259": "unesco"}  # 스페인 문화재(Bien de Interés Cultural), 유네스코 세계유산
+
+
+def is_ready(place, fetched):
+    """그 장소의 위키백과 문서를 모두 받아 보았는가(문서가 없다는 답도 받은 것으로 친다). fetched: {(lang, title)}"""
+    return all((d["lang"], d["title"]) in fetched for d in place.get("desc") or [] if d.get("src") == "wikipedia")
 
 
 def make_chunks(ids, places, cities, bundles, size=40):
@@ -210,12 +216,19 @@ def load_inputs(places_path, sources_dir, extracts_path, ids):
                 pid, lang, page, idx = key.rsplit("|", 3)
                 if pid in idset:
                     wv_text[(pid, lang, page, int(idx))] = text
+    extracts = load_extracts(extracts_path)
+    bundles = {p["id"]: source_bundle(p, wv_text, extracts) for p in places if p["id"] in idset}
+    return places, bundles
+
+
+def load_extracts(extracts_path):
+    """{(lang, title): 머리 문단}. 문서가 없던 제목은 빈 문자열로 들어 있다(출처 묶음에는 쓰이지 않는다)."""
     extracts = {}
     if extracts_path and pathlib.Path(extracts_path).exists():
         for l in open(extracts_path, encoding="utf-8"):
-            r = json.loads(l); extracts[(r["lang"], r["title"])] = r["extract"]
-    bundles = {p["id"]: source_bundle(p, wv_text, extracts) for p in places if p["id"] in idset}
-    return places, bundles
+            if l.strip():
+                r = json.loads(l); extracts[(r["lang"], r["title"])] = r["extract"]
+    return extracts
 
 
 def write_gz(path, obj):
@@ -229,17 +242,27 @@ def main():
     d = sub.add_parser("dump"); [d.add_argument(x) for x in ("ids", "places", "sources", "extracts", "out")]
     b = sub.add_parser("build"); [b.add_argument(x) for x in ("content", "places", "sources", "extracts")]; b.add_argument("--out", required=True); b.add_argument("--stamp", action="store_true")
     c = sub.add_parser("chunks"); [c.add_argument(x) for x in ("ids", "places", "cities", "sources", "extracts", "out")]; c.add_argument("--size", type=int, default=40)
+    c.add_argument("--ready-only", action="store_true"); c.add_argument("--limit", type=int, default=0)
     k = sub.add_parser("check"); [k.add_argument(x) for x in ("part", "chunk")]
     m = sub.add_parser("merge"); [m.add_argument(x) for x in ("content", "parts")]
     a = ap.parse_args()
     if a.cmd == "chunks":
         raw = json.load(open(a.ids, encoding="utf-8")); ids = [x["id"] if isinstance(x, dict) else x for x in raw]
-        places, bundles = load_inputs(a.places, a.sources, a.extracts, ids)
-        chunks = make_chunks(ids, places, json.load(gzip.open(a.cities, "rt", encoding="utf-8")), bundles, a.size)
         out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
-        for n, ch in enumerate(chunks, 1):
+        old = sorted(out.glob("chunk_*.json"))
+        taken = {c["id"] for f in old for c in json.load(open(f, encoding="utf-8"))}
+        start = max([int(f.stem.split("_")[1]) for f in old], default=0)
+        todo = [i for i in ids if i not in taken]
+        if a.ready_only:
+            fetched = set(load_extracts(a.extracts)); by_id = {p["id"]: p for p in json.load(gzip.open(a.places, "rt", encoding="utf-8"))}
+            todo = [i for i in todo if i in by_id and is_ready(by_id[i], fetched)]
+        if a.limit:
+            todo = todo[:a.limit]
+        places, bundles = load_inputs(a.places, a.sources, a.extracts, todo)
+        chunks = make_chunks(todo, places, json.load(gzip.open(a.cities, "rt", encoding="utf-8")), bundles, a.size)
+        for n, ch in enumerate(chunks, start + 1):
             (out / f"chunk_{n:03d}.json").write_text(json.dumps(ch, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        print(f"묶음 {len(chunks)}개(장소 {sum(len(x) for x in chunks)}곳, 글 출처 없는 {len(ids) - sum(len(x) for x in chunks)}곳 제외) → {out}"); return
+        print(f"새 묶음 {len(chunks)}개(chunk_{start + 1:03d}부터, 장소 {sum(len(x) for x in chunks)}곳). 이미 묶인 {len(taken)}곳, 아직 준비 안 됐거나 남은 {len(ids) - len(taken) - sum(len(x) for x in chunks)}곳 → {out}"); return
     if a.cmd == "check":
         rows = [json.loads(l) for l in open(a.part, encoding="utf-8") if l.strip()]
         chunk = json.load(open(a.chunk, encoding="utf-8"))

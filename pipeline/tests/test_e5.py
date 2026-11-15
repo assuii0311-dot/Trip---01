@@ -144,6 +144,9 @@ def test_wikipedia_extract_titles_and_response_mapping():
     data = {"query": {"normalized": [{"from": "casa batlló", "to": "Casa batlló"}], "redirects": [{"from": "Casa batlló", "to": "Casa Batlló"}],
                       "pages": {"1": {"title": "Casa Batlló", "extract": " La Casa Batlló es un edificio. "}, "-1": {"title": "Nada"}}}}
     assert wx.parse_response(data) == {"casa batlló": "La Casa Batlló es un edificio."} and wx.parse_response({}) == {}
+    b = {**PLACE, "id": "Q2", "desc": [{"src": "wikipedia", "lang": "es", "title": "Alhambra"}, {"src": "wikipedia", "lang": "es", "title": "Casa Batlló"}]}
+    assert wx.titles_of([PLACE, b], ["Q2", "Q461371"])["es"] == ["Alhambra", "Casa Batlló"]  # ID 목록의 순서, 중복 없음
+    assert wx.next_delay(1.0, True) == 2.0 and wx.next_delay(8.0, True) == 10.0 and wx.next_delay(2.0, False) == 1.8 and wx.next_delay(1.0, False) == 1.0
 
 
 # --- 전수 생성 도구(E5 4절 10항, D-038)
@@ -159,6 +162,7 @@ def test_scope_takes_top_places_per_destination_plus_highlights_once():
     assert [(r["id"], r["dest"], r["rank"]) for r in out] == [("Q1", "ISL", 1), ("Q6", "ISL", 2), ("Q2", "A", 2), ("Q5", "A", 3)]  # 섬이 먼저 가져간 Q1은 도시 A에서 다시 나오지 않는다
     assert [r["hl"] for r in out] == [False, False, False, True] and out == sc.select_scope(list(reversed(places)), cities, top=2)
     assert [r["id"] for r in sc.select_scope(places, cities, top=3, text_only=True, exclude={"Q1"})] == ["Q6", "Q2", "Q5"]  # 글 출처 없는 Q3과 이미 만든 Q1 제외
+    assert [r["id"] for r in sc.select_scope(places, cities, top=0, all_cats=True)] == ["Q1", "Q6", "Q2", "Q3", "Q5", "Q4"]  # 전부: 볼거리 먼저, 그 밖의 범주(Q4)는 뒤
 
 
 def test_chunks_check_and_merge_for_bulk_generation():
@@ -170,6 +174,7 @@ def test_chunks_check_and_merge_for_bulk_generation():
     one = chunks[0][0]
     assert one["city"] == "바르셀로나" and one["name_ko_needed"] is False and one["src_md5"] == pl.source_md5(b["Q461371"]) and one["names"]["ko"] == "카사 바트요"
     assert chunks[1][0]["name_ko_needed"] is True and chunks[1][0]["city"] == "Salou"
+    assert pl.is_ready(MONUMENT, set()) and not pl.is_ready(PLACE, {("es", "Casa Batlló")}) and pl.is_ready(PLACE, {("es", "Casa Batlló"), ("ko", "카사 바트요")})  # 위키백과 문서를 모두 받아 본 장소만 준비됨
     good = {**REC, "src_md5": one["src_md5"]}
     assert pl.check_part([good], chunks[0]) == []
     msgs = [m for _, m in pl.check_part([{**good, "summary_ko": "가우디가 고쳐 지은 건물이다.", "name_ko": "바트요 저택", "src_md5": "x"}, good], chunks[0])]
