@@ -34,7 +34,7 @@
 | 스페인어 Wikivoyage | 덤프. 보조 소스 | 동일 | 선택 |
 | OSM 스페인 추출본 | pbf 1.7GB. 여행 관련 태그 646,875건, place 92,422건, 행정 경계 | openstreetmap.fr (poc/osm_extract.py) | 필수 |
 | OSM 카나리아 추출본 | pbf 68MB. 여행 관련 태그 35,502건, 행정 경계 92건. 스페인 추출본에 카나리아 제도가 없어 따로 받는다(D-031). 같은 OSM ID는 한 번만 쓴다(중복 6건) | openstreetmap.fr africa/spain/canarias (poc/osm_extract.py, pipeline/e1/osm_boundaries.py) | 필수 |
-| 위키백과 발췌 | ko·en·es 문서 제목과 첫 문단 | 위키백과 API(식별 UA, 초당 1회) | 필수(상위 도시·1등급 장소) |
+| 위키백과 발췌 | ko·en·es 문서 제목과 첫 문단. 제목은 장소 레코드의 desc에 들어가고, 첫 문단은 E5가 설명을 만들 때 pipeline/e1/wikipedia_extracts.py로 받는다(D-033). 받은 원문은 저장소에 넣지 않는다 | 위키백과 API(식별 UA, 20개 묶음, 초당 1회, 429는 기다렸다 재시도) | 필수(상위 도시·1등급 장소) |
 | 페이지뷰 | 월간 덤프 최근 3개월 평균(D-023 확정. 제안 범위 3~6개월 중 디스크·시간 부담이 작은 쪽) | dumps.wikimedia.org (poc/pageviews_extract.py) | 필수 |
 | 공항 | SPARQL 결과(JSONL). 스페인 소재이고 IATA 코드(P238)가 있는 항목의 코드, ICAO, 영문·스페인어·한국어 라벨, 분류(P31), 소속 도시(P931)와 그 라벨, 좌표, 연 이용객(P3872) | Wikidata (pipeline/e1/airports.py) | 필수 |
 | 섬 폴리곤 | 이름이 있는 place=island 멀티폴리곤. 스페인 추출본 116건, 카나리아 추출본 13건(사실: openstreetmap.fr 스페인 추출본에는 카나리아 제도가 없다. 2026-11-14 확인) | openstreetmap.fr 스페인·카나리아 추출본 (pipeline/e1/osm_islands.py) | 필수(섬 여행지) |

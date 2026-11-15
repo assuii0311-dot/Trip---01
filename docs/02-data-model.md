@@ -67,6 +67,19 @@
 | items.<id>.sources, confidence, basis, generated | 출처 문서(제목, 언어, URL, 라이선스), 신뢰도(보통), 근거(text), 생성일 | E5 | 111건 |
 | license, attribution | CC BY-SA 4.0과 화면 표기 문구 | D-021 ⑦ | |
 
+### 장소 한국어 설명 (E5, D-033)
+
+파일 `data/e5/places/<샤드>.json.gz`(샤드는 md5(장소 ID)의 앞 두 자리, 내용은 {장소 ID: 항목})와 `data/e5/index.json`. 앱은 색인을 먼저 읽고 장소 상세를 열 때 샤드를 읽는다.
+
+| 필드 | 설명 | 출처 | 커버리지(사실, 2026-11-14) |
+|---|---|---|---|
+| summary | 한국어 요약, 200자 이내 | Wikivoyage 목록 본문, 위키백과 머리 문단, Wikidata 설명을 바탕으로 한 생성본 | 대표 모수 30곳(평균 122자) |
+| detail | 상세 단락 목록(2~4개, 합계 1,200자 이내). 출처가 짧으면 빈 목록 | 같음 | 13곳(평균 352자) |
+| name_ko | 생성한 한글 이름(한국어 이름이 없는 장소만). 색인의 names에도 들어간다 | E5 4절 4항 | 27곳 |
+| confidence, source_count, basis | 신뢰도(글 출처 2종이면 높음, 1종이면 보통), 글 출처 종류 수, 근거(text) | E5 4절 9항 | 높음 7, 보통 23 |
+| sources, attribution, generated | 출처 목록(종류, 언어, 문서 제목, 라이선스, URL), 화면 표기 문구, 생성일 | D-021 ⑦ | 30곳 |
+| index.json: place_shards, names, places | 설명이 있는 샤드 목록, 생성한 한글 이름, 장소 수 | E5 | 샤드 5개 |
+
 ### Place (장소)
 
 | 필드 | 설명 | 출처 | 커버리지(사실) |

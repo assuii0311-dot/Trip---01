@@ -56,6 +56,23 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 <venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz [--stamp]
 ```
 
+## 실행 순서 (E5 장소 한국어 설명)
+
+생성은 개발 세션에서 하고 결과를 `pipeline/e5/content/places_ko.jsonl`에 둔다(E5 4절 9항, D-033). 위키백과 머리 문단은 저장소 밖에 받는다.
+
+```
+# 1) 대표 모수(층화 표본 30곳) 선정
+<venv>/bin/python -I pipeline/run.py e5.sample data/places_tier1.json.gz data/cities.json.gz <루트>/e5/sample.json
+# 2) 위키백과 머리 문단 받기(이어받기 가능)
+<venv>/bin/python -I pipeline/run.py e1.wikipedia_extracts <루트>/e5/sample.json data/places_tier1.json.gz <루트>/e5/wiki_extracts.jsonl
+# 3) 생성에 쓸 출처 묶음 만들기
+<venv>/bin/python -I pipeline/run.py e5.places dump <루트>/e5/sample.json data/places_tier1.json.gz data/sources <루트>/e5/wiki_extracts.jsonl <루트>/e5/sample_sources.json
+# 4) 검증과 내보내기. 새로 생성했거나 다시 대조한 뒤에는 --stamp로 출처 해시를 적는다. 검증 실패나 낡은 항목이 있으면 종료 코드 1
+<venv>/bin/python -I pipeline/run.py e5.places build pipeline/e5/content/places_ko.jsonl data/places_tier1.json.gz data/sources <루트>/e5/wiki_extracts.jsonl --out data/e5 [--stamp]
+# 검수표(생성본과 출처 원문을 나란히)
+python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>/e5/sample_sources.json <루트>/e5/sample.json data/cities.json.gz <출력.md>
+```
+
 ## 산출물 (`data/`)
 
 | 파일 | 내용 |
@@ -67,6 +84,8 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 | places_tier2/<city>.json.gz | 2등급 장소를 도시별로 |
 | sources/<xx>.json.gz | Wikivoyage 목록 본문(설명 출처). 키 `장소ID|언어|문서|목록번호`, 샤드는 md5(장소ID)의 앞 두 자리 |
 | e5/destinations.json.gz | 여행지 한국어 요약과 생성한 한글 이름(D-032). 출처 문서, 신뢰도, 생성일 포함 |
+| e5/places/<xx>.json.gz | 장소 한국어 설명(D-033): 요약, 상세 단락, 생성한 한글 이름, 신뢰도, 출처 목록, 표기 문구. 샤드는 md5(장소ID)의 앞 두 자리 |
+| e5/index.json | 장소 설명이 있는 샤드 목록과 생성한 한글 이름(앱이 시작할 때 읽는다) |
 | airports.json.gz | IATA 코드가 있는 공항(D-029): 영문·현지어·한국어 이름, 소속 도시, 좌표, 연 이용객 |
 | attribution.json | 출처·라이선스·생성일·건수 |
 | crossval_report.json | 입력 건수, 매칭 통계, 교차검증·검증·좌표 출처·도시 귀속 분포, 필드 보유율, 파일 크기 |

@@ -69,6 +69,7 @@ def main():
           res["steps"]["first_title"] = page.locator(".card .title").first.inner_text()
           page.locator(".card").first.click(); page.wait_for_selector(".sheet", timeout=10000); time.sleep(1.5)
           res["steps"]["detail_title"] = page.locator(".sheet h2").inner_text(); res["steps"]["detail_text"] = page.locator(".sheet").inner_text()[:400]
+          res["steps"]["detail_desc_heading"] = page.locator(".sheet .desc-h").inner_text().replace("\n", " ")  # 설명이 아직 없는 장소는 "생성 전"
           page.screenshot(path=str(shots / "s6.png"))
           page.click(".sheet .btn:has-text('선택')"); time.sleep(0.3); page.click(".sheet .close")
           # S4: 선택한 장소를 1일에 배치, 숙박 탭
@@ -115,6 +116,32 @@ def main():
           pg.click("button:has-text('장소 배치')"); pg.click("button:has-text('일정 생성')"); pg.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
           isl["itin_note"] = pg.locator("p.note").first.inner_text()[:120]; isl["itin_items"] = pg.locator(".card .title").count(); pg.screenshot(path=str(shots / "island_s5.png"))
           res["island"] = isl; ctx2.close()
+          # --- 장소 한국어 설명과 듣기(E5 4절 9항, D-033): 코르도바 → 전체 후보 → 생성 이름으로 검색 → 상세 → 듣기
+          # 헤드리스 브라우저에는 음성이 없으므로 가짜 음성 합성기를 넣어 화면 연결만 확인한다(실제 소리는 기기에서 확인)
+          ctx3 = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, locale="ko-KR"); e5 = {}
+          ctx3.add_init_script("(() => { const log = []; const synth = { getVoices: () => [{ lang: 'ko-KR', localService: true, name: 'fake-ko' }], speak: (u) => log.push(u.text), cancel: () => log.push('<cancel>') };"
+                               " Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true }); window.SpeechSynthesisUtterance = function (t) { this.text = t; }; window.__speechLog = log; })();")
+          pd = ctx3.new_page()
+          pd.on("console", lambda m: res["console_errors"].append("e5: " + m.text) if m.type == "error" and "404" not in m.text else None)
+          pd.on("pageerror", lambda e: res["console_errors"].append(f"e5 pageerror: {e}"))
+          pd.goto(url, wait_until="networkidle", timeout=60000); pd.wait_for_selector(".steps", timeout=30000)
+          d3 = pd.locator("input[type=date]"); d3.nth(0).fill("2027-04-01"); d3.nth(1).fill("2027-04-04"); pd.click("text=다음 ▶"); pd.wait_for_selector(".destlist .card.dest", timeout=10000)
+          pd.fill("input[placeholder*='여행지 검색']", "cordoba"); time.sleep(0.4); e5["dest"] = pd.locator(".destlist .card.dest .title").first.inner_text().split("\n")[0][:30]
+          pd.locator(".destlist .card.dest .pick").first.click(); pd.click(".stepnav .btn:has-text('다음')"); pd.wait_for_selector(".airport", timeout=5000)
+          pd.click("text=다음 ▶"); pd.wait_for_selector(".cats", timeout=5000); pd.click("text=탐색으로 ▶"); pd.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          pd.locator(".card .btn").first.click(); pd.wait_for_selector(".seg", timeout=10000); time.sleep(1.5)
+          pd.click("button:has-text('전체 후보')"); pd.wait_for_selector(".card", timeout=30000); time.sleep(1)
+          pd.fill("input[placeholder='장소 이름 검색']", "칼리프"); time.sleep(0.5); e5["search_hits"] = pd.locator(".card").count()
+          pd.locator(".card").first.click(); pd.wait_for_selector(".sheet .desc-ko", timeout=10000)
+          e5["title"] = pd.locator(".sheet h2").inner_text().replace("\n", " "); e5["heading"] = pd.locator(".sheet .desc-h").inner_text().replace("\n", " | ")
+          e5["summary"] = pd.locator(".sheet .desc-ko > p").first.inner_text()[:80]
+          pd.locator(".sheet .desc-ko summary").click(); e5["detail_paragraphs"] = pd.locator(".sheet .desc-ko details p").count()
+          e5["source_links"] = pd.locator(".sheet .desc-ko .note a").count(); pd.locator(".sheet .desc-ko").scroll_into_view_if_needed(); pd.screenshot(path=str(shots / "s6_ko.png"))
+          pd.click(".sheet .speak"); time.sleep(0.2); e5["speak_button_after_click"] = pd.locator(".sheet .speak").inner_text()
+          log = pd.evaluate("window.__speechLog"); spoken = [x for x in log if x != "<cancel>"]
+          e5["spoken_chunks"] = len(spoken); e5["spoken_first"] = spoken[:2]; e5["spoken_has_latin_parens"] = any("(" in x and any("a" <= ch.lower() <= "z" for ch in x[x.index("("):]) for x in spoken)
+          pd.click(".sheet .speak"); time.sleep(0.2); e5["speak_button_after_stop"] = pd.locator(".sheet .speak").inner_text(); e5["cancel_calls"] = pd.evaluate("window.__speechLog").count("<cancel>")
+          res["e5_place"] = e5; ctx3.close()
       finally:
         try: page.screenshot(path=str(shots / "last.png"))
         except Exception: pass

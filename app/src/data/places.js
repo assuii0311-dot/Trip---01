@@ -49,6 +49,18 @@ export function sortByProminence(places) {
   return [...places].sort((a, b) => ((b.pop?.sl ?? 0) - (a.pop?.sl ?? 0)) || (((b.pop?.pv?.en ?? 0) + (b.pop?.pv?.es ?? 0)) - ((a.pop?.pv?.en ?? 0) + (a.pop?.pv?.es ?? 0))) || String(a.id).localeCompare(String(b.id)));
 }
 
+/**
+ * E5 색인의 생성 이름을 장소에 붙인다(E5 4절 4항·9항, D-033). 새 배열을 돌려주고 입력은 바꾸지 않는다.
+ * 한국어 이름이 이미 있는 장소는 그대로 둔다. 붙인 이름은 n.ko_src를 "generated"로 표시한다.
+ */
+export function applyPlaceKo(places, index) {
+  const names = (index && index.names) || {};
+  return places.map((p) => (names[p.id] && !p.n?.ko ? { ...p, n: { ...p.n, ko: names[p.id], ko_src: "generated" } } : p));
+}
+
+/** 그 샤드에 한국어 설명 파일이 있는가(색인에 없는 샤드는 요청하지 않는다) */
+export const hasPlaceKoShard = (index, shard) => !!index && (index.place_shards || []).includes(shard);
+
 /** 설명 출처의 영어 원문 앞 두 문장(E5 미생성 시 표시) */
 export function firstSentences(text, n = 2) {
   if (!text) return "";

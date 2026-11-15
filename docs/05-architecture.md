@@ -23,7 +23,7 @@
 | 파이프라인(E1, E3 사전 계산, E5 생성 보조) | Python 3.13, 가상환경은 저장소 밖. pyosmium, pyvalhalla, requests | PoC 스크립트 재사용 | |
 | 테스트 | 앱: Node 22 내장 `node --test`. 파이프라인: pytest. 흐름: Playwright(이 환경의 Chromium) | 추가 설치 최소. Playwright는 PoC에서 동작 확인 | Vitest(npm 의존) |
 | 배포 | GitHub Actions의 Pages 워크플로로 `app/`와 `data/`를 올린다 | 저장소 루트를 앱으로 쓰지 않아도 됨. 공개 저장소는 Actions 무료 | 브랜치 루트 배포(저장소 구조 제약) |
-| 음성 | Web Speech API(speechSynthesis, ko-KR) | R-17 요구 그대로 | |
+| 음성 | Web Speech API(speechSynthesis, ko-KR). 기기 내장 음성만 쓰고 원격 음성은 쓰지 않는다(D-033) | R-17 요구 그대로. 설명 글을 밖으로 보내지 않는다 | |
 
 - 외부 실행 시 호출은 세 곳뿐이다. GitHub API(E7), OpenFreeMap 타일, 구글맵 링크(사용자가 열 때). 그 외 모든 데이터는 앱 저장소의 정적 파일이다.
 
