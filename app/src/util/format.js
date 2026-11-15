@@ -4,7 +4,18 @@ export function fmtMinutes(min) { const h = Math.floor(min / 60), m = Math.round
 export function fmtEur(v) { return v == null ? "—" : `€${Math.round(v)}`; }
 export function fmtEurRange(a, b) { return a == null && b == null ? "—" : a === b ? fmtEur(a) : `€${Math.round(a)}~${Math.round(b)}`; }
 export function gmapsCoord(lat, lon) { return `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(6)},${lon.toFixed(6)}`; }
-export function gmapsName(name) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`; }
+/**
+ * 장소를 이름으로 여는 링크(D-035). 도시 이름을 붙여 "이름, 도시"로 검색한다. 이름만으로는 같은 이름의 다른 곳이 나오기 쉽다.
+ * 도시가 없으면 이름만, 이름이 없으면 null(좌표 링크만 쓴다).
+ */
+export function gmapsPlace(name, cityName) {
+  const n = String(name || "").trim(), c = String(cityName || "").trim();
+  if (!n) return null;
+  // 이름에 도시가 낱말로 이미 들어 있으면 다시 붙이지 않는다("Catedral de Granada" + "Granada")
+  const has = c && new RegExp("(^|[^\\p{L}\\p{N}])" + c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^\\p{L}\\p{N}]|$)", "iu").test(n);
+  const q = c && !has ? `${n}, ${c}` : n;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
 /** 경유지 한도(모바일 3, 그 외 9)에 맞춰 나눈 경로 링크 목록 */
 export function gmapsDirLinks(points, mode = "walking", limit = 3) {
   const ll = (p) => `${p.lat.toFixed(6)},${p.lon.toFixed(6)}`;

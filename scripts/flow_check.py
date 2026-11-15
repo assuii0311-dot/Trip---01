@@ -69,6 +69,7 @@ def main():
           res["steps"]["first_title"] = page.locator(".card .title").first.inner_text()
           page.locator(".card").first.click(); page.wait_for_selector(".sheet", timeout=10000); time.sleep(1.5)
           res["steps"]["detail_title"] = page.locator(".sheet h2").inner_text(); res["steps"]["detail_text"] = page.locator(".sheet").inner_text()[:400]
+          res["steps"]["detail_gmaps"] = [f"{a.inner_text()} → {a.get_attribute('href')[42:]}" for a in page.locator(".sheet a[href*='maps/search']").all()]  # 이름+도시 검색, 좌표(D-035)
           res["steps"]["detail_desc_heading"] = page.locator(".sheet .desc-h").inner_text().replace("\n", " ")  # 설명이 아직 없는 장소는 "생성 전"
           page.screenshot(path=str(shots / "s6.png"))
           page.click(".sheet .btn:has-text('선택')"); time.sleep(0.3); page.click(".sheet .close")
