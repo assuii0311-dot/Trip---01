@@ -63,6 +63,20 @@ export function addCustomPlace(plan, { name, lat, lon, cityId, cat = "heritage" 
   return { ...plan, custom: { ...plan.custom, [id]: p }, selection: [...plan.selection, id] };
 }
 
+/**
+ * 일정표를 만든 뒤 선택이 달라졌는지(D-036). missing: 골랐지만 일정표(날짜별 항목과 초과분)에 없는 장소, removed: 일정표에 있지만 선택에서 뺀 장소.
+ * 일정표가 없으면 둘 다 빈 목록이다.
+ */
+export function itineraryDrift(plan) {
+  const it = plan.itinerary;
+  if (!it) return { missing: [], removed: [] };
+  const inIt = new Set();
+  for (const d of it.days || []) for (const i of d.items || []) if (i.kind === "place") inIt.add(i.id);
+  for (const o of it.overflow || []) inIt.add(o.id);
+  const sel = new Set(plan.selection);
+  return { missing: plan.selection.filter((id) => !inIt.has(id)), removed: [...inIt].filter((id) => !sel.has(id)) };
+}
+
 export function setLodging(plan, cityId, patch) { return { ...plan, lodging: { ...plan.lodging, [cityId]: { ...(plan.lodging[cityId] || {}), ...patch } } }; }
 
 /** 도시별 숙박 일수 합이 기간-1과 같은지 */

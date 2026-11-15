@@ -8,14 +8,18 @@ import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
 
-export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, onCost, busy }) {
+export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, onCost, busy, role = "local", drift = { missing: [], removed: [] } }) {
+  const canEdit = role === "main" || role === "local", canPropose = role === "sub"; // 역할에 없는 편집 요소는 숨기거나 잠근다(R-22)
   const [di, setDi] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
   const days = result?.days || [];
   const day = days[di];
   const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.en || c.n.es : id; };
-  if (!result) return html`<div class="section"><${Empty}>선택한 장소 ${plan.selection.length}곳으로 일정을 만듭니다. 숙박 일수가 기간과 맞아야 합니다.</${Empty}><div class="row" style="justify-content:center"><button class="btn" disabled=${busy || plan.selection.length === 0} onClick=${onGenerate}>${busy ? "생성 중…" : "일정 생성 ▶"}</button></div></div>`;
+  if (!result) return html`<div class="section"><${Empty}>선택한 장소 ${plan.selection.length}곳으로 일정을 만듭니다. 숙박 일수가 기간과 맞아야 합니다.</${Empty}>${canEdit ? html`<div class="row" style="justify-content:center"><button class="btn" disabled=${busy || plan.selection.length === 0} onClick=${onGenerate}>${busy ? "생성 중…" : "일정 생성 ▶"}</button></div>` : html`<p class="note" style="text-align:center">메인 수립자가 일정을 생성해 저장하면 여기에 보입니다.</p>`}</div>`;
+  const nDrift = drift.missing.length + drift.removed.length;
   return html`<div>
+    ${nDrift > 0 && html`<div class="driftbar" role="status"><span>일정표를 만든 뒤 장소가 바뀌었습니다${drift.missing.length ? ` · 새로 고른 ${drift.missing.length}곳이 일정에 없음` : ""}${drift.removed.length ? ` · 뺀 ${drift.removed.length}곳이 일정에 남음` : ""}.</span>
+      ${canEdit ? html`<button class="btn small" disabled=${busy} onClick=${onGenerate}>${busy ? "만드는 중…" : "일정 다시 만들기"}</button>` : html`<span class="note">메인 수립자가 다시 만들면 반영됩니다.</span>`}</div>`}
     <div class="toolbar">${days.map((d, i) => html`<button class=${"chip " + (i === di ? "on" : "")} onClick=${() => setDi(i)}>${i + 1}일 ${d.date.slice(5)}${d.intercity ? " 🚆" : ""}</button>`)}</div>
     ${day && html`<div class="section" style="padding-top:4px">
       <p class="note">${cityName(day.cityId)} · 장소 ${day.summary.places}곳 · 이동 ${day.summary.travelMin}분(${Math.round(day.summary.travelShare * 100)}%${day.summary.warn ? " ⚠ 40% 초과" : ""}) · 도보 ${fmtDistance(day.summary.walkM)} · ${toHHMM(day.summary.start)}~${toHHMM(day.summary.end)}</p>
@@ -29,14 +33,14 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
             <div class="ico">${CAT_ICON[p.cat[0]] || "📍"}</div>
             <div class="body"><div class="title" onClick=${() => onOpenDetail(p.id)}>${toHHMM(it.start)}–${toHHMM(it.end)} ${placeName(p)}</div>
               <div class="chips meta">${it.flag && html`<${Chip} kind="warn">⚠ ${FLAG[it.flag]}</${Chip}>`}${plan.reservations[p.id] && plan.reservations[p.id] !== "none" && html`<${Chip} kind="warn">🎫 ${plan.reservations[p.id] === "required" ? "예약 필요" : "예약 권장"}</${Chip}>`}${plan.locks?.[p.id] && html`<${Chip}>🔒 잠금</${Chip}>`}</div>
-              <div class="row" style="margin-top:6px;font-size:13px"><label class="note">체류</label><input type="number" min="15" max="600" step="15" value=${it.dwell} style="width:70px;min-height:36px" onChange=${(e) => onSetDwell(p.id, Number(e.target.value))} /><span class="note">분</span>
-                <label class="note">예약 시각</label><input type="time" value=${plan.fixed?.[p.id] || ""} style="min-height:36px" onChange=${(e) => onSetFixed(p.id, e.target.value || null)} />
-                <button class="btn secondary" style="min-height:36px;padding:2px 8px" onClick=${() => onToggleLock(p.id)}>${plan.locks?.[p.id] ? "잠금 해제" : "잠금"}</button>
-                <select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">다른 날로…</option>${days.map((d2, j) => j !== di && html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select></div>
+              <div class="row" style="margin-top:6px;font-size:13px"><label class="note">체류</label><input type="number" min="15" max="600" step="15" value=${it.dwell} style="width:70px;min-height:36px" disabled=${!canEdit && !canPropose} onChange=${(e) => onSetDwell(p.id, Number(e.target.value))} /><span class="note">분</span>
+                <label class="note">예약 시각</label><input type="time" value=${plan.fixed?.[p.id] || ""} style="min-height:36px" disabled=${!canEdit} onChange=${(e) => onSetFixed(p.id, e.target.value || null)} />
+                ${canEdit && html`<button class="btn secondary" style="min-height:36px;padding:2px 8px" onClick=${() => onToggleLock(p.id)}>${plan.locks?.[p.id] ? "잠금 해제" : "잠금"}</button>`}
+                ${(canEdit || canPropose) && html`<select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">${canPropose ? "다른 날로 제안…" : "다른 날로…"}</option>${days.map((d2, j) => j !== di && html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select>`}</div>
             </div></div></div>`; })())}
-      <div class="row" style="margin-top:12px"><button class="btn secondary" disabled=${busy} onClick=${() => onRegenerateDay(day.date)}>이 날 재생성</button><button class="btn secondary" disabled=${busy} onClick=${onGenerate}>전체 재생성</button><button class="btn secondary" onClick=${() => setShowOverflow(!showOverflow)}>초과분 ${result.overflow.length}곳 ${showOverflow ? "▴" : "▾"}</button><button class="btn secondary" onClick=${onCost}>비용 €</button></div>
-      ${showOverflow && html`<div class="card" style="margin:8px 0"><div class="body"><div class="title">초과분</div>${result.overflow.length === 0 ? html`<div class="note">없음</div>` : result.overflow.map((o) => { const p = getPlace(o.id); return p && html`<div class="row" style="padding:4px 0"><span style="flex:1" onClick=${() => onOpenDetail(p.id)}>${placeName(p)} <span class="note">${o.reason}</span></span><select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">날짜에 넣기…</option>${days.map((d2, j) => html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select></div>`; })}</div></div>`}
-      <p class="note">잠긴 항목과 사용자가 배치한 항목은 재생성에도 유지됩니다(E4 4절 9항).</p>
+      <div class="row" style="margin-top:12px">${canEdit && html`<button class="btn secondary" disabled=${busy} onClick=${() => onRegenerateDay(day.date)}>이 날 재생성</button><button class="btn secondary" disabled=${busy} onClick=${onGenerate}>전체 재생성</button>`}<button class="btn secondary" onClick=${() => setShowOverflow(!showOverflow)}>초과분 ${result.overflow.length}곳 ${showOverflow ? "▴" : "▾"}</button><button class="btn secondary" onClick=${onCost}>비용 €</button></div>
+      ${showOverflow && html`<div class="card" style="margin:8px 0"><div class="body"><div class="title">초과분</div>${result.overflow.length === 0 ? html`<div class="note">없음</div>` : result.overflow.map((o) => { const p = getPlace(o.id); return p && html`<div class="row" style="padding:4px 0"><span style="flex:1" onClick=${() => onOpenDetail(p.id)}>${placeName(p)} <span class="note">${o.reason}</span></span>${(canEdit || canPropose) && html`<select style="min-height:36px" value="" onChange=${(e) => { if (e.target.value) onMoveToDay(p.id, e.target.value); }}><option value="">${canPropose ? "날짜 제안…" : "날짜에 넣기…"}</option>${days.map((d2, j) => html`<option value=${d2.date}>${j + 1}일 ${d2.date.slice(5)}</option>`)}</select>`}</div>`; })}</div></div>`}
+      <p class="note">${canEdit ? "잠긴 항목과 사용자가 배치한 항목은 재생성에도 유지됩니다(E4 4절 9항)." : canPropose ? "서브 수립자: 체류 시간이나 날짜를 바꾸면 제안으로 보내집니다." : "열람 모드입니다."}</p>
     </div>`}
   </div>`;
 }

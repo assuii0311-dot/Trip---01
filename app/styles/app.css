@@ -62,14 +62,29 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .catcard.on { border-color: var(--accent); background: #eff6ff; }
 .catcard .name { font-weight: 600; }
 .catcard .ex { font-size: 13px; color: var(--muted); }
-.steps { display: flex; gap: 8px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
-.steps .on { color: var(--accent); font-weight: 600; }
+.steps { display: flex; gap: 6px; margin-bottom: 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.steps button { font: inherit; color: inherit; min-height: 36px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: none; }
+.steps .on { color: var(--accent); font-weight: 600; border-color: var(--accent); }
+/* 여행 요약 줄과 하위 탭(D-036). 높이를 고정해 지도·목록 화면의 높이 계산에 쓴다 */
+.tripbar { height: 40px; display: flex; gap: 6px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--line); background: #f8fafc; overflow-x: auto; white-space: nowrap; flex: none; }
+.tripbar button { font: inherit; font-size: 13px; color: var(--fg); min-height: 30px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); flex: none; }
+.subtabs { height: 48px; display: flex; flex: none; border-bottom: 1px solid var(--line); background: var(--bg); }
+.subtabs button { flex: 1; font: inherit; font-size: 15px; color: var(--muted); border: 0; border-bottom: 3px solid transparent; background: none; min-height: 44px; }
+.subtabs button.on { color: var(--accent); font-weight: 600; border-bottom-color: var(--accent); }
+.linkbtn { font: inherit; color: var(--accent); background: none; border: 0; padding: 0 2px; text-decoration: underline; min-height: 28px; }
+.picks { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: #f3f4f6; font-size: 14px; color: var(--muted); }
+.picks.has { background: #ecfdf3; color: var(--fg); }
+.driftbar { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin: 8px 16px 0; padding: 10px 12px; border: 1px solid var(--warn); border-radius: 10px; background: #fff7ed; font-size: 14px; }
+.mapwrap { position: relative; }
+.maplegend { position: absolute; right: 8px; top: 8px; z-index: 2; display: flex; gap: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.92); font-size: 12px; color: #111; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+.maplegend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+.maplegend .dot.picked { background: #15803D; } .maplegend .dot.landmark { background: #CA8A04; } .maplegend .dot.other { background: #60a5fa; }
 .map { height: 40vh; min-height: 220px; width: 100%; background: #eef2f7; position: relative; }
 .map.collapsed { height: 0; min-height: 0; overflow: hidden; }
 .maptoggle { position: absolute; right: 8px; top: 8px; z-index: 2; }
 .toolbar { display: flex; gap: 8px; padding: 8px 16px; align-items: center; overflow-x: auto; }
 .toolbar input { flex: 1; min-width: 120px; min-height: 40px; font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
-.sheet { position: fixed; left: 0; right: 0; bottom: 0; top: 10vh; background: var(--bg); border-radius: 16px 16px 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,.15); z-index: 10; overflow: auto; padding: 16px 16px 32px; }
+.sheet { position: fixed; left: 0; right: 0; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom)); top: 10vh; background: var(--bg); border-radius: 16px 16px 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,.15); z-index: 10; overflow: auto; padding: 16px 16px 32px; }
 .sheet .close { position: absolute; right: 12px; top: 12px; min-width: 44px; min-height: 44px; border: 0; background: none; font-size: 20px; }
 .sheet h2 { margin: 0 24px 4px 0; font-size: 20px; }
 .alt { color: var(--muted); font-size: 14px; }
@@ -77,6 +92,17 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .src { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 12px; }
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 30; background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.sheet.proposal { top: auto; z-index: 20; max-height: 80vh; }
+.sheet.proposal .what { font-size: 17px; font-weight: 600; margin: 8px 0; }
+.sheet.proposal textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+.proposals h2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.proposals h2 .btn { margin-left: auto; }
+.btn.small { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+.card.proposal { margin: 0 0 8px; }
+.card.proposal.approved, .card.proposal.rejected { opacity: .7; }
+.chip .x { border: 0; background: none; color: inherit; font: inherit; padding: 0 0 0 4px; min-width: 24px; min-height: 24px; }
+.memo { margin: 4px 0; font-size: 15px; }
 .desc-h { font-size: 17px; margin: 12px 0 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .desc-h .speak { margin-left: auto; min-height: 36px; padding: 4px 12px; font-size: 14px; }
 .desc-ko p { margin: 6px 0; line-height: 1.65; }
@@ -86,5 +112,5 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .empty { padding: 32px 16px; color: var(--muted); text-align: center; }
 .note { font-size: 13px; color: var(--muted); }
 a { color: var(--accent); }
-@media (min-width: 600px) { .two { display: grid; grid-template-columns: 40% 60%; height: calc(100vh - var(--top-h) - var(--tab-h)); } .two .list { overflow: auto; } .two .map { height: 100%; } .cats { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 600px) { .two { display: grid; grid-template-columns: 40% 60%; height: calc(100vh - var(--top-h) - var(--tab-h) - var(--bars-h, 0px) - env(safe-area-inset-bottom)); } .two .list { overflow: auto; } .two .mapwrap { height: 100%; } .two .map { height: 100%; } .cats { grid-template-columns: repeat(3, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

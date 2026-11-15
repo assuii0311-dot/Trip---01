@@ -128,7 +128,8 @@
 | Selection | 선택 장소 place_id 목록, 직접 추가 장소(명칭·좌표) | R-07 |
 | Day / Item | 날짜, 순서, place_id, 시작·종료 예정 시각, 이동 수단, 확인 상태(영업시간 확인 등), 메모 | R-08, R-14 |
 | Lodging | 도시, 일수, 지역, 예약 정보 | R-10, R-19 |
-| Proposal | 제안자, 대상, 내용, 상태(대기·승인·거절) | R-23 |
+| Proposal | id(시각-작성자), author, created, kind(add·remove·move·dwell·memo), target{placeId, name, date}, value{date, from, minutes}, memo, status(pending·approved·rejected), decided{by, at, note}, base(작성 시점의 본문 버전). 파일은 `proposals/<id>.json.enc`(D-034) | R-23 |
+| Note | 승인된 메모 제안: id, placeId, date, text, by, at. 본문의 plan.notes에 둔다 | R-23 |
 | CostEstimate | 항목별 범위와 근거 | R-26 |
 | Export | KML·CSV·경로 링크 생성 기록 | R-27 |
 

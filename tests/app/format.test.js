@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fmtDistance, fmtMinutes, fmtEurRange, gmapsCoord, gmapsDirLinks } from "../../app/src/util/format.js";
+import { fmtDistance, fmtMinutes, fmtEurRange, gmapsCoord, gmapsPlace, gmapsDirLinks } from "../../app/src/util/format.js";
 import { md5 } from "../../app/src/util/hash.js";
 
 test("표기 규칙: 거리·시간·금액", () => {
@@ -14,6 +14,15 @@ test("구글맵 링크: 좌표 검색과 경유지 분할(모바일 3개)", () =
   const links = gmapsDirLinks(pts, "walking", 3);
   assert.equal(links.length, 2); assert.equal(links[0].via.length, 3); assert.ok(links[0].url.includes("waypoints=") && links[0].url.includes("travelmode=walking"));
   assert.equal(gmapsDirLinks(pts, "walking", 9).length, 1);
+});
+test("구글맵 링크: 이름에 도시를 붙여 검색한다 (D-035)", () => {
+  assert.equal(gmapsPlace("Iglesia de San Juan", "Ocaña"), "https://www.google.com/maps/search/?api=1&query=Iglesia%20de%20San%20Juan%2C%20Oca%C3%B1a");
+  assert.equal(gmapsPlace("Museu Etnològic de Dénia", "Dénia"), "https://www.google.com/maps/search/?api=1&query=Museu%20Etnol%C3%B2gic%20de%20D%C3%A9nia"); // 이름에 도시가 있으면 다시 붙이지 않는다
+  assert.equal(gmapsPlace(" Casa Batlló ", ""), "https://www.google.com/maps/search/?api=1&query=Casa%20Batll%C3%B3"); // 도시가 없으면 이름만
+  assert.equal(gmapsPlace("Catedral de Granada", "granada"), "https://www.google.com/maps/search/?api=1&query=Catedral%20de%20Granada");
+  assert.equal(gmapsPlace("Teatro Real", "Ea"), "https://www.google.com/maps/search/?api=1&query=Teatro%20Real%2C%20Ea"); // 낱말이 아니라 글자만 겹치면 도시를 붙인다
+  assert.equal(gmapsPlace("Bar (Centro)", "Centro"), "https://www.google.com/maps/search/?api=1&query=Bar%20(Centro)");
+  assert.equal(gmapsPlace("", "Madrid"), null); assert.equal(gmapsPlace(null, null), null);
 });
 test("md5: 파이프라인 샤드 키와 같은 값(RFC 1321 예)", () => {
   assert.equal(md5(""), "d41d8cd98f00b204e9800998ecf8427e");

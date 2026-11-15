@@ -11,7 +11,8 @@ export function makeGitHub(fetchFn = globalThis.fetch) {
     if (token) headers.Authorization = `Bearer ${token}`;
     if (etag) headers["If-None-Match"] = etag;
     if (body) headers["Content-Type"] = "application/json";
-    const res = await fetchFn(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    // cache "no-cache": 브라우저 캐시를 쓰더라도 매번 서버에 최신 여부를 확인한다. GitHub 응답은 60초 캐시가 붙어 있어, 기본값이면 다른 기기의 저장·승인이 1분까지 보이지 않는다
+    const res = await fetchFn(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: "no-cache" });
     const rate = { limit: res.headers.get("x-ratelimit-limit"), remaining: res.headers.get("x-ratelimit-remaining") };
     if (res.status === 304) return { status: 304, data: null, etag, rate };
     const text = await res.text();
@@ -37,6 +38,16 @@ export function makeGitHub(fetchFn = globalThis.fetch) {
       const d = r.data;
       const content = d.encoding === "base64" ? new TextDecoder().decode(Uint8Array.from(atob(d.content.replace(/\n/g, "")), (c) => c.charCodeAt(0))) : d.content;
       return { content, sha: d.sha, rate: r.rate };
+    },
+    /** 디렉터리의 파일 목록 [{name, path, sha, type}]. 디렉터리가 없으면 빈 목록. 호출 1회 */
+    async listDir(owner, repo, path, { token } = {}) {
+      try {
+        const r = await call(`/repos/${owner}/${repo}/contents/${path}`, { token });
+        return { entries: Array.isArray(r.data) ? r.data.map((e) => ({ name: e.name, path: e.path, sha: e.sha, type: e.type })) : [], rate: r.rate };
+      } catch (e) {
+        if (e instanceof GitHubError && e.status === 404) return { entries: [], rate: null };
+        throw e;
+      }
     },
     /** 파일 생성·갱신. sha는 갱신 시 현재 blob SHA(불일치면 GitHub가 409). 반환: 새 blob SHA와 커밋 SHA */
     async putFile(owner, repo, path, content, message, { sha, token, branch } = {}) {

@@ -4,12 +4,12 @@ import { md5 } from "../../util/hash.js";
 import { html, Chip } from "../components/ui.js";
 import { placeName, altNames, isForeignLandmark, firstSentences, hasPlaceKoShard } from "../../data/places.js";
 import { makeSpeaker } from "../../util/speech.js";
-import { gmapsCoord, gmapsName, CAT_ICON } from "../../util/format.js";
+import { gmapsCoord, gmapsPlace, CAT_ICON } from "../../util/format.js";
 import { reservationHint, placeAlternatives } from "../../engines/e2.js";
 
 const CV = { match: ["ok", "일치"], mismatch: ["warn", "불일치"], single: ["x", "단일 출처"], user: ["user", "사용자 추가"] };
 
-export function S6Detail({ place: p, categories, loader, e5Index, onClose, selected, onToggleSelect, cityPlaces = [], prof, reservation, onSetReservation, onOpenDetail }) {
+export function S6Detail({ place: p, categories, loader, e5Index, onClose, selected, onToggleSelect, cityPlaces = [], prof, reservation, onSetReservation, onOpenDetail, role = "local", notes = [], onProposeMemo, cityName = "" }) {
   const [src, setSrc] = useState(null);
   useEffect(() => {
     let alive = true;
@@ -58,8 +58,8 @@ export function S6Detail({ place: p, categories, loader, e5Index, onClose, selec
     <h2>${name}${p.n?.ko_src === "generated" && html` <span class="chip x">생성</span>`}</h2>
     ${alt && html`<div class="alt">${alt}</div>`}
     <div class="row" style="margin:8px 0">
-      <a class="btn secondary" href=${gmapsCoord(p.lat, p.lon)} target="_blank" rel="noopener">📍 구글맵(좌표)</a>
-      <a class="btn secondary" href=${gmapsName(p.n?.local || name)} target="_blank" rel="noopener">🔎 이름 검색</a>
+      ${gmapsPlace(p.n?.local || name, cityName) && html`<a class="btn secondary" href=${gmapsPlace(p.n?.local || name, cityName)} target="_blank" rel="noopener">🔎 구글맵에서 보기</a>`}
+      <a class="btn secondary" href=${gmapsCoord(p.lat, p.lon)} target="_blank" rel="noopener" title="검색 결과가 다른 곳일 때 위치를 확인합니다">📍 위치만 보기(좌표)</a>
     </div>
     <div class="chips">
       ${isForeignLandmark(p) && html`<${Chip} kind="star">★ 해외 대표 명소</${Chip}>`}
@@ -95,7 +95,10 @@ export function S6Detail({ place: p, categories, loader, e5Index, onClose, selec
       ${p.links?.kowiki && html` · <a href=${"https://ko.wikipedia.org/wiki/" + encodeURIComponent(p.links.kowiki)} target="_blank" rel="noopener">ko.wikipedia</a>`}
       ${p.links?.web && html` · <a href=${p.links.web} target="_blank" rel="noopener">웹사이트</a>`}</div>
     ${alts.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">대안 장소 <span class="note">같은 범주, 2km 안</span></h3>${alts.map((a) => html`<div class="row" style="padding:4px 0"><a href="#" style="flex:1" onClick=${(e) => { e.preventDefault(); onOpenDetail && onOpenDetail(a.p.id); }}>${CAT_ICON[a.p.cat[0]] || ""} ${placeName(a.p)}</a><span class="note">${Math.round(a.dist)}m · ${a.score.toFixed(2)}</span></div>`)}`}
-    ${onToggleSelect && html`<div style="margin-top:16px"><button class="btn" onClick=${onToggleSelect}>${selected ? "선택 해제" : "+ 선택"}</button></div>`}
+    ${notes.length > 0 && html`<h3 style="font-size:17px;margin:12px 0 4px">메모</h3>${notes.map((n) => html`<p class="memo">${n.text} <span class="note">— ${n.by}</span></p>`)}`}
+    ${(onToggleSelect || onProposeMemo) && html`<div class="row" style="margin-top:16px">
+      ${onToggleSelect && html`<button class="btn" onClick=${onToggleSelect}>${role === "sub" ? (selected ? "삭제 제안" : "추가 제안") : selected ? "선택 해제" : "+ 선택"}</button>`}
+      ${onProposeMemo && html`<button class="btn secondary" onClick=${onProposeMemo}>메모 제안</button>`}</div>`}
   </div>`;
 }
 
