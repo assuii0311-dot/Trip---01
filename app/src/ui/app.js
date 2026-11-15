@@ -17,7 +17,8 @@ import { CostPanel } from "./components/cost_panel.js";
 import { estimateCost } from "../engines/e6.js";
 import { profile, cityNights } from "../engines/e2.js";
 import { tripDays } from "../state/store.js";
-import { loadPlan, savePlan, toggleSelect as planToggle, assignDay, moveInDay, addCustomPlace, setLodging } from "../state/plan.js";
+import { loadPlan, savePlan, toggleSelect as planToggle, assignDay, moveInDay, addCustomPlace, setLodging, itineraryDrift } from "../state/plan.js";
+import { defaultNav, applyNav, navToHash, hashToNav, screenKey, sanitizeNav, saveNav, loadNav } from "../state/nav.js";
 import { makeGitHub } from "../engines/e7/github.js";
 import { makeSync, parseRepo } from "../engines/e7/sync.js";
 import { validateKey } from "../engines/e7/crypto.js";
@@ -34,12 +35,30 @@ const DAY_CAPACITY = 4; // E4 (e) 하루 수용 3~4곳
 const AUTOSAVE_MS = 120000; // E7 (g) 유휴 2분
 
 export function App({ data, loader }) {
-  const [tab, setTab] = useState("input");
   const [plan, setPlanState] = useState(() => loadPlan(localStorage));
-  const [detailId, setDetailId] = useState(null);
-  const [exploreTab, setExploreTab] = useState("explore");
-  const [exploreCity, setExploreCity] = useState(null);
-  const [planTab, setPlanTab] = useState("arrange");
+  // 화면 위치와 보기 상태(D-036): 탭을 옮기거나 새로 고쳐도 보던 자리를 잃지 않게 한곳에 두고, 주소(#...)와 기기에 적는다
+  const [nav, setNavState] = useState(() => {
+    const cityIds = plan.trip.cities || [];
+    const saved = sanitizeNav(loadNav(localStorage), { cityIds });
+    const fromHash = hashToNav(location.hash);
+    return sanitizeNav(fromHash ? applyNav(saved, { ...fromHash, detail: null }) : saved, { cityIds });
+  });
+  const navRef = useRef(nav); navRef.current = nav;
+  const scrollMem = useRef({}).current; // 화면별 목록 위치
+  const scrollNow = () => { const m = document.querySelector(".main"), l = document.querySelector(".two .list"); return { main: m ? m.scrollTop : 0, list: l ? l.scrollTop : 0 }; };
+  /** 화면을 옮기거나 보기 상태를 바꾼다. 화면(주소)이 달라질 때만 방문 기록에 남긴다 */
+  const go = (patch, { replace = false } = {}) => {
+    const cur = navRef.current, next = applyNav(cur, patch);
+    if (screenKey(next) !== screenKey(cur)) scrollMem[screenKey(cur)] = scrollNow();
+    navRef.current = next; setNavState(next); saveNav(localStorage, next);
+    const h = navToHash(next);
+    if (h !== location.hash) { try { history[replace ? "replaceState" : "pushState"](null, "", location.pathname + location.search + h); } catch {} }
+  };
+  const tab = nav.tab, detailId = nav.detail, exploreTab = nav.exploreTab, planTab = nav.planTab;
+  const setTab = (k) => go({ tab: k, detail: null });
+  const setDetailId = (id) => go({ detail: id });
+  const setExploreTab = (k) => go({ exploreTab: k });
+  const setPlanTab = (k) => go({ planTab: k });
   const [genBusy, setGenBusy] = useState(false);
   const [costOpen, setCostOpen] = useState(false);
   const travelCache = useRef(new Map()).current;
@@ -77,6 +96,7 @@ export function App({ data, loader }) {
   const setDwell = (id, v) => { if (roleRef.current === "sub") return propose("dwell", placeTarget(id), { minutes: Number(v) }); setPlan((pl) => ({ ...pl, dwell: { ...(pl.dwell || {}), [id]: v } })); };
   const byId = new Map(data.tier1.map((p) => [p.id, p]));
   const getPlace = (id) => byId.get(id) || data.tier2cache.get(id) || plan.custom[id];
+  const getPlaceRef = useRef(getPlace); getPlaceRef.current = getPlace;
   const prof = profile(plan.trip, data.categories, DAY_CAPACITY);
   const nightsTotal = Math.max(0, tripDays(plan.trip) - 1);
   const recCounts = Object.fromEntries(plan.trip.cities.map((id) => [id, (data.cities.find((c) => c.id === id)?.places?.tier1) || 1]));
@@ -140,7 +160,7 @@ export function App({ data, loader }) {
       const inter = travelCache.get(days[0]?.cityId)?.inter;
       r.days.forEach((d, i) => { const src = days[i].intercityFrom; if (src && inter) { const a = data.cities.find((c) => c.id === src), b = data.cities.find((c) => c.id === d.cityId); if (a && b) d.intercity = { from: src, to: d.cityId, leg: intercityLeg(a, b, inter) }; } });
       setPlan((pl) => ({ ...pl, itinerary: { ...r, generated: new Date().toISOString() } }));
-      setPlanTab("itinerary");
+      go({ tab: "plan", planTab: "itinerary" });
     } catch (e) { alert("일정 생성 실패: " + (e.message || e)); } finally { setGenBusy(false); }
   }
 
@@ -244,7 +264,7 @@ export function App({ data, loader }) {
       if (q && parseRepo(q) && q !== c.repo) { c = { repo: q }; setCfg(c); try { localStorage.removeItem(SYNCMETA_KEY); } catch {} } // 다른 여행의 Key·토큰은 쓰지 않는다
     } catch {}
     if (!parseRepo(c.repo)) return;
-    if (!c.key || validateKey(c.key)) { setTab("settings"); setNotice("공유받은 여행입니다. Key를 입력하고 불러오기를 누르세요."); return; }
+    if (!c.key || validateKey(c.key)) { go({ tab: "settings", detail: null }, { replace: true }); setNotice("공유받은 여행입니다. Key를 입력하고 불러오기를 누르세요."); return; }
     const m = readMeta();
     onLoad({ keepDraft: m && m.dirty ? m : null }).then((msg) => setNotice(msg)).catch((e) => setNotice(`여행 저장소를 읽지 못했습니다: ${e.message || e}`));
   }, []);
@@ -268,19 +288,63 @@ export function App({ data, loader }) {
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(null), 6000); return () => clearTimeout(t); }, [notice]);
   const pendingCount = proposals.list.filter((x) => x.status === "pending").length;
 
+  // 뒤로 가기·앞으로 가기: 주소에 적힌 화면으로 간다(앱을 벗어나지 않는다)
+  useEffect(() => {
+    try { history.replaceState(null, "", location.pathname + location.search + navToHash(navRef.current)); } catch {}
+    const onPop = () => {
+      const p = hashToNav(location.hash); if (!p) return;
+      const cur = navRef.current; scrollMem[screenKey(cur)] = scrollNow();
+      const next = applyNav(cur, { detail: null, ...p, ...(p.detail && !getPlaceRef.current(p.detail) ? { detail: null } : {}) });
+      navRef.current = next; setNavState(next); saveNav(localStorage, next);
+    };
+    window.addEventListener("popstate", onPop); return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  // 화면이 바뀌면 그 화면에서 보던 목록 위치로 돌아간다(목록이 늦게 채워질 수 있어 몇 번 시도한다)
+  const sk = screenKey(nav);
+  useEffect(() => {
+    const want = scrollMem[sk];
+    const els = () => [document.querySelector(".main"), document.querySelector(".two .list")];
+    if (!want || (!want.main && !want.list)) { const [m, l] = els(); if (m) m.scrollTop = 0; if (l) l.scrollTop = 0; return; } // 처음 온 화면은 맨 위에서 시작한다
+    let stop = false; const cancel = () => { stop = true; };
+    const apply = () => {
+      if (stop) return;
+      const [m, l] = els(); if (m && want.main) m.scrollTop = want.main; if (l && want.list) l.scrollTop = want.list;
+      if ((!want.main || (m && Math.abs(m.scrollTop - want.main) < 2)) && (!want.list || (l && Math.abs(l.scrollTop - want.list) < 2))) stop = true; // 닿았으면 그만둔다
+    };
+    apply(); const timers = [120, 500, 1400].map((ms) => setTimeout(apply, ms));
+    // 사용자가 직접 움직이기 시작하면 더는 되돌리지 않는다
+    const evs = ["touchstart", "wheel", "keydown", "mousedown"]; evs.forEach((e) => window.addEventListener(e, cancel, { passive: true }));
+    return () => { timers.forEach(clearTimeout); evs.forEach((e) => window.removeEventListener(e, cancel)); };
+  }, [sk]);
+  // 여행지가 바뀌어 보던 도시가 없어졌으면 비운다
+  useEffect(() => { const c = navRef.current.explore.city; if (c && !plan.trip.cities.includes(c)) go({ explore: { city: null } }); }, [plan.trip.cities.join(",")]);
+  const drift = itineraryDrift(plan);
+  const tripLine = (() => {
+    const t0 = plan.trip, days = tripDays(t0), md = (d) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+    const names = t0.cities.map((id) => { const c = cityById(id); return c ? destName(c) : id; });
+    return { dates: t0.start && t0.end ? `${md(t0.start)}~${md(t0.end)} · ${days}일` : null, cities: names.length ? `${names[0]}${names.length > 1 ? ` 외 ${names.length - 1}곳` : ""}` : null, picks: plan.selection.length };
+  })();
+  const showTripbar = !!(tripLine.dates || tripLine.cities || tripLine.picks > 0);
+  // 위쪽 줄(여행 요약, 하위 탭)의 높이를 알려 지도·목록 화면이 남은 높이를 정확히 쓰게 한다
+  useEffect(() => { const el = document.getElementById("app"); if (el) el.style.setProperty("--bars-h", `${(showTripbar ? 40 : 0) + (tab === "explore" || tab === "plan" ? 48 : 0)}px`); }, [showTripbar, tab]);
+  const SUBTABS = { explore: [["summary", "도시 요약"], ["explore", "장소 고르기"]], plan: [["arrange", "배치·숙박"], ["itinerary", "일정표"]] };
   const titles = { input: "입력", explore: exploreTab === "summary" ? "요약" : "탐색·추천", plan: planTab === "arrange" ? "선택·배치" : "일정표", share: "공유", settings: "설정" };
   return html`
     <header class="top"><h1>${titles[tab]}</h1>
-      ${tab === "explore" && html`<button class="chip" onClick=${() => setExploreTab(exploreTab === "summary" ? "explore" : "summary")}>${exploreTab === "summary" ? "탐색 ▶" : "◀ 요약"}</button>`}
-      ${tab === "plan" && html`<button class="chip" onClick=${() => setPlanTab(planTab === "arrange" ? "itinerary" : "arrange")}>${planTab === "arrange" ? "일정표 ▶" : "◀ 배치"}</button>`}
       ${sync.connected ? html`<button class=${"chip " + (sync.dirty ? "warn" : sync.stale ? "warn" : "ok")} title="버전" onClick=${() => { setTab("settings"); }}>${sync.commit ? sync.commit.slice(0, 7) : "—"}${sync.dirty ? " · 저장 필요" : sync.stale ? " · 오래됨" : " · 최신"}${role === "sub" ? " · 서브" : role === "viewer" ? " · 열람" : ""}${role === "main" && pendingCount ? ` · 제안 ${pendingCount}` : ""}</button>` : html`<span class="version" title="데이터 갱신일">데이터 ${data.attribution.generated}</span>`}
     </header>
+    ${showTripbar && html`<div class="tripbar" aria-label="지금 여행">
+      ${tripLine.dates ? html`<button onClick=${() => go({ tab: "input", inputStep: 1, detail: null })} title="기간 바꾸기">📅 ${tripLine.dates}</button>` : html`<button onClick=${() => go({ tab: "input", inputStep: 1, detail: null })}>📅 기간 정하기</button>`}
+      <button onClick=${() => go({ tab: "input", inputStep: 2, detail: null })} title="여행지 바꾸기">📍 ${tripLine.cities || "여행지 고르기"}</button>
+      <button onClick=${() => go({ tab: "plan", planTab: "arrange", detail: null })} title="고른 장소 보기">✓ 고른 장소 ${tripLine.picks}곳</button>
+    </div>`}
+    ${SUBTABS[tab] && html`<div class="subtabs" role="tablist">${SUBTABS[tab].map(([k, label]) => { const on = (tab === "explore" ? exploreTab : planTab) === k; return html`<button role="tab" aria-selected=${on} class=${on ? "on" : ""} onClick=${() => (tab === "explore" ? setExploreTab(k) : setPlanTab(k))}>${label}${tab === "plan" && k === "itinerary" && (drift.missing.length + drift.removed.length) > 0 ? " •" : ""}</button>`; })}</div>`}
     <main class="main">
-      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${canEdit ? "main" : "viewer"} onDone=${() => { setExploreTab("summary"); setTab("explore"); }} />`}
-      ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} onReselect=${() => setTab("input")} onExplore=${(cid) => { setExploreCity(cid); setExploreTab("explore"); }} />`}
-      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} key=${exploreCity || "x"} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} initialCity=${exploreCity} role=${role} />`}
+      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${canEdit ? "main" : "viewer"} ui=${{ step: nav.inputStep, ...nav.input }} setUi=${({ step, ...rest }) => go({ ...(step ? { inputStep: step } : {}), ...(Object.keys(rest).length ? { input: rest } : {}) })} onDone=${() => go({ tab: "explore", exploreTab: "summary", detail: null })} />`}
+      ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} selection=${plan.selection} getPlace=${getPlace} onReselect=${() => go({ tab: "input", inputStep: 4, detail: null })} onExplore=${(cid) => go({ exploreTab: "explore", explore: { city: cid } })} />`}
+      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} ui=${nav.explore} setUi=${(patch) => go({ explore: patch })} role=${role} />`}
       ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${assignPlace} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} role=${role} />`}
-      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${setDwell} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { assignPlace(id, d); if (canEdit) setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} role=${role} />`}
+      ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${setDwell} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { assignPlace(id, d); if (canEdit) setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} role=${role} drift=${drift} />`}
     ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: cityById, trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
       ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} role=${role} account=${sync.account} proposals=${proposals} onRefreshProposals=${() => refreshProposals()} onDecide=${onDecide} onProposeMemo=${() => propose("memo")} />`}
       ${tab === "settings" && html`<${S8Settings} data=${data} cfg=${cfg} setCfg=${setCfg} syncState=${{ ...sync, role }} onCheck=${onCheck} onInit=${onInit} onLoad=${() => onLoad()} onSave=${onSave} onDisconnect=${onDisconnect} onSetSubs=${onSetSubs} hasMine=${hasMine} onRestoreMine=${onRestoreMine} onDropMine=${onDropMine} />`}
@@ -291,5 +355,5 @@ export function App({ data, loader }) {
       <button class="btn secondary" onClick=${async () => { if (confirm("정말 내 변경으로 덮어쓸까요? 상대의 변경이 사라집니다.")) { try { await doSave(true); } catch {} setConflict(null); } }}>덮어쓰기</button></div></div>`}
     ${proposalDraft && html`<${ProposalSheet} draft=${proposalDraft} dates=${dateList(plan.trip)} describe=${(d) => describeProposal({ ...d, memo: d.memo || "" }, (id) => { const pl = getPlace(id); return pl ? placeName(pl) : null; }, dayOfPlace)} onSubmit=${submitProposal} onClose=${() => setProposalDraft(null)} />`}
     ${notice && html`<div class="toast" role="status" onClick=${() => setNotice(null)}>${notice}</div>`}
-    <nav class="tabs" aria-label="주 탐색">${TABS.map(([k, label, ico]) => html`<button class=${tab === k ? "on" : ""} onClick=${() => { setTab(k); setDetailId(null); }} aria-current=${tab === k ? "page" : undefined}><span class="ico" aria-hidden="true">${ico}</span>${label}</button>`)}</nav>`;
+    <nav class="tabs" aria-label="주 탐색">${TABS.map(([k, label, ico]) => html`<button class=${tab === k ? "on" : ""} onClick=${() => setTab(k)} aria-current=${tab === k ? "page" : undefined}><span class="ico" aria-hidden="true">${ico}</span>${label}</button>`)}</nav>`;
 }

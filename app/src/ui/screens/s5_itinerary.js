@@ -8,7 +8,7 @@ import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
 
-export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, onCost, busy, role = "local" }) {
+export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRegenerateDay, onSetDwell, onSetFixed, onToggleLock, onOpenDetail, onMoveToDay, onCost, busy, role = "local", drift = { missing: [], removed: [] } }) {
   const canEdit = role === "main" || role === "local", canPropose = role === "sub"; // 역할에 없는 편집 요소는 숨기거나 잠근다(R-22)
   const [di, setDi] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
@@ -16,7 +16,10 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
   const day = days[di];
   const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.en || c.n.es : id; };
   if (!result) return html`<div class="section"><${Empty}>선택한 장소 ${plan.selection.length}곳으로 일정을 만듭니다. 숙박 일수가 기간과 맞아야 합니다.</${Empty}>${canEdit ? html`<div class="row" style="justify-content:center"><button class="btn" disabled=${busy || plan.selection.length === 0} onClick=${onGenerate}>${busy ? "생성 중…" : "일정 생성 ▶"}</button></div>` : html`<p class="note" style="text-align:center">메인 수립자가 일정을 생성해 저장하면 여기에 보입니다.</p>`}</div>`;
+  const nDrift = drift.missing.length + drift.removed.length;
   return html`<div>
+    ${nDrift > 0 && html`<div class="driftbar" role="status"><span>일정표를 만든 뒤 장소가 바뀌었습니다${drift.missing.length ? ` · 새로 고른 ${drift.missing.length}곳이 일정에 없음` : ""}${drift.removed.length ? ` · 뺀 ${drift.removed.length}곳이 일정에 남음` : ""}.</span>
+      ${canEdit ? html`<button class="btn small" disabled=${busy} onClick=${onGenerate}>${busy ? "만드는 중…" : "일정 다시 만들기"}</button>` : html`<span class="note">메인 수립자가 다시 만들면 반영됩니다.</span>`}</div>`}
     <div class="toolbar">${days.map((d, i) => html`<button class=${"chip " + (i === di ? "on" : "")} onClick=${() => setDi(i)}>${i + 1}일 ${d.date.slice(5)}${d.intercity ? " 🚆" : ""}</button>`)}</div>
     ${day && html`<div class="section" style="padding-top:4px">
       <p class="note">${cityName(day.cityId)} · 장소 ${day.summary.places}곳 · 이동 ${day.summary.travelMin}분(${Math.round(day.summary.travelShare * 100)}%${day.summary.warn ? " ⚠ 40% 초과" : ""}) · 도보 ${fmtDistance(day.summary.walkM)} · ${toHHMM(day.summary.start)}~${toHHMM(day.summary.end)}</p>

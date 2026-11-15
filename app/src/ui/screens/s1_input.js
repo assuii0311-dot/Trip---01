@@ -1,5 +1,6 @@
 // S1 입력(흐름 1, F-01~F-03). docs/04-wireframes.md S1. 단계: 기본 정보 → 여행지(나라 아래 도시·섬 카드, D-030) → 공항·여행 형태 → 취향
 import { useState } from "../../lib.js";
+import { inputFilterCount, clearedInput } from "../../state/nav.js";
 import { html } from "../components/ui.js";
 import { validateTrip, tripDays } from "../../state/store.js";
 import { CAT_ICON } from "../../util/format.js";
@@ -52,14 +53,18 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
   </div>`;
 }
 
-export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone }) {
-  const [step, setStep] = useState(1);
-  const [q, setQ] = useState("");
-  const [kind, setKind] = useState("all");
-  const [focus, setFocus] = useState([]);
-  const [region, setRegion] = useState("");
+export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone, ui, setUi }) {
+  // 단계와 여행지 목록의 검색어·필터는 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
+  const [local, setLocal] = useState({ step: 1, q: "", kind: "all", focus: [], region: "" });
+  const view = ui || local, patch = setUi || ((p) => setLocal((s) => ({ ...s, ...p })));
+  const { step, q, kind, focus, region } = view;
+  const setStep = (s) => patch({ step: s }), setQ = (v) => patch({ q: v }), setKind = (v) => patch({ kind: v }), setFocus = (v) => patch({ focus: v }), setRegion = (v) => patch({ region: v });
   const [showErr, setShowErr] = useState(false);
   const err = validateTrip(trip);
+  // 단계 표시를 눌러 이동한다. 앞 단계는 언제나, 뒤 단계는 앞 단계의 필수 입력이 채워졌을 때만
+  const blockedAt = (s) => (s >= 2 && (err.period || err.people) ? 1 : s >= 3 && err.cities ? 2 : s >= 4 && err.day ? 3 : 0);
+  const jump = (s) => { const b = blockedAt(s); if (b) { setShowErr(true); setStep(b); } else { setShowErr(false); setStep(s); } };
+  const nFilters = inputFilterCount(view);
   const ro = role !== "main";
   const upd = (patch) => !ro && setTrip({ ...trip, ...patch });
   const catName = (id) => (categories.find((c) => c.id === id) || {}).ko || id;
@@ -73,7 +78,7 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
   const nIsland = list.filter(isIsland).length;
   const steps = ["기본 정보", "여행지", "공항·여행 형태", "취향"];
   return html`<div class="section">
-    <div class="steps">${steps.map((s, i) => html`<span class=${step === i + 1 ? "on" : ""}>${i + 1} ${s}</span>`)}</div>
+    <div class="steps" role="tablist" aria-label="입력 단계">${steps.map((s, i) => html`<button type="button" role="tab" aria-selected=${step === i + 1} class=${step === i + 1 ? "on" : ""} onClick=${() => jump(i + 1)}>${i + 1} ${s}</button>`)}</div>
     ${ro && html`<p class="note">열람 모드입니다. 수립자만 입력을 바꿀 수 있습니다.</p>`}
     ${step === 1 && html`
       <div class="field"><label>나라</label><div class="row"><span class="chip on">${COUNTRY}</span><span class="note">지금은 스페인만 준비되어 있습니다. 다음 단계에서 스페인의 여행지(도시·섬)를 보고 고릅니다.</span></div></div>
@@ -90,7 +95,7 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
         <div class="destfilter"><div class="seg">${[["all", "전체"], ["city", "도시"], ["island", "섬"]].map(([k, v]) => html`<button class=${kind === k ? "on" : ""} onClick=${() => setKind(k)}>${v}</button>`)}</div>
           <select aria-label="지역" value=${region} onChange=${(e) => setRegion(e.target.value)}><option value="">전체 지역</option>${regionOpts.map((r) => html`<option value=${r.id}>${r.name} (${r.n})</option>`)}</select></div>
         <div class="chips focusfilter">${focusCats.map((c) => html`<button class=${"chip " + (focus.includes(c.id) ? "on" : "")} onClick=${() => setFocus(focus.includes(c.id) ? focus.filter((x) => x !== c.id) : [...focus, c.id])}>${CAT_ICON[c.id] || ""} ${c.ko}</button>`)}</div></div>
-      <p class="note">표시 ${shown.length}곳${focus.length ? " · 고른 취향이 중심인 여행지" : ""}</p>
+      <p class="note">표시 ${shown.length}곳${focus.length ? " · 고른 취향이 중심인 여행지" : ""}${nFilters > 0 && html` · <button type="button" class="linkbtn" onClick=${() => patch(clearedInput())}>필터 지우기</button>`}</p>
       <div class="destlist">
         ${shown.map((c) => html`<${DestCard} key=${c.id} c=${c} selected=${trip.cities.includes(c.id)} ro=${ro} tastes=${trip.tastes} catName=${catName} airports=${airports} cities=${cities} onToggle=${toggleCity} />`)}
         ${shown.length === 0 && others.length === 0 && html`<div class="empty">조건에 맞는 여행지가 없습니다.</div>`}

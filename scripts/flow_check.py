@@ -77,7 +77,7 @@ def main():
           page.click("nav.tabs button:has-text('일정')"); page.wait_for_selector("select[aria-label='날짜']", timeout=10000)
           page.locator("select[aria-label='날짜']").first.select_option(index=1); time.sleep(0.3)
           res["steps"]["day1_items"] = page.locator(".card .row").count()
-          page.click("button:has-text('숙박')"); page.wait_for_selector("input[type=number]", timeout=5000); res["steps"]["lodging_zones"] = page.locator(".chips button.chip").count()
+          page.click(".toolbar .seg button:has-text('숙박')"); page.wait_for_selector("input[type=number]", timeout=5000); res["steps"]["lodging_zones"] = page.locator(".chips button.chip").count()
           page.screenshot(path=str(shots / "s4.png"))
           page.click("button:has-text('장소 배치')"); page.click("button:has-text('일정 생성')"); page.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
           res["steps"]["itin_days"] = page.locator(".toolbar .chip").count(); res["steps"]["itin_items"] = page.locator(".card .title").count(); res["steps"]["itin_note"] = page.locator("p.note").first.inner_text()[:120]
@@ -113,7 +113,7 @@ def main():
           picks = pg.locator(".card button[aria-label='선택']"); [picks.nth(i).click() for i in range(min(5, picks.count()))]
           pg.click("button:has-text('전체 후보')"); pg.wait_for_selector(".card", timeout=30000); time.sleep(1.5); isl["all_note"] = pg.locator(".note").first.inner_text()[:110]; pg.screenshot(path=str(shots / "island_s3.png"))
           pg.click("nav.tabs button:has-text('일정')"); pg.wait_for_selector("select[aria-label='날짜']", timeout=10000); isl["arrange_groups"] = pg.locator(".section h2").all_inner_texts()[:3]
-          pg.click("button:has-text('숙박')"); pg.wait_for_selector("input[type=number]", timeout=5000); isl["lodging_zones"] = [x[:30] for x in pg.locator(".chips button.chip").all_inner_texts()][:3]
+          pg.click(".toolbar .seg button:has-text('숙박')"); pg.wait_for_selector("input[type=number]", timeout=5000); isl["lodging_zones"] = [x[:30] for x in pg.locator(".chips button.chip").all_inner_texts()][:3]
           pg.click("button:has-text('장소 배치')"); pg.click("button:has-text('일정 생성')"); pg.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
           isl["itin_note"] = pg.locator("p.note").first.inner_text()[:120]; isl["itin_items"] = pg.locator(".card .title").count(); pg.screenshot(path=str(shots / "island_s5.png"))
           res["island"] = isl; ctx2.close()
