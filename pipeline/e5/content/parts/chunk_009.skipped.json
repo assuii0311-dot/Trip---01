@@ -34,5 +34,9 @@
  {
   "id": "osm:n824993418",
   "reason": "출처 글이 다른 장소를 설명한다. 장소 이름은 Le Méridien Barcelona인데 출처 항목 이름은 Citadines Ramblas Barcelona이고 내용도 스튜디오·아파트형 숙소 설명이다."
+ },
+ {
+  "id": "osm:n824310260",
+  "reason": "장소 이름(INNSiDE by Meliá Barcelona Apolo)과 출처 항목 이름(Tryp Barcelona Apolo Hotel)이 달라 같은 호텔인지 출처만으로 확인할 수 없다. 내용도 건물이 낡았다는 평가가 대부분이다."
  }
 ]
