@@ -9,7 +9,7 @@ import time
 
 from playwright.sync_api import sync_playwright
 
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+CHROME = "/opt/pw-browsers/chromium"  # 환경이 제공하는 크로미움의 고정 경로(판 번호가 바뀌어도 같다)
 
 
 def main():
