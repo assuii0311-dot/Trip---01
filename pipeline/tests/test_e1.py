@@ -343,3 +343,101 @@ def test_wd_categories_order_does_not_depend_on_set_order():
     for classes in ({"Q839954", "Q16970", "Q33506"}, {"Q33506", "Q839954", "Q16970"}, set(reversed(["Q839954", "Q16970", "Q33506"]))):
         assert cat.wd_categories(classes, False) == expected
     assert cat.wd_categories({"Q2074737"}, True) == [] and cat.wd_categories(set(), True) == ["heritage"]
+
+
+# ── 이름 일치 강화 규칙(D-043). 사례는 2026-11-15 장소 설명 생성 때 사람이 가려낸 틀린 묶음과 맞는 묶음이다
+def test_names_agree_rejects_known_wrong_pairs_and_keeps_right_ones():
+    from pipeline.e1.match import NameWeights, names_agree, type_conflict
+    corpus = ["Hotel Granvia", "Gran Hotel Havana", "Hotel Barcelona Center", "Hotel Pelayo Barcelona", "Expo Hotel Barcelona", "Mercure Barcelona Condor", "Mercure Alberta Barcelona",
+              "Hostal Live Barcelona", "Hotel Soho Barcelona", "Way Hostel", "Mad Hostel", "Bar Pepe", "Bar La Estación", "Restaurante Roma", "Restaurante Kogan", "SH Ifach", "Hotel SH Ifach",
+              "Iglesia de San Pedro", "Iglesia de San Juan", "Iglesia de Santa María", "Catedral de Jaca", "Museo del Prado", "Citrus", "Vinitus", "La Fontana", "La Tavina"] * 3
+    w = NameWeights(corpus)
+    wrong = [("Gran Hotel Havana", "Hotel Granvia"), ("Way Hostel", "Mad Hostel"), ("Citrus", "Vinitus"), ("La Fontana", "La Tavina"), ("Hotel Pelayo Barcelona", "Expo Hotel Barcelona"),
+             ("Mercure Barcelona Condor", "Mercure Alberta Barcelona"), ("Hostal Live Barcelona", "Hotel Soho Barcelona"), ("Kogan Restaurante", "Roma Restaurante"), ("La Caravana", "La Campana")]
+    for a, b in wrong:
+        assert not names_agree([a], [b], w, strict=True), (a, b)
+    right_strict = [("SH Ifach", "Hotel SH Ifach"), ("Coscorrones", "Bar Coscorrones"), ("Bar Restaurant Santa Margarida", "Santa Margarita Restaurant"), ("Avenida", "Hotel Avenida")]
+    for a, b in right_strict:
+        assert names_agree([a], [b], w, strict=True), (a, b)
+    # 볼거리: 철자 차이와 종류 낱말뿐인 이름은 같은 곳으로, 성인 이름이 다르면 다른 곳으로
+    assert names_agree(["Castillo de Javier"], ["Castle of Xabier"], w)
+    assert names_agree(["Catedral"], ["Catedral de Jaca"], w)
+    assert names_agree(["Euskal Herriko Museoa"], ["Museo Euskal Herria"], w)
+    assert not names_agree(["Iglesia de San Pedro"], ["Iglesia de San Juan"], w)
+    assert not names_agree(["Iglesia de Santa María Reina y Madre"], ["iglesia de los Santos Mártires"], w)
+    # 종류 계열이 다르면 이름이 겹쳐도 다른 대상
+    assert type_conflict(["Ayuntamiento de Tarifa"], ["Castillo de Tarifa"]) and type_conflict(["Hotel Torre del Compte"], ["estación de Torre del Compte"]) is False  # 탑(tower)이 양쪽에 있어 계열로는 못 가른다
+    assert not names_agree(["Bar La Estación"], ["estación de San Claudio"], w, strict=True)  # 역 건물의 술집: 고유 낱말이 겹치지 않는다
+    assert type_conflict(["Mezquita de Torrevieja"], ["Estación de Torrevieja"]) and not type_conflict(["Capela do Santo André"], ["Catedral de Santiago de Compostela"])
+    assert not names_agree(["Ayuntamiento de Tarifa"], ["Castillo de Tarifa"], w)
+
+
+def test_qid_tagged_osm_of_other_kind_is_detached_or_keeps_wikidata_name():
+    # 역 항목(관광 범주 없음)에 태그된 술집은 묶지 않는다. 역은 범주가 없어 장소가 되지 않고 술집은 독립 장소로 남는다
+    wd = {"Q1": wd_item("Q1", 43.0, -5.0, "estación de San Claudio", classes=("Q55488",), sitelinks=2),
+          "Q2": wd_item("Q2", 36.01, -5.60, "Castillo de Tarifa", "Castle of Tarifa", classes=("Q23413",), sitelinks=5)}
+    osm = [osm_poi("n1", 43.0001, -5.0001, "Bar La Estación", key="amenity", value="bar", wikidata="Q1"),
+           osm_poi("w2", 36.0101, -5.6001, "Ayuntamiento de Tarifa", key="historic", value="castle", wikidata="Q2")]
+    groups, stats = build_groups(wd, osm, [])
+    assert stats["osm_qid_detached"] == 1 and stats["osm_qid_wdname"] == 1
+    assert groups["Q1"]["osm"] == [] and place_from_group(groups["Q1"], {}) is None
+    bar = place_from_group(groups["osm:n1"], {}); assert bar["cat"] == ["cafe"] and bar["n"]["local"] == "Bar La Estación"
+    castle = place_from_group(groups["Q2"], {})
+    assert castle["n"]["local"] == "Castillo de Tarifa" and castle["cs"] == "wikidata" and castle["cat"] == ["heritage"]
+    # 범주만 다르고(문화재로만 분류된 수도원) 이름의 종류가 같으면 그대로 묶는다
+    wd2 = {"Q645157": wd_item("Q645157", 41.38, 1.08, "Monasterio de Poblet", classes=("Q4989906",), sitelinks=40)}
+    osm2 = [osm_poi("w8", 41.3801, 1.0801, "Reial Monestir de Santa Maria de Poblet", key="amenity", value="place_of_worship", wikidata="Q645157")]
+    groups2, stats2 = build_groups(wd2, osm2, [])
+    assert len(groups2["Q645157"]["osm"]) == 1 and stats2["osm_qid_detached"] == 0
+
+
+def test_osm_pointing_to_another_qid_matches_only_when_names_agree():
+    # 이름이 맞지 않으면 가까이 있어도 묶지 않는다(말라가의 두 성당: 글자 유사도는 0.6을 넘지만 고유 낱말이 겹치지 않는다)
+    wd = {"Q5912680": wd_item("Q5912680", 36.7227, -4.4236, "iglesia de los Santos Mártires", classes=("Q16970",), sitelinks=3)}
+    osm = [osm_poi("w3", 36.72223, -4.424215, "Iglesia de los Santos Martires", key="amenity", value="place_of_worship", wikidata="Q20021492")]
+    wv = [wv_listing(0, "Santos Mártires church", 36.7227, -4.4236, raw_type="church", wikidata="Q777")]
+    groups, stats = build_groups(wd, osm, wv)
+    assert stats["osm_other_qid"] == 1 and stats["wv_other_qid"] == 1
+    # 이름이 거의 같으면 다른 번호를 가리켜도 같은 곳으로 본다(Wikidata에 중복 항목이 많다)
+    assert len(groups["Q5912680"]["osm"]) == 1 and len(groups["Q5912680"]["wv"]) == 1
+    osm2 = [osm_poi("w4", 36.72223, -4.424215, "Iglesia de Santa María Reina y Madre", key="amenity", value="place_of_worship", wikidata="Q20021492")]
+    groups2, stats2 = build_groups(wd, osm2, [])
+    assert groups2["Q5912680"]["osm"] == [] and "osm:w4" in groups2 and stats2["osm_by_geo"] == 0
+    # 고유 낱말 하나만 같은 정도로는 묶지 않는다(산티아고 순례길 항목 ↔ 산티아고 사도 성당)
+    wd3 = {"Q41150": wd_item("Q41150", 42.8806, -8.5446, "Camino de Santiago", "Way of St. James", classes=("Q4989906",), sitelinks=90)}
+    osm3 = [osm_poi("w5", 42.8807, -8.5447, "Santiago Apóstolo", key="amenity", value="place_of_worship", wikidata="Q999999")]
+    groups3, _ = build_groups(wd3, osm3, [])
+    assert groups3["Q41150"]["osm"] == [] and "osm:w5" in groups3
+
+
+def test_geo_match_needs_name_agreement_for_commerce_listing():
+    osm = [osm_poi("n5", 41.3927, 2.1720, "Gran Hotel Havana", key="tourism", value="hotel"), osm_poi("n6", 41.3929, 2.1722, "Hotel Granvia", key="tourism", value="hotel")]
+    wv = [wv_listing(0, "Hotel Granvia", 41.39272, 2.17202, ltype="sleep")]  # 좌표는 Havana 쪽에 더 가깝다
+    groups, stats = build_groups({}, osm, wv)
+    assert len(groups["osm:n6"]["wv"]) == 1 and groups["osm:n5"]["wv"] == []
+    wv2 = [wv_listing(1, "Hotel Granvia", 41.39272, 2.17202, ltype="sleep")]
+    groups2, stats2 = build_groups({}, osm[:1], wv2)  # 같은 이름의 장소가 없으면 목록은 따로 남는다
+    assert groups2["osm:n5"]["wv"] == [] and stats2["wv_alone"] == 1
+
+
+def test_boundary_fallback_hull_and_spanish_ine_only():
+    # T-049: 다각형으로 조립되지 않은 스페인 지자체(세우타)는 경계선 점들의 볼록 껍질로 대신한다
+    import importlib.util
+    from shapely import wkb
+    from shapely.geometry import Point
+    spec = importlib.util.spec_from_file_location("osm_boundaries", str(ROOT / "pipeline/e1/osm_boundaries.py")); ob = importlib.util.module_from_spec(spec); spec.loader.exec_module(ob)
+    w = ob.hull_wkb([(-5.38, 35.87), (-5.28, 35.87), (-5.28, 35.92), (-5.38, 35.92), (-5.33, 35.90)])
+    g = wkb.loads(bytes.fromhex(w)); assert g.geom_type == "MultiPolygon" and g.contains(Point(-5.32, 35.89)) and not g.contains(Point(-5.50, 35.89))
+    assert ob.hull_wkb([(0, 0), (1, 1)]) is None and ob.hull_wkb([(0, 0), (1, 1), (2, 2)]) is None
+    assert ob.is_spanish_ine("51001000000") and ob.is_spanish_ine("28079") and not ob.is_spanish_ine("170601") and not ob.is_spanish_ine(None)
+
+
+def test_wikidata_supplement_record_prefers_preferred_population():
+    from pipeline.e1.wikidata_supplement import record_from_entity
+    ent = {"labels": {"es": {"value": "Ceuta"}, "ko": {"value": "세우타"}}, "sitelinks": {"eswiki": {}, "enwikivoyage": {}},
+           "claims": {"P625": [{"mainsnak": {"datavalue": {"value": {"latitude": 35.886667, "longitude": -5.3}}}}], "P131": [{"mainsnak": {"datavalue": {"value": {"id": "Q29"}}}}],
+                      "P1082": [{"rank": "normal", "mainsnak": {"datavalue": {"value": {"amount": "+83229"}}}, "qualifiers": {"P585": [{"datavalue": {"value": {"time": "+2024-01-01T00:00:00Z"}}}]}},
+                                {"rank": "preferred", "mainsnak": {"datavalue": {"value": {"amount": "+83595"}}}, "qualifiers": {"P585": [{"datavalue": {"value": {"time": "+2025-01-01T00:00:00Z"}}}]}}]}}
+    r = record_from_entity("Q5823", ent)
+    assert r == {"qid": "Q5823", "cls": "Q2074737", "coord": "Point(-5.3 35.886667)", "pop": "83595", "sitelinks": "2", "p131": "Q29", "label_es": "Ceuta", "label_en": None, "label_ko": "세우타", "n_heritage": 0, "wv_en": True}
+

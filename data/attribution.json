@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-14",
+ "generated": "2026-11-16",
  "sources": [
   {
    "source": "OpenStreetMap",
@@ -58,10 +58,10 @@
  ],
  "data_license": "data/LICENSE-DATA.md",
  "counts": {
-  "places": 519448,
-  "tier1": 101674,
-  "tier2": 417774,
-  "cities": 8382,
+  "places": 520818,
+  "tier1": 101581,
+  "tier2": 419237,
+  "cities": 8383,
   "regions": 133
  }
 }

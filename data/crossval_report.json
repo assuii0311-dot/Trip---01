@@ -1,12 +1,12 @@
 {
- "generated": "2026-11-14 15:50",
+ "generated": "2026-11-16 02:19",
  "inputs": {
-  "wikidata": 133362,
+  "wikidata": 133363,
   "osm_places": 498578,
   "wv_en": 11613,
   "wv_es": 3999,
-  "pageviews": 29826,
-  "boundaries": 8544,
+  "pageviews": 29827,
+  "boundaries": 8545,
   "airports_wd": 67,
   "islands_osm": 121,
   "islands_wd": 56
@@ -27,88 +27,92 @@
   "destinations": 111
  },
  "match": {
-  "osm_by_qid": 24403,
-  "osm_by_geo": 10212,
-  "osm_alone": 411630,
+  "osm_by_qid": 24277,
+  "osm_by_geo": 9293,
+  "osm_alone": 412675,
   "wv_by_qid": 2455,
-  "wv_by_geo": 3669,
-  "wv_alone": 3275,
+  "wv_by_geo": 3163,
+  "wv_alone": 3781,
   "wv_nocoord": 3290,
-  "mismatch": 1050,
+  "mismatch": 990,
+  "osm_qid_detached": 126,
+  "osm_qid_wdname": 23,
+  "osm_other_qid": 12814,
+  "wv_other_qid": 548,
   "osm_noise": 52333
  },
  "places": {
-  "total": 519448,
-  "tier1": 101674,
-  "tier2": 417774,
+  "total": 520818,
+  "tier1": 101581,
+  "tier2": 419237,
   "crossval": {
-   "match": 35810,
-   "single": 482652,
-   "mismatch": 986
+   "match": 34740,
+   "single": 485140,
+   "mismatch": 938
   },
   "verified": {
-   "True": 80733,
-   "False": 438715
+   "True": 80062,
+   "False": 440756
   },
   "coord_source": {
-   "osm": 444779,
-   "wikidata": 71880,
-   "wikivoyage": 2789
+   "osm": 445082,
+   "wikidata": 72459,
+   "wikivoyage": 3277
   },
   "city_assignment": {
-   "city_polygon": 510408,
-   "city_none": 664,
-   "city_nearest": 8334,
+   "city_polygon": 512147,
+   "city_none": 281,
+   "city_nearest": 8348,
    "city_polygon_name": 42
   }
  },
  "categories_tier1": {
-  "heritage": 68743,
-  "park": 1132,
+  "heritage": 68727,
+  "park": 1121,
   "square": 1553,
-  "museum": 1615,
-  "activity": 1461,
-  "nature": 10965,
-  "market": 506,
-  "restaurant": 1583,
-  "cafe": 346,
-  "lodging": 1464,
-  "religious": 14388,
-  "beach": 2088
+  "activity": 1458,
+  "nature": 10957,
+  "market": 476,
+  "restaurant": 1545,
+  "cafe": 305,
+  "museum": 1612,
+  "lodging": 1405,
+  "religious": 14365,
+  "beach": 2087
  },
  "names": {
-  "ko": 242,
-  "en": 80829,
-  "es": 58248
+  "ko": 238,
+  "en": 80786,
+  "es": 58082
  },
  "fields_tier1": {
-  "hours": 2721,
+  "hours": 2631,
   "price": 3350,
   "desc_wv": 5157,
-  "pageviews": 17939
+  "pageviews": 17820
  },
  "files": {
   "cities": {
-   "raw_bytes": 7390829,
-   "gz_bytes": 1201136
+   "raw_bytes": 7393147,
+   "gz_bytes": 1201756
   },
   "regions": {
    "raw_bytes": 96803,
    "gz_bytes": 35024
   },
   "categories": {
-   "raw_bytes": 5941,
-   "gz_bytes": 2170
+   "raw_bytes": 5942,
+   "gz_bytes": 2171
   },
   "places_tier1": {
-   "raw_bytes": 60761221,
-   "gz_bytes": 6288005
+   "raw_bytes": 60638319,
+   "gz_bytes": 6241858
   },
   "airports": {
-   "raw_bytes": 18381,
-   "gz_bytes": 4908
+   "raw_bytes": 18380,
+   "gz_bytes": 4909
   }
  },
- "tier2_gz_bytes": 18275603,
- "elapsed_s": 152
+ "tier2_gz_bytes": 18342297,
+ "elapsed_s": 141
 }

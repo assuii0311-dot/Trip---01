@@ -65,6 +65,7 @@ WD_CLASS_CATEGORY = {
     "Q2074737": None, "Q515": None, "Q3957": None, "Q532": None, "Q55488": None, "Q1248784": None,
 }
 WD_SETTLEMENT_CLASSES = {"Q2074737", "Q515", "Q3957", "Q532"}
+MUNICIPALITY_SUPPLEMENT = ["Q5823"]  # 수집 질의에서 빠진 지자체(세우타, T-049). e1.wikidata_supplement가 Wikidata에서 받아 지자체 파일에 보탠다
 WD_AIRPORT_CLASS = "Q1248784"
 WD_STATION_CLASS = "Q55488"
 WD_WORLD_HERITAGE = "Q9259"
@@ -74,6 +75,8 @@ R_MATCH_M = 150.0
 SIM_MATCH = 0.6
 R_MISMATCH_M = 500.0
 SIM_MISMATCH = 0.4
+TOKEN_AGREE_STRICT = 0.7   # 상업 시설(식당·카페·숙소·가게)의 이름 일치: 양쪽 각각에서 겹친 낱말의 무게 비율 중 작은 값. 추정값
+SIM_STRONG = 0.8   # 이름 일치: 글자 유사도가 이 이상이면 낱말이 달라도 같은 이름으로 본다(Javier/Xabier 같은 철자 차이). 상업 시설에는 쓰지 않는다
 DISTRICT_RADIUS_M = 1500.0
 LODGING_CENTER_RADIUS_M = 3000.0
 
