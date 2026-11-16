@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { dwellOf, mealSlots, clusterPlaces, orderRoute, parseHours, placeDay, generate, memoTravel, toMin, toHHMM } from "../../app/src/engines/e4.js";
+import { dwellOf, mealSlots, clusterPlaces, orderRoute, parseHours, placeDay, generate, memoTravel, spreadOverDays, toMin, toHHMM } from "../../app/src/engines/e4.js";
 
 const mk = (id, lat, lon, cat = "heritage", hrs = null) => ({ id, lat, lon, cat: [cat], hrs });
 const P = [mk("prado", 40.4138, -3.6921, "museum", "Mon-Sat 10:00-20:00"), mk("retiro", 40.4150, -3.6840, "park"), mk("mayor", 40.4154, -3.7074, "square"), mk("palacio", 40.4180, -3.7143, "heritage", "10:00-18:00"), mk("sol", 40.4169, -3.7033, "square"), mk("debod", 40.4240, -3.7178, "heritage"), mk("eat1", 40.4160, -3.7050, "restaurant")];
@@ -59,4 +59,19 @@ test("memoTravel: 같은 구간은 한 번만 계산하고, id가 없는 출발�
   const o1 = { lat: 1, lon: 2 }, o2 = { lat: 1, lon: 3 }, x = { id: "x", lat: 0, lon: 0 }, y = { id: "y", lat: 0, lon: 1 };
   t(o1, x); t(o1, x); t(o2, x); t(x, y); t(y, x); t(x, y);
   assert.equal(calls, 4);
+});
+
+// 묶음 13: 배치 화면의 자동 배정. 고정 입력은 마드리드 추천 54곳
+test("spreadOverDays: 하루 용량을 넘지 않게 날짜에 나누고, 남는 곳은 미배치로 돌려준다", () => {
+  const fx = JSON.parse(readFileSync(new URL("./fixtures/madrid54.json", import.meta.url), "utf8"));
+  const dates = Array.from({ length: 10 }, (_, i) => `2027-05-${String(i + 1).padStart(2, "0")}`);
+  const r = spreadOverDays(fx.places, dates, 4);
+  const placed = Object.values(r.byDate).flat();
+  assert.ok(Object.values(r.byDate).every((ids) => ids.length >= 1 && ids.length <= 4));
+  assert.equal(placed.length, 40); assert.equal(r.rest.length, 14); // 10일 × 4곳
+  assert.equal(new Set([...placed, ...r.rest]).size, 54); // 빠지거나 겹친 장소가 없다
+  assert.deepEqual(spreadOverDays(fx.places, dates, 4), r); // 같은 입력에 같은 결과
+  const few = spreadOverDays(fx.places.slice(0, 6), dates.slice(0, 3), 4);
+  assert.equal(Object.values(few.byDate).flat().length, 6); assert.deepEqual(few.rest, []);
+  assert.deepEqual(spreadOverDays(fx.places.slice(0, 2), [], 4), { byDate: {}, rest: fx.places.slice(0, 2).map((p) => p.id) });
 });

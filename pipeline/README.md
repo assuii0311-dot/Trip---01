@@ -101,7 +101,7 @@ python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>
 |---|---|
 | cities.json.gz | 지자체 8,000여 건과 섬 여행지(kind island, 소속 지자체 members): 명칭, 좌표, 인구, 층, 행정 소속, 가이드 문서와 소개 문장·개요, 장소 수, 숙박 밀도, 구역, 가격대 분포, 교통 피드, 택시 요금표. 여행지 필드(D-030): dest(참고 등급·순위·선정 근거), focus(취향 중심 범주), hl(대표 명소), island(소속 섬) |
 | regions.json.gz | 자치주·주(OSM 행정 경계)와 Wikivoyage 지역 문서 |
-| categories.json.gz | 상위 범주 12개와 대응표, 범주별 1등급 수와 예시 |
+| categories.json.gz | 상위 범주 12개와 대응표, 범주별 1등급 수, 범주의 뜻(`desc`, 설정 `CATEGORY_DESC`)과 예시(그 범주가 첫 범주인 장소) |
 | places_tier1.json.gz | 1등급 장소 전체 |
 | places_tier2/<city>.json.gz | 2등급 장소를 도시별로 |
 | sources/<xx>.json.gz | Wikivoyage 목록 본문(설명 출처). 키 `장소ID|언어|문서|목록번호`, 샤드는 md5(장소ID)의 앞 두 자리 |

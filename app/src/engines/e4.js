@@ -37,6 +37,37 @@ export function clusterPlaces(places, k) {
   return groups.filter((g) => g.length);
 }
 
+/**
+ * 한 여행지의 장소를 그 여행지의 날짜들에 나눈다(배치 화면의 "자동 배정", 묶음 13).
+ * 좌표로 묶고(clusterPlaces) 서쪽 묶음부터 날짜 순으로 놓는다(generate와 같은 규칙). 하루 capacity곳을 넘는 묶음은
+ * 중심에서 먼 장소부터, 자리가 남은 가장 가까운 묶음으로 옮긴다. 어디에도 자리가 없으면 rest(미배치)로 돌려준다.
+ * 하루 안의 순서는 묶음 중심에서 가까운 곳부터 이어 가는 최근접 순서다.
+ */
+export function spreadOverDays(places, dates, capacity = 4) {
+  if (!dates.length || !places.length) return { byDate: {}, rest: places.map((p) => p.id) };
+  const cen = (g) => [g.reduce((s, p) => s + p.lat, 0) / g.length, g.reduce((s, p) => s + p.lon, 0) / g.length];
+  const groups = clusterPlaces(places, dates.length).map((g) => g.map((i) => places[i]));
+  groups.sort((a, b) => cen(a)[1] - cen(b)[1] || cen(a)[0] - cen(b)[0] || (a[0].id < b[0].id ? -1 : 1));
+  while (groups.length < dates.length) groups.push([]);
+  const rest = [];
+  for (let guard = places.length * 2; guard > 0; guard--) {
+    const gi = groups.findIndex((g) => g.length > capacity); if (gi < 0) break;
+    const g = groups[gi]; const [la, lo] = cen(g);
+    let fi = 0, fd = -1; g.forEach((p, i) => { const d = hav(p.lat, p.lon, la, lo); if (d > fd || (d === fd && p.id < g[fi].id)) { fd = d; fi = i; } });
+    const [p] = g.splice(fi, 1);
+    let ti = -1, td = Infinity;
+    groups.forEach((h, i) => { if (i === gi || h.length >= capacity) return; const d = h.length ? hav(p.lat, p.lon, ...cen(h)) : 1e12; if (d < td) { td = d; ti = i; } });
+    if (ti < 0) rest.push(p.id); else groups[ti].push(p);
+  }
+  const byDate = {};
+  groups.forEach((g, i) => {
+    if (!g.length) return;
+    const [la, lo] = cen(g);
+    byDate[dates[i]] = orderRoute(g, { lat: la, lon: lo }, (a, b) => hav(a.lat, a.lon, b.lat, b.lon)).map((k) => g[k].id);
+  });
+  return { byDate, rest };
+}
+
 export const TWO_OPT_MAX_PASSES = 50; // 순서 다듬기(2-opt)의 반복 상한(T-052). 추정: 보통 10번 안에 멈춘다
 
 /** 같은 구간의 이동 계산을 한 번만 하게 감싼다(T-052). 열쇠는 장소 id, 없으면 좌표 */

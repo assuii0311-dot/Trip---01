@@ -226,9 +226,9 @@ def main():
     cat_counts = collections.Counter(c for p in tier1 for c in p["cat"])
     examples = {}
     for c in C.CATEGORIES:
-        top = sorted((p for p in tier1 if c in p["cat"]), key=lambda p: (-p["pop"]["sl"], -((p["pop"]["pv"] or {}).get("en", 0))))[:3]
+        top = sorted((p for p in tier1 if p["cat"] and p["cat"][0] == c), key=lambda p: (-p["pop"]["sl"], -((p["pop"]["pv"] or {}).get("en", 0)), p["id"]))[:3]  # 그 범주가 첫 범주인 장소만 예시로 쓴다(알람브라가 공원의 예로 나오지 않게)
         examples[c] = [{"id": p["id"], "n": p["n"].get("ko") or p["n"].get("local")} for p in top]
-    categories = {"categories": [{"id": c, "ko": k, "tier1": cat_counts.get(c, 0), "examples": examples[c]} for c, k in C.CATEGORIES.items()], "osm_map": C.OSM_TAG_CATEGORY, "wv_map": C.WV_TYPE_CATEGORY, "wd_map": C.WD_CLASS_CATEGORY}
+    categories = {"categories": [{"id": c, "ko": k, "desc": C.CATEGORY_DESC.get(c, ""), "tier1": cat_counts.get(c, 0), "examples": examples[c]} for c, k in C.CATEGORIES.items()], "osm_map": C.OSM_TAG_CATEGORY, "wv_map": C.WV_TYPE_CATEGORY, "wd_map": C.WD_CLASS_CATEGORY}
     # 설명 출처 본문 샤드(Wikivoyage content)와 장소 파일
     content_by_key = {(w["lang"], w["page"], w["idx"]): w["content"] for w in list_en + list_es if w.get("content")}
     shards = collections.defaultdict(dict)

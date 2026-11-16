@@ -56,7 +56,7 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
   </div>`;
 }
 
-export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone, ui, setUi, ko = {} }) {
+export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone, ui, setUi, ko = {}, onRemoveDest }) {
   // 단계와 여행지 목록의 검색어·필터는 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
   const [local, setLocal] = useState({ step: 1, q: "", kind: "all", rec: false, region: "" });
   const view = ui || local, patch = setUi || ((p) => setLocal((s) => ({ ...s, ...p })));
@@ -80,7 +80,8 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
   const toggleTaste = (id) => upd({ tastes: tastes.includes(id) ? tastes.filter((x) => x !== id) : [...tastes, id] });
   const others = q.trim() ? searchOthers(cities, q).map((c) => ({ ...c, _regionName: regionName(c) })) : [];
   const regionOpts = regionOptions(list, regions);
-  const toggleCity = (id) => upd({ cities: trip.cities.includes(id) ? trip.cities.filter((x) => x !== id) : [...trip.cities, id] });
+  // 여행지를 뺄 때는 그 여행지에서 고른 장소도 함께 정리해야 하므로 앱 쪽 처리(onRemoveDest)에 맡긴다(묶음 13)
+  const toggleCity = (id) => (trip.cities.includes(id) ? (onRemoveDest ? onRemoveDest(id) : upd({ cities: trip.cities.filter((x) => x !== id) })) : upd({ cities: [...trip.cities, id] }));
   const nIsland = list.filter(isIsland).length;
   const steps = ["기본 정보", "취향·여행지", "공항·여행 형태"];
   return html`<div class="section">
@@ -96,7 +97,7 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
       <div class="field"><label>내 취향 (여러 개 고를 수 있습니다)</label>
         <div class="chips tastes">${categories.map((c) => html`<button type="button" class=${"chip taste " + (tastes.includes(c.id) ? "on" : "")} disabled=${ro} aria-pressed=${tastes.includes(c.id)} onClick=${() => toggleTaste(c.id)}>${CAT_ICON[c.id] || ""} ${c.ko}</button>`)}</div>
         <span class="note">고른 취향이 중심인 여행지에 "추천"이 붙고 위로 올라옵니다. 고르지 않으면 인기 순으로 보입니다. 취향은 장소 추천에도 쓰입니다(E2).</span>
-        <details class="tastehelp"><summary>범주 설명 보기</summary>${categories.map((c) => html`<div class="note"><b>${CAT_ICON[c.id] || ""} ${c.ko}</b> ${c.tier1.toLocaleString()}곳 · 예: ${(c.examples || []).map((e) => e.n).join(", ")}</div>`)}</details></div>
+        <details class="tastehelp"><summary>범주 설명 보기</summary>${categories.map((c) => html`<div class="note"><b>${CAT_ICON[c.id] || ""} ${c.ko}</b> ${c.desc ? `${c.desc} · ` : ""}예: ${(c.examples || []).map((e) => e.n).join(", ")}</div>`)}</details></div>
       <p class="note">${COUNTRY}의 여행지 ${list.length}곳(도시 ${list.length - nIsland}, 섬 ${nIsland})입니다. 소개와 대표 명소를 보고 가고 싶은 곳을 고르세요. 등급은 인기를 나타내는 참고값입니다.</p>
       <div class="field"><label>선택한 여행지 ${trip.cities.length}곳</label>
         <div class="chips picked">${trip.cities.length === 0 ? html`<span class="note">아직 없습니다. 아래 카드의 + 를 누르세요.</span>` : trip.cities.map((id) => { const c = cities.find((x) => x.id === id); return html`<span class="chip on" onClick=${() => toggleCity(id)}>${c ? destName(c) : id}${ro ? "" : " ×"}</span>`; })}</div>

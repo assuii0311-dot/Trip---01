@@ -12,6 +12,10 @@ export function createMap(container, { center = [-3.7038, 40.4168], zoom = 12, o
   if (typeof maplibregl === "undefined") return null;
   let fallback = false;
   const map = new maplibregl.Map({ container, style: OFM_STYLE, center, zoom, attributionControl: false });
+  // 아이패드 사파리는 두 손가락 동작을 화면 전체 확대로도 처리한다. 지도 영역(범례 같은 겹친 요소 포함)에서는 그 동작을 막아 지도만 확대되게 한다(묶음 13, 기기 확인 필요)
+  const zone = container.closest(".mapwrap") || container;
+  for (const ev of ["gesturestart", "gesturechange", "gestureend"]) zone.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+  zone.addEventListener("touchmove", (e) => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
   map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: ATTR_OFM }));
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
   map.on("error", (e) => {

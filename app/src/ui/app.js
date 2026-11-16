@@ -6,9 +6,9 @@ import { S2Summary } from "./screens/s2_summary.js";
 import { S3Explore } from "./screens/s3_explore.js";
 import { S4Arrange } from "./screens/s4_arrange.js";
 import { S5Itinerary } from "./screens/s5_itinerary.js";
-import { generate, toMin, toHHMM } from "../engines/e4.js";
+import { generate, toMin, toHHMM, spreadOverDays } from "../engines/e4.js";
 import { makeIntraIndex, makeTransitIndex, cityLeg, intercityLeg, makeIslandIndex } from "../engines/e3.js";
-import { dateList } from "../state/plan.js";
+import { dateList, removeSelections, removeDestination, assignMany } from "../state/plan.js";
 import { S6Detail } from "./screens/s6_detail.js";
 import { S7Share } from "./screens/s7_share.js";
 import { S8Settings } from "./screens/s8_settings.js";
@@ -25,7 +25,7 @@ import { validateKey } from "../engines/e7/crypto.js";
 import { resolveRole, can, cleanSubs, ROLE_LABEL } from "../engines/e7/roles.js";
 import { makeProposal, applyProposal, describeProposal } from "../engines/e7/proposals.js";
 import { placeName } from "../data/places.js";
-import { memberIds, makeDestOf, destName } from "../data/dest.js";
+import { memberIds, makeDestOf, destName, inDest } from "../data/dest.js";
 
 const TABS = [["input", "입력", "📝"], ["explore", "탐색", "🧭"], ["plan", "일정", "📅"], ["share", "공유", "🤝"], ["settings", "설정", "⚙️"]];
 const CFG_KEY = "trip01.sync.v1";
@@ -104,6 +104,41 @@ export function App({ data, loader }) {
   const detail = detailId ? getPlace(detailId) : null;
   const twoPane = tab === "explore" && exploreTab === "explore"; // 목록과 지도가 나란한 화면
   const detailAlts = detail && prof ? placeAlternatives(detail, data.tier1.filter((p) => p.city === detail.city), prof.weights) : []; // 상세와 지도가 같은 대안을 쓴다(D-039)
+  // --- 묶음 13: 여행지 빼기, 고른 장소 모두 지우기, 자동 배정 ---
+  /** 여행지에 속한 고른 장소(섬은 소속 지자체 포함). destId가 null이면 선택한 여행지 어디에도 속하지 않는 장소. 정보를 읽지 못한 장소는 어느 쪽에도 넣지 않는다 */
+  const picksOf = (destId) => { const pl = planRef.current; const dests = pl.trip.cities.map(cityById).filter(Boolean); const one = destId ? cityById(destId) : null;
+    return pl.selection.filter((id) => { const p = byId.get(id) || data.tier2cache.get(id) || pl.custom[id]; if (!p) return false; return destId ? !!one && inDest(p, one) : !dests.some((c) => inDest(p, c)); }); };
+  const removeDest = async (destId) => {
+    if (!can(roleRef.current, "edit")) { deny(); return; }
+    const c = cityById(destId); const name = c ? destName(c) : destId;
+    try { await loaderWithCache.tier2(destId); } catch {} // 식당·카페처럼 도시 파일에 있는 장소도 가려내려면 먼저 읽어야 한다
+    const ids = picksOf(destId);
+    if (ids.length && !window.confirm(`${name}에서 고른 장소 ${ids.length}곳도 함께 뺍니다. 계속할까요?`)) return;
+    setPlan((p) => removeDestination(p, destId, ids));
+    setNotice(ids.length ? `${name}와(과) 그곳에서 고른 장소 ${ids.length}곳을 뺐습니다.` : `${name}을(를) 여행지에서 뺐습니다.`);
+  };
+  /** which: "all" 전부, "orphan" 선택한 여행지에 속하지 않는 장소, 그 밖에는 여행지 ID */
+  const clearPicks = (which = "all") => {
+    if (!can(roleRef.current, "edit")) { deny(); return; }
+    const pl = planRef.current; const ids = which === "all" ? [...pl.selection] : picksOf(which === "orphan" ? null : which);
+    if (!ids.length) return;
+    const label = which === "all" ? "고른 장소" : which === "orphan" ? "선택한 여행지에 속하지 않는 장소" : `${destName(cityById(which))}에서 고른 장소`;
+    if (!window.confirm(`${label} ${ids.length}곳을 모두 지웁니다. 날짜 배치도 함께 지워집니다. 계속할까요?`)) return;
+    setPlan((p) => removeSelections(p, ids)); setNotice(`${label} ${ids.length}곳을 지웠습니다.`);
+  };
+  /** 여행지의 장소 전부를 그 여행지의 날짜에 나눠 배정한다(E4 spreadOverDays). 하루 용량을 넘는 장소는 미배치로 남긴다 */
+  const autoAssign = (destId) => {
+    if (!can(roleRef.current, "edit")) { deny(); return; }
+    const pl = planRef.current; const ids = picksOf(destId); const places = ids.map((id) => byId.get(id) || data.tier2cache.get(id) || pl.custom[id]);
+    const dates = buildDays(pl).filter((d) => d.cityId === destId).map((d) => d.date);
+    if (!places.length) return;
+    if (!dates.length) { setNotice("이 여행지에 배정된 날짜가 없습니다. 숙박 탭에서 일수를 확인하세요."); return; }
+    const r = spreadOverDays(places, dates, prof.dayCapacity);
+    setPlan((p) => assignMany(p, r.byDate, r.rest));
+    setNotice(`${places.length - r.rest.length}곳을 ${dates.length}일에 나눠 배정했습니다.${r.rest.length ? ` 하루 ${prof.dayCapacity}곳을 넘는 ${r.rest.length}곳은 미배치로 남겼습니다.` : ""}`);
+  };
+  /** 여러 장소를 한 날짜에 넣거나(date) 미배치로 돌린다(date가 null) */
+  const assignPlaces = (ids, date) => { if (!ids.length) return; if (roleRef.current === "sub") return ids.length === 1 ? assignPlace(ids[0], date) : deny(); if (!can(roleRef.current, "edit")) { deny(); return; } setPlan((p) => assignMany(p, date ? { [date]: ids } : {}, date ? [] : ids)); };
   const addMany = (ids) => { if (!ids.length) return; setPlan((p) => addSelections(p, ids)); if (can(roleRef.current, "edit")) setNotice(`추천 ${ids.length}곳을 담았습니다.`); };
   const openDetail = (id) => setDetailId(id);
   const cityById = (id) => data.cities.find((c) => c.id === id);
@@ -344,10 +379,10 @@ export function App({ data, loader }) {
     </div>`}
     ${SUBTABS[tab] && html`<div class="subtabs" role="tablist">${SUBTABS[tab].map(([k, label]) => { const on = (tab === "explore" ? exploreTab : planTab) === k; return html`<button role="tab" aria-selected=${on} class=${on ? "on" : ""} onClick=${() => (tab === "explore" ? setExploreTab(k) : setPlanTab(k))}>${label}${tab === "plan" && k === "itinerary" && (drift.missing.length + drift.removed.length) > 0 ? " •" : ""}</button>`; })}</div>`}
     <main class="main">
-      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${canEdit ? "main" : "viewer"} ko=${{ lines: data.e5Lines?.lines || {}, names: data.e5Index?.names || {} }} ui=${{ step: nav.inputStep, ...nav.input }} setUi=${({ step, ...rest }) => go({ ...(step ? { inputStep: step } : {}), ...(Object.keys(rest).length ? { input: rest } : {}) })} onDone=${() => go({ tab: "explore", exploreTab: "summary", detail: null })} />`}
-      ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} selection=${plan.selection} getPlace=${getPlace} tier1=${data.tier1} loader=${loaderWithCache} nights=${nights} balance=${nav.explore.balance || plan.trip.foreignBalance || "balance"} onBalance=${(k) => go({ explore: { balance: k } })} onToggleSelect=${toggleSelect} onAddMany=${addMany} onOpenDetail=${openDetail} role=${role} onReselect=${() => go({ tab: "input", inputStep: 2, detail: null })} onExplore=${(cid) => go({ exploreTab: "explore", explore: { city: cid } })} />`}
-      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} ui=${nav.explore} setUi=${(patch) => go({ explore: patch })} role=${role} altIds=${detail && twoPane ? detailAlts.map((a) => a.p.id) : []} />`}
-      ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${assignPlace} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} role=${role} />`}
+      ${tab === "input" && html`<${S1Input} trip=${plan.trip} setTrip=${setTrip} cities=${data.cities} airports=${data.airports} categories=${data.categories} regions=${data.regions || []} role=${canEdit ? "main" : "viewer"} ko=${{ lines: data.e5Lines?.lines || {}, names: data.e5Index?.names || {} }} ui=${{ step: nav.inputStep, ...nav.input }} setUi=${({ step, ...rest }) => go({ ...(step ? { inputStep: step } : {}), ...(Object.keys(rest).length ? { input: rest } : {}) })} onDone=${() => go({ tab: "explore", exploreTab: "summary", detail: null })} onRemoveDest=${removeDest} />`}
+      ${tab === "explore" && exploreTab === "summary" && html`<${S2Summary} trip=${plan.trip} cities=${data.cities} categories=${data.categories} prof=${prof} selection=${plan.selection} getPlace=${getPlace} tier1=${data.tier1} loader=${loaderWithCache} nights=${nights} balance=${nav.explore.balance || plan.trip.foreignBalance || "balance"} onBalance=${(k) => go({ explore: { balance: k } })} onToggleSelect=${toggleSelect} onAddMany=${addMany} onOpenDetail=${openDetail} role=${role} onRemoveDest=${removeDest} onClearPicks=${clearPicks} orphanCount=${picksOf(null).length} onNext=${() => go({ tab: "plan", planTab: "arrange", detail: null })} onReselect=${() => go({ tab: "input", inputStep: 2, detail: null })} onExplore=${(cid) => go({ exploreTab: "explore", explore: { city: cid } })} />`}
+      ${tab === "explore" && exploreTab === "explore" && html`<${S3Explore} trip=${plan.trip} cities=${data.cities} categories=${data.categories} tier1=${data.tier1} loader=${loaderWithCache} selection=${plan.selection} onToggleSelect=${toggleSelect} onOpenDetail=${openDetail} selectedId=${detailId} prof=${prof} nights=${nights} ui=${nav.explore} setUi=${(patch) => go({ explore: patch })} role=${role} onClearPicks=${clearPicks} onNext=${() => go({ tab: "plan", planTab: "arrange", detail: null })} altIds=${detail && twoPane ? detailAlts.map((a) => a.p.id) : []} />`}
+      ${tab === "plan" && planTab === "arrange" && html`<${S4Arrange} plan=${plan} cities=${data.cities} byId=${{ get: getPlace }} prof=${prof} nights=${nights} onAssign=${assignPlace} onMove=${(d, a, b) => setPlan((p) => moveInDay(p, d, a, b))} onSetLodging=${(cid, patch) => setPlan((p) => setLodging(p, cid, patch))} onAddCustom=${(c) => setPlan((p) => addCustomPlace(p, c))} onOpenDetail=${openDetail} onGenerate=${() => runGenerate()} role=${role} dayCities=${buildDays(plan).map((d) => ({ date: d.date, cityId: d.cityId }))} onAutoAssign=${autoAssign} onAssignMany=${assignPlaces} onClearPicks=${clearPicks} orphanCount=${picksOf(null).length} />`}
       ${tab === "plan" && planTab === "itinerary" && html`<${S5Itinerary} plan=${plan} result=${plan.itinerary} getPlace=${getPlace} cities=${data.cities} busy=${genBusy} onGenerate=${() => runGenerate()} onRegenerateDay=${(d) => runGenerate(d)} onSetDwell=${setDwell} onSetFixed=${(id, v) => setPlan((pl) => ({ ...pl, fixed: { ...(pl.fixed || {}), [id]: v } }))} onToggleLock=${(id) => setPlan((pl) => ({ ...pl, locks: { ...(pl.locks || {}), [id]: !(pl.locks || {})[id] } }))} onOpenDetail=${openDetail} onMoveToDay=${(id, d) => { assignPlace(id, d); if (canEdit) setTimeout(() => runGenerate(), 0); }} onCost=${() => setCostOpen(true)} role=${role} drift=${drift} />`}
     ${costOpen && plan.itinerary && html`<${CostPanel} cost=${estimateCost({ itinerary: plan.itinerary, getPlace, cityOf: cityById, trip: plan.trip, lodging: plan.lodging, faresByCity: Object.fromEntries([...travelCache.entries()].map(([k, v]) => [k, v.tidx?.fares || []])) })} onClose=${() => setCostOpen(false)} />`}
       ${tab === "share" && html`<${S7Share} plan=${plan} getPlace=${getPlace} cities=${data.cities} cfg=${cfg} onImport=${(p) => setPlan({ ...p })} role=${role} account=${sync.account} proposals=${proposals} onRefreshProposals=${() => refreshProposals()} onDecide=${onDecide} onProposeMemo=${() => propose("memo")} />`}

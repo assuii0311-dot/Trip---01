@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-16 02:19",
+ "generated": "2026-11-16 05:54",
  "inputs": {
   "wikidata": 133363,
   "osm_places": 498578,
@@ -101,8 +101,8 @@
    "gz_bytes": 35024
   },
   "categories": {
-   "raw_bytes": 5942,
-   "gz_bytes": 2171
+   "raw_bytes": 6865,
+   "gz_bytes": 2704
   },
   "places_tier1": {
    "raw_bytes": 60638319,
@@ -114,5 +114,5 @@
   }
  },
  "tier2_gz_bytes": 18342297,
- "elapsed_s": 141
+ "elapsed_s": 147
 }

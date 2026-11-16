@@ -108,7 +108,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .src { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; margin-top: 12px; }
-.toast { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 30; background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.toast { position: fixed; left: 12px; right: 12px; bottom: calc(var(--tab-h) + 72px + env(safe-area-inset-bottom)); /* 아래 고정 줄(다음 단계 버튼)을 가리지 않게 그 위에 띄운다(묶음 13) */ z-index: 30; background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
 .sheet.proposal { top: auto; z-index: 20; max-height: 80vh; }
 .sheet.proposal .what { font-size: 17px; font-weight: 600; margin: 8px 0; }
 .sheet.proposal textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
@@ -130,3 +130,36 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 a { color: var(--accent); }
 @media (min-width: 600px) { .two { display: grid; grid-template-columns: 40% 60%; height: calc(100vh - var(--top-h) - var(--tab-h) - var(--bars-h, 0px) - env(safe-area-inset-bottom)); } .two .list { overflow: auto; } .two .mapwrap { height: 100%; } .two .map { height: 100%; } .cats { grid-template-columns: repeat(3, 1fr); } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* 묶음 13: 지도 영역에서는 브라우저의 화면 확대·스크롤 대신 지도가 손가락 동작을 받는다 */
+.mapwrap, .mapwrap * { touch-action: none; }
+/* 장소 고르기의 목록 아래 고정 줄(다음 단계로) */
+.listnav { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 8px 16px; background: var(--bg); border-top: 1px solid var(--line); z-index: 3; }
+.listnav .btn:last-child { flex: 1; }
+.btn.sm { min-height: 40px; padding: 4px 12px; font-size: 14px; }
+/* 배치 화면: 왼쪽 날짜, 오른쪽 장소. 장소는 한 줄짜리 작은 항목 */
+.arr { padding-bottom: 64px; }
+.arr-days { padding: 4px 0; }
+.daybox { margin: 6px 8px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); }
+.daybox.over { outline: 3px solid var(--accent); background: #eff6ff; }
+.dayhead { padding: 8px 10px; background: #f8fafc; font-size: 14px; display: flex; gap: 6px; align-items: baseline; }
+.dayhead .cnt { margin-left: auto; color: var(--muted); font-size: 12px; }
+.dropnote { padding: 6px 10px; font-size: 13px; color: var(--accent); background: #eff6ff; }
+.arr-cityhead { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; flex-wrap: wrap; }
+.arr-cityhead h2 { margin: 0; flex: 1; font-size: 17px; }
+.mini { display: flex; align-items: center; gap: 4px; min-height: 40px; padding: 0 4px 0 2px; border-top: 1px solid var(--line); font-size: 14px; }
+.mini.place { cursor: pointer; }
+.mini.held { background: #dbeafe; }
+.mini .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grip { touch-action: none; border: 0; background: none; font-size: 20px; line-height: 1; min-width: 40px; min-height: 40px; color: var(--muted); cursor: grab; }
+.minibtn { border: 0; background: none; min-width: 36px; min-height: 40px; color: var(--muted); font-size: 14px; }
+.minibtn:disabled { opacity: 0.3; }
+.daytag { font-size: 12px; padding: 2px 8px; border-radius: 10px; background: #f3f4f6; color: var(--muted); flex: none; }
+.daytag.on { background: #dcfce7; color: #166534; }
+.dragghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -130%); background: var(--accent); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 14px; max-width: 60vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }
+@media (min-width: 600px) {
+  .arr { display: grid; grid-template-columns: minmax(240px, 38%) 1fr; padding-bottom: 0; height: calc(100vh - var(--top-h) - var(--tab-h) - var(--bars-h, 0px) - env(safe-area-inset-bottom) - 134px); } /* 위 도구 줄 62px + 아래 고정 줄 61px + 여유 */
+  .arr-days, .arr-places { overflow: auto; -webkit-overflow-scrolling: touch; }
+  .arr-days { border-right: 1px solid var(--line); }
+}
+

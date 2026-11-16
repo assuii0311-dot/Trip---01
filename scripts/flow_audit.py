@@ -147,7 +147,7 @@ def main():
                         pk.nth(j).click()
                 sub("도시 요약", "요약"); pg.wait_for_selector(".card", timeout=10000)
             # ---- 일정
-            tab("일정"); pg.wait_for_selector("select[aria-label='날짜']", timeout=10000)
+            tab("일정"); pg.wait_for_selector(".arr, select[aria-label='날짜']", timeout=10000)
             pg.click(".toolbar .seg button:has-text('숙박')"); wait(400); tab("탐색"); tab("일정")
             out["c4 숙박을 보다가 다른 탭에 다녀오면"] = pg.locator(".toolbar .seg button.on").first.inner_text()
             if pg.locator("button:has-text('일정 생성')").count() == 0:
