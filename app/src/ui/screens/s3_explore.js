@@ -7,8 +7,9 @@ import { filterPlaces, sortByProminence, placeName, altNames, isForeignLandmark,
 import { recommendForDestination, cityAlternatives } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
 import { inDest, destName, isIsland } from "../../data/dest.js";
+import { TripAlts } from "../components/trip_alts.js";
 
-export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, recDays = {}, ui, setUi, role = "local", altIds = [], onClearPicks, onNext }) {
+export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, recDays = {}, ui, setUi, role = "local", altIds = [], onClearPicks, onNext, tripAlts = null, onApplyTrip, onAddDest, assignedCount = 0 }) {
   const canPick = role !== "viewer"; // 공유자는 열람만(R-22). 서브 수립자의 선택은 제안으로 보내진다
   const tripCities = trip.cities.length ? trip.cities : cities.filter((c) => c.stratum === "big").sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 10).map((c) => c.id);
   // 보던 도시, 추천/전체, 검색어, 범주 필터, 추천 기준은 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
@@ -76,7 +77,8 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
             <div class="meta chips"><${Chip} kind=${r.bundle === "taste" ? "ok" : "star"}>${r.reasons.join(" · ")}</${Chip}>${r.p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}<${Chip} kind="est">인기 ${r.score.toFixed(2)}</${Chip}>${r.p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}</div></div>
           ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(r.p.id); }}>${selection.includes(r.p.id) ? "✓" : "+"}</button>`}</div>`)}
         ${altOpen && alts && html`<div class="sheet" role="dialog" aria-label="대안"><button class="close" aria-label="닫기" onClick=${() => setAltOpen(false)}>✕</button>
-          <h2>도시 기준 대안</h2><p class="note">전체 일정 기준 대안(도시 조합·일수)은 묶음 5(이동 시간) 뒤에 제공됩니다. 장소 기준 대안은 장소 상세에 있습니다.</p>
+          <${TripAlts} alts=${tripAlts} cities=${cities} canEdit=${role === "main" || role === "local"} assignedCount=${assignedCount} onApply=${onApplyTrip} onAddDest=${onAddDest} destCount=${tripCities.length} dayCapacity=${prof.dayCapacity} />
+          <h2 style="margin-top:20px">도시 기준 대안 <span class="note">${city ? destName(city) : ""}</span></h2><p class="note">같은 여행지에서 추천 기준만 바꾼 두 세트입니다. 장소 기준 대안은 장소 상세에 있습니다.</p>
           ${[["landmark", "대표 명소 중심 세트"], ["other", "취향 중심 세트"]].map(([k, title]) => html`<h3 style="font-size:17px;margin:12px 0 4px">${title}</h3>${alts[k].map((r) => html`<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1">${CAT_ICON[r.p.cat[0]] || ""} ${placeName(r.p)} <span class="note">${r.score.toFixed(2)}</span></span><button class="btn secondary" style="min-height:36px;padding:4px 10px" onClick=${() => onToggleSelect(r.p.id)}>${selection.includes(r.p.id) ? "✓" : "+"}</button></div>`)}`)}
         </div>`}` : html`
         <div class="toolbar"><input placeholder="장소 이름 검색" value=${q} onInput=${(e) => setQ(e.target.value)} /><button class="btn secondary" style="min-height:40px" onClick=${() => setMapOpen(!mapOpen)}>${mapOpen ? "지도 접기" : "지도"}</button></div>

@@ -7,7 +7,7 @@ import { lodgingZones } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
 import { inDest, makeDestOf, destName } from "../../data/dest.js";
 
-export function S4Arrange({ plan, cities, byId, prof, nights, onAssign, onMove, onSetLodging, onAddCustom, onOpenDetail, onGenerate, role = "local", dayCities = [], onAutoAssign, onAssignMany, onClearPicks, orphanCount = 0 }) {
+export function S4Arrange({ plan, cities, byId, prof, nights, dayPlan = null, onMoveCity, onAssign, onMove, onSetLodging, onAddCustom, onOpenDetail, onGenerate, role = "local", dayCities = [], onAutoAssign, onAssignMany, onClearPicks, orphanCount = 0 }) {
   const canEdit = role === "main" || role === "local", canPropose = role === "sub"; // 역할에 없는 편집 요소는 숨기거나 잠근다(R-22)
   const dates = dateList(plan.trip);
   const un = unassigned(plan);
@@ -41,10 +41,11 @@ export function S4Arrange({ plan, cities, byId, prof, nights, onAssign, onMove, 
   return html`<div>
     <div class="toolbar"><div class="seg" style="flex:1"><button class=${tab === "place" ? "on" : ""} onClick=${() => setTab("place")}>장소 배치 (${plan.selection.length})</button><button class=${tab === "lodging" ? "on" : ""} onClick=${() => setTab("lodging")}>숙박 ${check.ok ? "✓" : "⚠"}</button></div></div>
     ${tab === "lodging" ? html`<div class="section">
-      <p class="note">기간 ${dates.length}일, 숙박 ${check.total}박. 도시별 일수 합이 ${check.total}박이어야 합니다(현재 ${check.nights}박). 제안 일수는 추천 장소 수 ÷ 하루 ${prof.dayCapacity}곳(E2).</p>
+      <p class="note">기간 ${dates.length}일, 숙박 ${check.total}박. 도시별 일수 합이 ${check.total}박이어야 합니다(현재 ${check.nights}박). 제안 일수는 고른 장소 수 ÷ 하루 ${prof.dayCapacity}곳을 먼저 잡고, 남는 날은 아직 고르지 않은 여행지에 알려진 곳 수에 비례해 나눈 값입니다(E2). 일정은 위에서부터 순서대로 날짜를 씁니다.</p>
+      ${dayPlan && dayPlan.over && html`<p class="note warnline overnote">⚠ 고른 장소가 일정보다 많습니다. 하루 ${prof.dayCapacity}곳을 넘는 장소는 일정 생성에서 초과분으로 남습니다.</p>`}
       ${plan.trip.cities.length === 0 && html`<${Empty}>입력에서 여행 도시를 먼저 고르세요.</${Empty}>`}
       ${plan.trip.cities.map((cid) => { const c = cities.find((x) => x.id === cid); if (!c) return null; const l = plan.lodging[cid] || {}; const focus = plan.selection.map(get).filter((p) => p && inDest(p, c)); const z = lodgingZones(c, focus);
-        return html`<div class="card" key=${cid}><div class="body"><div class="title">${cityName(cid)} <span class="note">제안 ${nights[cid] || 1}박</span></div>
+        return html`<div class="card" key=${cid}><div class="body"><div class="title">${plan.trip.cities.indexOf(cid) + 1}. ${cityName(cid)} <span class="note">제안 ${nights[cid] ?? 1}박${dayPlan ? ` · ${dayPlan.days[cid] ?? 0}일` : ""}</span>${canEdit && onMoveCity && plan.trip.cities.length > 1 ? html`<span class="citymove" style="float:right"><button type="button" class="minibtn moveup" aria-label="순서 앞으로" disabled=${plan.trip.cities.indexOf(cid) === 0} onClick=${() => onMoveCity(cid, -1)}>▲</button><button type="button" class="minibtn movedown" aria-label="순서 뒤로" disabled=${plan.trip.cities.indexOf(cid) === plan.trip.cities.length - 1} onClick=${() => onMoveCity(cid, 1)}>▼</button></span>` : ""}</div>
           <div class="row" style="margin:6px 0"><label class="note">숙박 일수</label><input type="number" min="0" max="30" style="width:80px;min-height:40px" disabled=${!canEdit} value=${l.nights ?? nights[cid] ?? 1} onInput=${(e) => onSetLodging(cid, { nights: Number(e.target.value) })} /></div>
           <div class="note">추천 구역(선택·추천 장소 중심 1.5km 안, 숙박 수 순)</div>
           <div class="chips" style="margin:6px 0">${z.zones.length ? z.zones.map((zz) => html`<button class=${"chip " + (l.zone === zz.id ? "on" : "")} disabled=${!canEdit} onClick=${() => onSetLodging(cid, { zone: zz.id, zoneName: zz.name, zoneLat: c.districts.find((d) => d.id === zz.id)?.lat, zoneLon: c.districts.find((d) => d.id === zz.id)?.lon })} title=${zz.reason}>${zz.name || zz.id} · ${zz.lodging}</button>`) : html`<span class="note">${z.fallback?.reason}</span>`}</div>

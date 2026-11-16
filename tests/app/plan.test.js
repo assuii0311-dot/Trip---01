@@ -59,3 +59,24 @@ test("assignMany: 여러 장소를 날짜에 넣고 일부는 미배치로 돌�
   const r = assignMany(plan, { "2027-05-02": ["a"], "2027-05-03": ["d"] }, ["b"]);
   assert.deepEqual(r.days, { "2027-05-01": [], "2027-05-02": ["c", "a"], "2027-05-03": ["d"] });
 });
+
+import { moveCity, applyTripPlan } from "../../app/src/state/plan.js";
+test("moveCity: 여행지 순서를 한 칸 옮기고 끝에서는 그대로 (D-051)", () => {
+  const p = { ...emptyPlan(), trip: { ...emptyPlan().trip, ...trip, cities: ["A", "B", "C"] } };
+  assert.deepEqual(moveCity(p, "B", -1).trip.cities, ["B", "A", "C"]); assert.deepEqual(moveCity(p, "B", 1).trip.cities, ["A", "C", "B"]);
+  assert.equal(moveCity(p, "A", -1), p); assert.equal(moveCity(p, "C", 1), p); assert.equal(moveCity(p, "X", 1), p);
+  assert.deepEqual(p.trip.cities, ["A", "B", "C"]); // 입력은 바꾸지 않는다
+});
+test("applyTripPlan: 순서·숙박 일수·추천 기준을 쓰고, 날짜 배치는 유지하거나 푼다 (D-051)", () => {
+  let p = { ...emptyPlan(), trip: { ...emptyPlan().trip, ...trip, cities: ["A", "B", "C"] }, selection: ["x", "y"], days: { "2027-05-01": ["x"], "2027-05-02": ["y"] }, lodging: { A: { nights: 9, zone: "z1" } } };
+  const alt = { order: ["A", "C", "B"], nights: { A: 2, C: 1, B: 0 }, balance: "landmark" };
+  const keep = applyTripPlan(p, alt);
+  assert.deepEqual(keep.trip.cities, ["A", "C", "B"]); assert.equal(keep.trip.foreignBalance, "landmark");
+  assert.deepEqual(keep.lodging, { A: { nights: 2, zone: "z1" }, C: { nights: 1 }, B: { nights: 0 } }); // 고른 숙박 구역은 남는다
+  assert.deepEqual(keep.days, p.days); assert.deepEqual(keep.selection, ["x", "y"]);
+  const clear = applyTripPlan(p, alt, { keepAssign: false });
+  assert.deepEqual(clear.days, { "2027-05-01": [], "2027-05-02": [] }); assert.deepEqual(clear.selection, ["x", "y"]); // 배치만 풀고 고른 장소는 남는다
+  assert.equal(applyTripPlan(p, { order: ["A", "B"] }), p); assert.equal(applyTripPlan(p, { order: ["A", "B", "X"] }), p); assert.equal(applyTripPlan(p, { order: ["A", "A", "B"] }), p); // 여행지 집합이 다르면 그대로
+  assert.deepEqual(p.trip.cities, ["A", "B", "C"]);
+});
+

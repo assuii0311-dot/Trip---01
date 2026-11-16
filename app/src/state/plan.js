@@ -83,6 +83,28 @@ export function assignMany(plan, byDate = {}, clear = []) {
   return { ...plan, days };
 }
 
+/** 여행지 순서를 한 칸 옮긴다(dir: -1 앞으로, +1 뒤로). 끝에서는 그대로(D-051) */
+export function moveCity(plan, cityId, dir) {
+  const cs = [...plan.trip.cities], i = cs.indexOf(cityId), j = i + (dir < 0 ? -1 : 1);
+  if (i < 0 || j < 0 || j >= cs.length) return plan;
+  [cs[i], cs[j]] = [cs[j], cs[i]];
+  return { ...plan, trip: { ...plan.trip, cities: cs } };
+}
+
+/**
+ * 전체 일정 대안을 계획에 쓴다(E2 4절 5항, D-051): 여행지 순서, 여행지별 숙박 일수, 추천 기준.
+ * order가 지금 여행지와 같은 집합이 아니면 아무것도 바꾸지 않는다. keepAssign이 false면 날짜 배치를 모두 푼다(고른 장소는 남는다).
+ */
+export function applyTripPlan(plan, { order, nights = {}, balance = null }, { keepAssign = true } = {}) {
+  const cur = plan.trip.cities;
+  if (!Array.isArray(order) || order.length !== cur.length || new Set(order).size !== order.length || order.some((id) => !cur.includes(id))) return plan;
+  const lodging = { ...plan.lodging };
+  for (const id of order) if (nights[id] != null) lodging[id] = { ...(lodging[id] || {}), nights: Number(nights[id]) };
+  const trip = { ...plan.trip, cities: [...order], ...(balance ? { foreignBalance: balance } : {}) };
+  const days = keepAssign ? plan.days : Object.fromEntries(Object.keys(plan.days).map((d) => [d, []]));
+  return { ...plan, trip, lodging, days };
+}
+
 export function unassigned(plan) { const placed = new Set(Object.values(plan.days).flat()); return plan.selection.filter((id) => !placed.has(id)); }
 
 /** 직접 추가 장소(R-07): 교차검증 "사용자 추가" */
