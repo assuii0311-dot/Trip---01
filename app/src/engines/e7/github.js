@@ -5,6 +5,19 @@ export class GitHubError extends Error {
   constructor(status, message, body) { super(message); this.status = status; this.body = body; }
 }
 
+export const MAX_FILE_BYTES = 1024 * 1024; // GitHub 읽기 API가 본문을 함께 돌려주는 한도(문서 기준 1MB 이하)
+export const SAFE_FILE_BYTES = Math.floor(MAX_FILE_BYTES * 0.8); // 여유 20%를 둔 올리기 한도(D-042). 넘으면 올리지 않는다
+
+/**
+ * 글을 UTF-8 바이트로 바꿔 base64로 만든다. 한 번에 바꾸면 브라우저 엔진의 함수 인자 수 한도에 걸리므로
+ * (실측: 크롬 124,745바이트, 문서: 사파리 65,536개) 32,768바이트씩 나눠 바꾼다(T-051).
+ */
+export function utf8ToB64(text) {
+  const bytes = new TextEncoder().encode(text); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return { b64: btoa(bin), bytes: bytes.length };
+}
+
 export function makeGitHub(fetchFn = globalThis.fetch) {
   async function call(path, { method = "GET", token, body, etag } = {}) {
     const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
@@ -49,9 +62,11 @@ export function makeGitHub(fetchFn = globalThis.fetch) {
         throw e;
       }
     },
-    /** 파일 생성·갱신. sha는 갱신 시 현재 blob SHA(불일치면 GitHub가 409). 반환: 새 blob SHA와 커밋 SHA */
+    /** 파일 생성·갱신. sha는 갱신 시 현재 blob SHA(불일치면 GitHub가 409). SAFE_FILE_BYTES를 넘으면 호출하지 않고 413 오류. 반환: 새 blob SHA와 커밋 SHA */
     async putFile(owner, repo, path, content, message, { sha, token, branch } = {}) {
-      const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(content)));
+      const { b64, bytes } = utf8ToB64(content);
+      const kb = (n) => Math.round(n / 1024);
+      if (bytes > SAFE_FILE_BYTES) throw new GitHubError(413, `파일이 너무 큽니다(${kb(bytes)}KB). 여행 저장소에 올릴 수 있는 크기는 ${kb(SAFE_FILE_BYTES)}KB까지입니다. 장소나 메모를 줄여 주세요.`, { tooLarge: true, bytes, limit: SAFE_FILE_BYTES });
       const body = { message, content: b64 };
       if (sha) body.sha = sha;
       if (branch) body.branch = branch;

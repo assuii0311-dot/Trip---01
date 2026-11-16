@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { deriveKey, encryptJson, decryptJson, randomSalt, validateKey, sha256Hex } from "../../app/src/engines/e7/crypto.js";
-import { makeGitHub, GitHubError } from "../../app/src/engines/e7/github.js";
+import { makeGitHub, GitHubError, utf8ToB64, SAFE_FILE_BYTES, MAX_FILE_BYTES } from "../../app/src/engines/e7/github.js";
 import { makeSync, parseRepo, FILES } from "../../app/src/engines/e7/sync.js";
 import { resolveRole, can, cleanSubs, isLogin, ROLE_LABEL } from "../../app/src/engines/e7/roles.js";
 import { makeProposal, applyProposal, decideProposal, describeProposal, sortProposals, visibleProposals, validateProposal, proposalPath } from "../../app/src/engines/e7/proposals.js";
@@ -199,4 +199,22 @@ test("sync: 제안은 본문 파일을 바꾸지 않고, 승인하면 본문 커
   // Key가 다르면 제안을 읽지 못한다(개수만 센다)
   const other = await (await import("../../app/src/engines/e7/crypto.js")).deriveKey("another passphrase!", cur.meta.kdf.salt, cur.meta.kdf.iterations);
   const l4 = await sync.listProposals({ ...cfg, key: other }); assert.equal(l4.proposals.length, 0); assert.equal(l4.unreadable, 2);
+});
+
+// T-051: 올리기 전 변환은 파일 크기와 상관없이 되고, 한도(1MB의 80%)를 넘는 파일은 호출 전에 막는다
+test("github: 큰 파일도 base64로 바꾸고(200KB, 한글 포함), 원문으로 되돌아온다", () => {
+  const text = "가나다 Museo del Prado ñ€ ".repeat(8000); // UTF-8 약 250KB
+  const { b64, bytes } = utf8ToB64(text);
+  assert.ok(bytes > 200 * 1024);
+  assert.equal(new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))), text);
+  assert.equal(utf8ToB64("").b64, ""); assert.equal(utf8ToB64("hi").b64, "aGk=");
+});
+test("github: 한도를 넘는 파일은 올리지 않고 413 오류로 알린다(여유 20%)", async () => {
+  assert.equal(SAFE_FILE_BYTES, Math.floor(MAX_FILE_BYTES * 0.8));
+  const st = { files: {}, commits: {} }; const gh = mockGitHub(st);
+  const ok = await gh.putFile("o", "r", "big.txt", "x".repeat(800 * 1024), "m"); assert.ok(ok.commit);
+  const calls = st.cacheModes ? st.cacheModes.length : null;
+  await assert.rejects(gh.putFile("o", "r", "big2.txt", "x".repeat(900 * 1024), "m"), (e) => e instanceof GitHubError && e.status === 413 && e.body.tooLarge && /KB/.test(e.message));
+  assert.equal(st.files["big2.txt"], undefined);
+  if (calls != null) assert.equal(st.cacheModes.length, calls); // 호출 자체를 하지 않는다
 });
