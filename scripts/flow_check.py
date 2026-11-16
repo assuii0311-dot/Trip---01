@@ -37,11 +37,15 @@ def main():
           res["steps"]["dest_first"] = page.locator(".destlist .card.dest").first.inner_text().replace("\n", " | ")[:260]
           res["steps"]["dest_ko_summaries"] = page.locator(".destlist .card.dest .lead.ko").count()  # E5 한국어 소개(D-032)
           page.click(".seg button:has-text('섬')"); time.sleep(0.3); res["steps"]["dest_islands"] = page.locator(".destlist .card.dest").count(); page.click(".seg button:has-text('전체')")
-          # 취향을 고르면 맞는 여행지에 추천이 붙고 위로 온다(D-039). "추천만 보기"로 거른 수를 센다
+          # 인기와 취향 추천을 따로 본다(D-049): 취향을 골라도 순서는 인기순 그대로, 취향 추천은 10곳, "취향 추천만"과 "취향순"으로 따로 본다
+          res["steps"]["dest_popular"] = page.locator(".destlist .card.dest .chip.pop").count()
           res["steps"]["categories"] = page.locator(".tastes button.taste").count()
           page.locator(".tastes button.taste:has-text('해변')").click(); time.sleep(0.3); res["steps"]["dest_first_with_beach_taste"] = page.locator(".destlist .card.dest").first.inner_text().split("\n")[0][:30]
           res["steps"]["dest_recommended"] = page.locator(".destlist .card.dest .chip.rec").count()
-          page.click("button.reconly"); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.click("button.reconly"); page.locator(".tastes button.taste:has-text('해변')").click()
+          res["steps"]["dest_rec_why"] = page.locator(".destlist .card.dest .recwhy").first.inner_text()[:70]
+          page.click("button.reconly"); time.sleep(0.3); res["steps"]["dest_beach"] = page.locator(".destlist .card.dest").count(); page.click("button.reconly")
+          page.click(".sortseg button:has-text('취향순')"); time.sleep(0.3); res["steps"]["dest_first_taste_sort"] = page.locator(".destlist .card.dest").first.inner_text().split("\n")[0][:30]; page.click(".sortseg button:has-text('인기순')")
+          page.click("button.poponly"); time.sleep(0.3); res["steps"]["dest_poponly"] = page.locator(".destlist .card.dest").count(); page.click("button.poponly"); page.locator(".tastes button.taste:has-text('해변')").click()
           tastes = page.locator(".tastes button.taste"); tastes.nth(2).click(); tastes.nth(0).click()
           page.fill("input[placeholder*='여행지 검색']", "madrid"); time.sleep(0.4)
           res["steps"]["city_hits"] = [x.strip().split("\n")[0][:40] for x in page.locator(".destlist .card.dest .title").all_inner_texts()][:4]
@@ -61,6 +65,7 @@ def main():
           page.locator(".card .btn.explore").first.click(); page.wait_for_selector(".toolbar .seg", timeout=10000); time.sleep(2)
           res["steps"]["rec_cards"] = page.locator(".card").count(); res["steps"]["rec_first"] = page.locator(".card .title").first.inner_text() if page.locator(".card").count() else None
           res["steps"]["rec_note"] = page.locator("p.note").first.inner_text()[:100]
+          res["steps"]["rec_bundles"] = page.locator("h3.bundlehead").all_inner_texts()
           page.screenshot(path=str(shots / "s3_rec.png"))
           page.click("text=대안 ▸"); page.wait_for_selector(".sheet", timeout=10000); res["steps"]["alt_rows"] = page.locator(".sheet .row").count(); page.click(".sheet .close")
           page.click("button:has-text('전체 후보')"); page.wait_for_selector(".card", timeout=30000); time.sleep(1)

@@ -78,7 +78,16 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); f
 .hl li b { font-weight: 600; }
 .hl .line { display: inline; margin: 0; }
 .hl .line::before { content: "— "; color: var(--muted); }
-.chips.tastes .chip.taste, .chip.reconly { font: inherit; font-size: 14px; min-height: 36px; }
+.chips.tastes .chip.taste, .chip.reconly, .chip.poponly { font: inherit; font-size: 14px; min-height: 36px; }
+/* 여행지 목록의 정렬과 거르기, 추천 묶음 제목(D-049) */
+.destsort { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.destsort .seg { flex: 0 1 200px; }
+.destsort .seg button { white-space: nowrap; min-height: 40px; }
+.destsort .seg button:disabled { color: var(--muted, #94a3b8); }
+.card.dest .recwhy { color: var(--ok, #15803d); }
+.bundlehead { font-size: 16px; margin: 14px 16px 6px; }
+.bundlehead .note { font-weight: 400; margin-left: 6px; }
+.chip.bundle { font-size: 12px; padding: 0 6px; min-height: 0; line-height: 18px; vertical-align: 2px; }
 .tastehelp { margin-top: 6px; } .tastehelp summary { color: var(--accent); font-size: 14px; min-height: 32px; cursor: pointer; }
 .recprev { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
 .recrow { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }

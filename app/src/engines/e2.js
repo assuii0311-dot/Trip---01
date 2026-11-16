@@ -1,10 +1,11 @@
-// E2 추천 엔진(docs/engines/E2-recommendation.md, 설계 동의 D-025. 점수 가중치는 D-024).
+// E2 추천 엔진(docs/engines/E2-recommendation.md, 설계 동의 D-025. 인기 점수와 추천의 두 묶음은 D-049).
 // 순수 함수만 둔다. 입력은 E1 기준 데이터와 여행 입력, 출력은 설계 문서 3절의 구조.
 import { hav, isForeignLandmark } from "../data/places.js";
 
-export const WEIGHTS = { match: 0.5, rep: 0.4, heritage: 0.1 }; // D-024
-export const W_SELECTED = 1.0, W_UNSELECTED = 0.3; // D-025 (f)
+export const W_SELECTED = 1.0, W_UNSELECTED = 0.3; // D-025 (f). 화면의 선호 표시에만 쓴다(D-049)
 export const LANDMARK_TH = { share: 0.5, sitelinks: 10 }; // D-025 (d)
+export const BUNDLE_SHARE = { landmark: 0.75, balance: 0.5, other: 0.25 }; // D-049: 추천 가운데 대표 명소 묶음의 몫(제안값)
+export const RUN_MAX = 3; // 같은 첫 범주가 이어질 수 있는 수
 
 /** 선호 분석(R-05): 범주 가중치와 프로필 문장. budget·dayCapacity는 E6·E4 값과 맞춘다. */
 export function profile(trip, categories, dayCapacity = 4) {
@@ -16,54 +17,56 @@ export function profile(trip, categories, dayCapacity = 4) {
   return { weights, sentence, budget, dayCapacity, tastes: [...sel] };
 }
 
-/** 도시 안 백분위(0~1). 값이 같으면 같은 백분위. 결정적. */
-export function percentiles(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const n = sorted.length;
-  return (v) => (n <= 1 ? 1 : sorted.findIndex((x) => x >= v) / (n - 1));
+const views = (p) => (p.pop?.pv?.en ?? 0) + (p.pop?.pv?.es ?? 0);
+
+/**
+ * 인기 점수(E2 4절 3항, D-049): 사이트링크 수와 월 조회수(en+es)의 ln(1+x)를 후보 안 최댓값으로 나눠 평균(0~1).
+ * 백분위가 아니라 실제 크기를 쓰므로 장소가 많은 도시에서도 상위권이 동점이 되지 않는다.
+ */
+export function popularity(places) {
+  let maxSl = 0, maxPv = 0; // 후보가 수만 곳일 수 있어 펼침 인자 대신 돌면서 센다
+  for (const p of places) { maxSl = Math.max(maxSl, p.pop?.sl ?? 0); maxPv = Math.max(maxPv, views(p)); }
+  const mSl = Math.log1p(maxSl), mPv = Math.log1p(maxPv);
+  return (p) => ((mSl ? Math.log1p(p.pop?.sl ?? 0) / mSl : 0) + (mPv ? Math.log1p(views(p)) / mPv : 0)) / 2;
 }
 
-/** 대표성: 사이트링크와 조회수(en+es)를 각각 도시 안 백분위로 바꿔 평균 */
-export function representativeness(places) {
-  const sl = percentiles(places.map((p) => p.pop?.sl ?? 0));
-  const pv = percentiles(places.map((p) => (p.pop?.pv?.en ?? 0) + (p.pop?.pv?.es ?? 0)));
-  return (p) => (sl(p.pop?.sl ?? 0) + pv((p.pop?.pv?.en ?? 0) + (p.pop?.pv?.es ?? 0))) / 2;
-}
-
-/** "그 밖의 장소" 비중(D-025 (b)): landmark 그대로, balance 0.6배, other 반전(1-rep). E2 4절 3항의 "부호와 크기" */
-export function balancedRep(rep, balance) {
-  if (balance === "other") return 1 - rep;
-  if (balance === "balance") return 0.6 * rep;
-  return rep;
-}
-
-/** 장소 점수(D-024): 0.50×취향 일치 + 0.40×대표성 + 0.10×유산 지정. 근거 항목 두 개를 함께 돌려준다. */
-export function scorePlace(p, weights, rep, balance = "balance") {
-  const match = Math.max(0, ...p.cat.map((c) => weights[c] ?? W_UNSELECTED));
-  const r = balancedRep(rep, balance);
-  const her = p.her && p.her.length ? 1 : 0;
-  const terms = [["취향 일치", WEIGHTS.match * match], ["대표성", WEIGHTS.rep * r], ["유산 지정", WEIGHTS.heritage * her]];
-  const score = terms.reduce((s, [, v]) => s + v, 0);
-  const reasons = terms.filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k);
-  return { score: Math.round(score * 1000) / 1000, reasons, match, rep: r, her };
-}
-
-/** 추천 목록(R-06): 도시의 장소를 점수순으로, 같은 범주 연속 3개 제한. 수는 cap×nights×1.5 */
-export function recommend(places, { weights, balance = "balance", dayCapacity = 4, nights = 1, limit } = {}) {
-  const rep = representativeness(places);
-  const scored = places.map((p) => ({ p, ...scorePlace(p, weights, rep(p), balance), landmark: isForeignLandmark(p, LANDMARK_TH) }))
-    .sort((a, b) => b.score - a.score || String(a.p.id).localeCompare(String(b.p.id)));
-  const n = limit ?? Math.ceil(dayCapacity * Math.max(1, nights) * 1.5);
-  const out = [], deferred = [];
-  let lastCat = null, run = 0;
-  for (const s of scored) {
+/** 다양성 제한(E2 4절 4항): 같은 첫 범주가 RUN_MAX곳 이어지면 다음 곳을 미뤘다가 다른 범주가 나온 뒤 다시 끼운다. 앞에서 n곳 */
+export function diversify(sorted, n, runMax = RUN_MAX) {
+  const out = [], wait = [];
+  let last = null, run = 0;
+  const push = (s) => { const c = s.p.cat[0]; run = c === last ? run + 1 : 1; last = c; out.push(s); };
+  const blocked = (s) => s.p.cat[0] === last && run >= runMax;
+  for (const s of sorted) {
     if (out.length >= n) break;
-    const c = s.p.cat[0];
-    if (c === lastCat && run >= 3) { deferred.push(s); continue; }
-    out.push(s); run = c === lastCat ? run + 1 : 1; lastCat = c;
+    if (blocked(s)) { wait.push(s); continue; }
+    push(s);
+    while (wait.length && out.length < n && !blocked(wait[0])) push(wait.shift());
   }
-  for (const s of deferred) { if (out.length >= n) break; out.push(s); }
+  for (const s of wait) { if (out.length >= n) break; out.push(s); } // 한 범주뿐이면 그대로 잇는다
   return out;
+}
+
+/**
+ * 추천 목록(R-06, E2 4절 4항, D-049): 대표 명소 묶음(취향과 무관, 인기 점수순)과 취향 추천 묶음(고른 취향 범주, 인기 점수순).
+ * 수는 dayCapacity×days. 대표 명소의 몫은 BUNDLE_SHARE[balance](올림), 취향을 고르지 않았으면 전부 대표 명소.
+ * 묶음에 드는 곳은 점수로 정하고, 같은 범주가 이어지지 않게 하는 제한(diversify)은 묶음 안의 순서에만 쓴다.
+ * 돌려주는 배열은 대표 명소가 앞, 취향 추천이 뒤다. 각 항목: { p, score, bundle: "top"|"taste", reasons, match, her, landmark }
+ */
+export function recommend(places, { tastes = [], balance = "balance", dayCapacity = 4, days = 1, limit } = {}) {
+  const pop = popularity(places), sel = new Set(tastes);
+  const scored = places.map((p) => ({ p, raw: pop(p), match: p.cat.some((c) => sel.has(c)), her: p.her && p.her.length ? 1 : 0, landmark: isForeignLandmark(p, LANDMARK_TH) }))
+    .sort((a, b) => b.raw - a.raw || String(a.p.id).localeCompare(String(b.p.id)));
+  const n = Math.min(scored.length, limit ?? dayCapacity * Math.max(1, days));
+  const nTop = sel.size ? Math.ceil(n * (BUNDLE_SHARE[balance] ?? BUNDLE_SHARE.balance)) : n;
+  // 묶음에 드는 곳은 인기 점수로 정하고, 다양성 제한은 묶음 안의 순서에만 쓴다(덜 알려진 곳이 범주가 다르다는 이유로 끼어들지 않게)
+  const top = diversify(scored.slice(0, nTop), nTop);
+  const used = new Set(top.map((s) => s.p.id));
+  const taste = diversify(scored.filter((s) => s.match && !used.has(s.p.id)).slice(0, n - top.length), n - top.length);
+  for (const s of taste) used.add(s.p.id);
+  const fill = top.length + taste.length < n ? scored.filter((s) => !used.has(s.p.id)).slice(0, n - top.length - taste.length) : []; // 취향에 맞는 곳이 모자라면 인기순으로 채운다
+  const item = (bundle) => ({ p, raw, match, her, landmark }) => ({ p, score: Math.round(raw * 1000) / 1000, bundle, match, her, landmark,
+    reasons: [bundle === "top" ? "대표 명소" : "취향 일치", ...(bundle === "top" && match && sel.size ? ["취향 일치"] : []), ...(her ? ["유산 지정"] : [])].slice(0, 2) });
+  return [...top.map(item("top")), ...fill.map(item("top")), ...taste.map(item("taste"))];
 }
 
 /** 추천에 넣는 2등급 범주(식당·카페·시장). 1등급은 모두 후보다 */
@@ -74,17 +77,17 @@ export function recommendForDestination(places, opts) {
   return recommend(places.filter((p) => p.tier === 1 || p.cat.some((c) => RECOMMEND_TIER2_CATS.includes(c))), opts);
 }
 
-/** 도시 수준 대안(R-06): 대표 명소 중심 세트와 그 밖 중심 세트 */
+/** 도시 수준 대안(R-06): 대표 명소 중심 세트와 취향 중심 세트 */
 export function cityAlternatives(places, opts) {
   return { landmark: recommend(places, { ...opts, balance: "landmark" }), other: recommend(places, { ...opts, balance: "other" }) };
 }
 
-/** 장소 수준 대안: 같은 상위 범주, 2km 안, 점수 상위 2개 */
-export function placeAlternatives(p, places, weights, balance = "balance") {
-  const rep = representativeness(places);
+/** 장소 수준 대안: 같은 상위 범주, 2km 안, 인기 점수 상위 2개 */
+export function placeAlternatives(p, places) {
+  const pop = popularity(places);
   return places.filter((q) => q.id !== p.id && q.cat.some((c) => p.cat.includes(c)) && hav(p.lat, p.lon, q.lat, q.lon) <= 2000)
-    .map((q) => ({ p: q, ...scorePlace(q, weights, rep(q), balance), dist: hav(p.lat, p.lon, q.lat, q.lon) }))
-    .sort((a, b) => b.score - a.score || a.dist - b.dist).slice(0, 2);
+    .map((q) => ({ p: q, score: Math.round(pop(q) * 1000) / 1000, raw: pop(q), dist: hav(p.lat, p.lon, q.lat, q.lon) }))
+    .sort((a, b) => b.raw - a.raw || a.dist - b.dist || String(a.p.id).localeCompare(String(b.p.id))).slice(0, 2);
 }
 
 /** 숙박 일수(R-10, E2 4절 6항): ceil(추천 수 ÷ 하루 수용), 최소 1, 합이 기간을 넘으면 비례 축소 */

@@ -62,13 +62,36 @@ test("E5 여행지 한국어 소개 붙이기: 요약, 생성 이름, 입력 불
   assert.deepEqual(applyDestinationKo(cities, null), cities); assert.deepEqual(applyDestinationKo(cities, {}), cities);
 });
 
-import { tasteMatch, sortByTaste } from "../../app/src/util/destinations.js";
-test("tasteMatch/sortByTaste: 고른 취향이 여행지의 중심 범주면 추천, 맞음이 큰 순 (D-039)", () => {
-  const L = [{ id: "A", focus: ["heritage", "museum"] }, { id: "B", focus: ["beach"] }, { id: "C", focus: ["museum", "beach"] }, { id: "D" }];
+import { tasteMatch, destViews, tasteRanking, sortDestinations, onlyDestinations, isPopular, POPULAR_N, TASTE_TOP_N } from "../../app/src/util/destinations.js";
+test("tasteMatch: 고른 취향이 여행지의 중심 범주인지(카드의 칩 강조용)", () => {
+  const L = [{ id: "A", focus: ["heritage", "museum"] }, { id: "C", focus: ["museum", "beach"] }, { id: "D" }];
   assert.deepEqual(tasteMatch(L[0], ["museum"]), { matched: ["museum"], weight: 1 });
-  assert.deepEqual(tasteMatch(L[2], ["museum", "beach"]), { matched: ["museum", "beach"], weight: 3 });
-  assert.deepEqual(tasteMatch(L[3], ["beach"]), { matched: [], weight: 0 });
-  assert.deepEqual(sortByTaste(L, ["beach"]).map((c) => c.id), ["B", "C", "A", "D"]); // 첫째 중심(2) > 둘째 중심(1) > 없음, 같으면 원래 순서
-  assert.deepEqual(sortByTaste(L, ["museum"]).map((c) => c.id), ["C", "A", "B", "D"]);
-  assert.equal(sortByTaste(L, []), L);
+  assert.deepEqual(tasteMatch(L[1], ["museum", "beach"]), { matched: ["museum", "beach"], weight: 3 });
+  assert.deepEqual(tasteMatch(L[2], ["beach"]), { matched: [], weight: 0 });
+});
+test("여행지의 인기와 취향 추천: 조회수의 크기와 비중으로 순위를 매기고 위 N곳만 추천 (D-049)", () => {
+  // 고정 입력: 2026-11-16 시험 계산의 모양을 축약(큰 도시, 한 범주에 치우친 곳, 섬, 조회수가 없는 곳)
+  const D = [
+    { id: "big", dest: { tier: 1, rank: 1 } }, { id: "mus", dest: { tier: 2, rank: 30 } }, { id: "isl", kind: "island", members: ["m1", "m2"], dest: { tier: 1, rank: 4 } },
+    { id: "her", dest: { tier: 3, rank: 60 } }, { id: "none", dest: { tier: 3, rank: 90 } }, { id: "notdest" },
+  ];
+  const pl = (city, cat, en, es = 0) => ({ city, cat, pop: { pv: en || es ? { en, es } : null } });
+  const T1 = [pl("big", ["heritage"], 9000, 1000), pl("big", ["museum"], 1000), pl("big", ["park"], 500), pl("mus", ["museum", "heritage"], 1500), pl("mus", ["park"], 100),
+    pl("m1", ["beach"], 800), pl("m2", ["nature"], 700), pl("m2", ["museum"], 0), pl("her", ["heritage"], 300), pl("none", ["museum"], 0), pl("notdest", ["museum"], 99999), pl("gone", ["museum"], 5)];
+  const V = destViews(D, T1);
+  assert.deepEqual([...V.keys()].sort(), ["big", "her", "isl", "mus"]); // 조회수가 있는 여행지만. 목록 밖 지자체와 조회수 0은 빠진다
+  assert.equal(V.get("big").total, 11500); assert.equal(V.get("isl").total, 1500); assert.equal(V.get("isl").rows.length, 2); // 섬은 소속 지자체의 장소를 모은다
+  const L = D.filter((c) => c.dest);
+  const R = tasteRanking(L, V, ["museum"], 2);
+  assert.equal(R.get("big").mass, 1000); assert.equal(R.get("mus").mass, 1500); assert.equal(Math.round(R.get("mus").share * 100), 94); // 범주가 둘인 장소도 한 번만 센다
+  assert.deepEqual(L.map((c) => R.get(c.id).order), [2, 1, 3, 4, 5]); // 크기와 비중이 모두 큰 mus가 앞. 0인 곳은 참고 순위순
+  assert.deepEqual(L.map((c) => tasteRanking(L, V, ["heritage"]).get(c.id).order), [1, 2, 4, 3, 5]); // 크기 순서와 비중 순서가 정반대라 동점이면 참고 순위순(big 1위, mus 30위, her 60위)
+  assert.deepEqual(L.filter((c) => R.get(c.id).top).map((c) => c.id), ["big", "mus"]);
+  assert.deepEqual([...tasteRanking(L, V, ["beach"], 3).entries()].filter(([, v]) => v.top).map(([k]) => k), ["isl"]); // 맞는 곳이 없으면(크기 0) 추천을 붙이지 않는다
+  assert.equal(tasteRanking(L, V, []).size, 0); assert.equal(tasteRanking([], V, ["museum"]).size, 0);
+  // 정렬과 거르기. 인기순은 받은 순서 그대로, 취향순은 순위순
+  assert.equal(sortDestinations(L, "pop", R), L); assert.equal(sortDestinations(L, "taste", new Map()), L);
+  assert.deepEqual(sortDestinations(L, "taste", R).map((c) => c.id), ["mus", "big", "isl", "her", "none"]);
+  assert.deepEqual(onlyDestinations(L, "pop", R).map((c) => c.id), ["big", "isl"]); assert.deepEqual(onlyDestinations(L, "taste", R).map((c) => c.id), ["big", "mus"]); assert.equal(onlyDestinations(L, "", R), L);
+  assert.ok(isPopular({ dest: { rank: POPULAR_N } }) && !isPopular({ dest: { rank: POPULAR_N + 1 } }) && !isPopular({}) && TASTE_TOP_N === 10);
 });
