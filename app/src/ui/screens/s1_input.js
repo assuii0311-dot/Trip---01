@@ -51,6 +51,7 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
       ${towns.length > 0 && html`<div class="sub">주요 도시: ${towns.join(" · ")}${c.members.length > towns.length ? ` 외 ${c.members.length - towns.length}곳` : ""}</div>`}
       ${meta && html`<div class="note">${meta}</div>`}
       ${c.ko?.summary ? html`<p class="lead ko">${c.ko.summary}</p>` : c.wv?.lead && html`<p class="lead">${c.wv.lead}</p>`}
+      ${c.ko?.food && html`<div class="sub food" title="여행 가이드(Wikivoyage)의 먹거리 절에 나오는 음식">🍽 대표 음식: ${c.ko.food}</div>`}
     </div>
     <button class="btn secondary pick" disabled=${ro} aria-label=${selected ? "선택 해제" : "선택"} aria-pressed=${selected} onClick=${() => onToggle(c.id)}>${selected ? "✓" : "+"}</button>
   </div>`;

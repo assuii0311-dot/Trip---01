@@ -1,6 +1,7 @@
 """Wikivoyage 덤프에서 스페인 하위 문서와 목록을 전체 필드로 추출한다 (E1 2절). PoC의 poc/wikivoyage_parse.py를 재사용한다.
 
-출력: pages.jsonl {lang, title, kind, parent, depth, lead, understand, sleep_tiers, eat_tiers}. lead는 첫 소제목 앞의 문서 머리글(여행지 소개 한 줄용, E1 4절 15항)
+출력: pages.jsonl {lang, title, kind, parent, depth, lead, understand, eat, sleep_tiers, eat_tiers}. lead는 첫 소제목 앞의 문서 머리글(여행지 소개 한 줄용, E1 4절 15항).
+      eat는 먹거리 절(Eat/Comer)에서 목록 틀을 뺀 줄글(여행지 대표 음식 한 줄의 출처, E5 4절 12항)
       listings.jsonl {lang, page, idx, type, raw_type, section, tier, name, alt, lat, lon, wikidata, content, price, hours, url, phone, address}
 실행: python -I -m pipeline.e1.wikivoyage <lang> <덤프.bz2> <출력 디렉터리>
 """
@@ -15,6 +16,8 @@ import wikivoyage_parse as W  # noqa: E402
 
 TIER_WORDS = {"budget": "저가", "mid-range": "중가", "splurge": "고가", "económico": "저가", "medio": "중가", "lujo": "고가", "barato": "저가", "caro": "고가"}
 UNDERSTAND = {"en": ("understand",), "es": ("comprender", "entender")}
+EAT = {"en": ("eat",), "es": ("comer",)}
+EAT_LIMIT = 8000  # 먹거리 절은 지역 안내가 길어 음식 이름이 뒤쪽에 나오는 문서가 있다(바르셀로나 6,040자)
 FILE_RE = re.compile(r"\[\[(?:File|Image|Archivo|Imagen|Fichero):[^\[\]]*(?:\[\[[^\]]*\]\][^\[\]]*)*\]\]", re.I)
 LINK_RE = re.compile(r"\[\[(?:[^|\]]*\|)?([^\]]+)\]\]")
 TEMPLATE_RE = re.compile(r"\{\{[^{}]*\}\}")
@@ -95,6 +98,7 @@ def main():
                 continue
             kind = (W.page_status(text) or ("", ""))[1] if hasattr(W, "page_status") else ""
             und = plain(section_text(text, UNDERSTAND[lang]))
+            eat = plain(section_text(text, EAT[lang]), EAT_LIMIT)
             h2 = [(m.start(), m.group(1).strip().lower()) for m in W.H2_RE.finditer(text)]
             lead = plain(EXTLINK_RE.sub(r"\1", MAGIC_RE.sub("", text[:h2[0][0]] if h2 else text)), 800).replace("\u200b", "")
             h3 = [(m.start(), m.group(1).strip().lower()) for m in W.H3_RE.finditer(text)]
@@ -121,7 +125,7 @@ def main():
                        "address": clean_name(params.get("address")) or None}
                 if rec["name"]:
                     fl.write(json.dumps(rec, ensure_ascii=False) + "\n"); n_list += 1; idx += 1
-            fp.write(json.dumps({"lang": lang, "title": title, "kind": kind, "parent": parents.get(title), "depth": depth.get(title, 0), "lead": lead, "understand": und, "sleep_tiers": tiers["sleep"], "eat_tiers": tiers["eat"]}, ensure_ascii=False) + "\n")
+            fp.write(json.dumps({"lang": lang, "title": title, "kind": kind, "parent": parents.get(title), "depth": depth.get(title, 0), "lead": lead, "understand": und, "eat": eat, "sleep_tiers": tiers["sleep"], "eat_tiers": tiers["eat"]}, ensure_ascii=False) + "\n")
             n_pages += 1
     print(f"  {lang}: 문서 {n_pages}건, 목록 {n_list}건 → {out}", flush=True)
 

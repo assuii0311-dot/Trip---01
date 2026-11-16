@@ -53,6 +53,41 @@ def test_build_reports_stale_invalid_and_ignores_existing_names():
     assert rep["stale"] == ["Q8810"]
 
 
+# --- 여행지 대표 음식(E5 4절 12항, D-046). 고정 입력은 2026-11-16 생성본(그라나다, 말라가)의 모양을 축약한 것.
+EAT_PAGE = {**PAGE, "eat": "Granada is notable as most of its bars will serve free tapas with each drink. The most typical thing to eat is espetos, sardines grilled over a fire; and pescaíto frito."}
+FOOD = {"id": "Q8810", "page": "Granada", "food_ko": "에스페토(정어리 꼬치구이), 페스카이토 프리토(생선 튀김)", "terms": ["espetos", "Pescaíto frito"], "src_md5": e5.food_md5(EAT_PAGE), "generated": "2026-11-16"}
+
+
+def test_food_items_split_outside_parentheses():
+    assert e5.food_items("타파스(토르티야, 감자 등), 하몬(햄)") == ["타파스(토르티야, 감자 등)", "하몬(햄)"]
+    assert e5.food_items("핀초") == ["핀초"] and e5.food_items("") == []
+
+
+def test_validate_food_rules():
+    assert e5.validate_food(FOOD, EAT_PAGE) == [] and e5.validate_food(FOOD) == []
+    assert any("60자 초과" in p for p in e5.validate_food({**FOOD, "food_ko": "가" * 61}))
+    assert any("5개" in p for p in e5.validate_food({**FOOD, "food_ko": "가, 나, 다라, 마, 바"}))
+    assert "문장으로 끝남(이름을 나열한 한 줄이어야 함)" in e5.validate_food({**FOOD, "food_ko": "에스페토가 알려져 있다"})
+    assert "금지어 '추천'" in e5.validate_food({**FOOD, "food_ko": "에스페토 추천"})
+    assert "출처 표기(terms) 없음" in e5.validate_food({**FOOD, "terms": []}) and "대표 음식 없음" in e5.validate_food({**FOOD, "food_ko": ""})
+    assert "출처에 없는 표기 'paella'" in e5.validate_food({**FOOD, "terms": ["espetos", "paella"]}, EAT_PAGE)  # 출처에 없는 음식은 통과하지 못한다
+
+
+def test_build_attaches_food_and_holds_back_stale_or_ungrounded_lines():
+    pages = {"Granada": EAT_PAGE, "Fuengirola": PAGE}
+    good = {**GOOD, "src_md5": e5.source_md5(EAT_PAGE)}
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD])
+    assert out["items"]["Q8810"]["food"] == FOOD["food_ko"] and rep["food"] == 1 and rep["food_invalid"] == {} and rep["food_stale"] == []
+    out, rep = e5.build([good], CITIES, pages, food=[{**FOOD, "src_md5": "0" * 32}])  # 먹거리 절이 바뀌면 대표 음식만 빠지고 소개는 남는다
+    assert "food" not in out["items"]["Q8810"] and rep["food_stale"] == ["Q8810"] and rep["count"] == 1
+    out, rep = e5.build([good], CITIES, pages, food=[{**FOOD, "terms": ["fabada"]}])
+    assert "food" not in out["items"]["Q8810"] and rep["food_invalid"]["Q8810"] == ["출처에 없는 표기 'fabada'"]
+    out, rep = e5.build([good], CITIES, pages, food=[{**FOOD, "id": "Q492735"}])  # 소개가 없는 여행지의 대표 음식은 붙이지 않는다
+    assert rep["food_orphan"] == ["Q492735"] and rep["food"] == 0
+    out, rep = e5.build([good], CITIES, pages)  # 대표 음식 파일이 없어도 예전과 같은 결과
+    assert "food" not in out["items"]["Q8810"] and rep["food"] == 0
+
+
 # --- 장소 설명(E5 4절 9항, D-033). 고정 입력은 2026-11-14 대표 모수(카사 바트요, 하우메 1세 기념비)의 모양을 축약한 것.
 from pipeline.e1 import wikipedia_extracts as wx  # noqa: E402
 from pipeline.e5 import places as pl  # noqa: E402

@@ -69,8 +69,10 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 
 ```
 # 새로 생성했거나 출처와 다시 대조한 뒤에는 --stamp로 출처 해시를 적는다. 검증 실패나 낡은 항목이 있으면 종료 코드 1
-<venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz [--stamp]
+<venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz --food pipeline/e5/content/destinations_food_ko.jsonl [--stamp] [--stamp-food]
 ```
+
+`--food`는 여행지 대표 음식 한 줄(E5 4절 12항, D-046)을 함께 내보낸다. 출처는 pages.jsonl의 `eat`(먹거리 절)이므로 `e1.wikivoyage`를 먼저 돌려 둔다. 내용 파일의 `terms`(출처에 적힌 음식 표기)가 먹거리 절에 없으면 그 줄은 내보내지 않는다. `--stamp-food`는 먹거리 절의 해시를 다시 적는다(새로 생성했거나 출처와 다시 대조한 뒤에만).
 
 ## 실행 순서 (E5 장소 한국어 설명)
 

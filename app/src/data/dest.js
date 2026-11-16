@@ -28,7 +28,8 @@ export function makeDestOf(cities, tripCityIds) {
 
 /**
  * E5가 만든 여행지 한국어 소개를 도시 레코드에 붙인다(E5 4절 8항, D-032). 새 배열을 돌려주고 입력은 바꾸지 않는다.
- * 붙는 필드: ko{summary, sources, confidence, generated}. 한국어 이름이 없는 여행지는 생성한 이름을 n.ko에 넣고 n.ko_src를 "generated"로 표시한다.
+ * 붙는 필드: ko{summary, sources, confidence, generated, food}. food는 대표 음식 한 줄(E5 4절 12항, D-046)이고 출처에 음식 이름이 없는 여행지에는 없다.
+ * 한국어 이름이 없는 여행지는 생성한 이름을 n.ko에 넣고 n.ko_src를 "generated"로 표시한다.
  */
 export function applyDestinationKo(cities, e5) {
   const items = (e5 && e5.items) || {};
@@ -36,6 +37,6 @@ export function applyDestinationKo(cities, e5) {
     const it = items[c.id];
     if (!it) return c;
     const n = !c.n?.ko && it.name_ko ? { ...c.n, ko: it.name_ko, ko_src: "generated" } : c.n;
-    return { ...c, n, ko: { summary: it.summary, sources: it.sources || [], confidence: it.confidence, generated: it.generated } };
+    return { ...c, n, ko: { summary: it.summary, sources: it.sources || [], confidence: it.confidence, generated: it.generated, food: it.food || null } };
   });
 }
