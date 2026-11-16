@@ -30,7 +30,7 @@
 |---|---|---|---|
 | Wikidata 항목 | SPARQL 결과(JSONL). 클래스 34종과 문화유산 지정(P1435) 항목, 지자체 8,414건 | Wikidata (poc/wikidata_collect.py, wikidata_heritage.py) | 필수 |
 | 사이트링크와 라벨 | 언어별 위키 문서 존재, 라벨, 설명 | Wikidata 엔티티 API (poc/wikidata_sitelinks.py) | 필수 |
-| 영문 Wikivoyage | 덤프(bz2). 스페인 하위 문서 565건, 목록 11,626건, 절 텍스트, 문서 머리글(첫 소제목 앞 글. 여행지 소개 문장용) | dumps.wikimedia.org (poc/wikivoyage_parse.py) | 필수 |
+| 영문 Wikivoyage | 덤프(bz2). 스페인 하위 문서 565건, 목록 11,626건, 절 텍스트, 문서 머리글(첫 소제목 앞 글. 여행지 소개 문장용), 먹거리 절의 줄글(여행지 대표 음식의 출처, E5 4절 12항) | dumps.wikimedia.org (poc/wikivoyage_parse.py) | 필수 |
 | 스페인어 Wikivoyage | 덤프. 보조 소스 | 동일 | 선택 |
 | OSM 스페인 추출본 | pbf 1.7GB. 여행 관련 태그 646,875건, place 92,422건, 행정 경계 | openstreetmap.fr (poc/osm_extract.py) | 필수 |
 | OSM 카나리아 추출본 | pbf 68MB. 여행 관련 태그 35,502건, 행정 경계 92건. 스페인 추출본에 카나리아 제도가 없어 따로 받는다(D-031). 같은 OSM ID는 한 번만 쓴다(중복 6건) | openstreetmap.fr africa/spain/canarias (poc/osm_extract.py, pipeline/e1/osm_boundaries.py) | 필수 |

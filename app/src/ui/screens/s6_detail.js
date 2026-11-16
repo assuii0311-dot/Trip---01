@@ -52,7 +52,7 @@ export function S6Detail({ place: p, categories, loader, e5Index, onClose, selec
   const [cvKind, cvLabel] = CV[p.cv] || CV.single;
   const wd = (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "ko") || (p.desc || []).find((d) => d.src === "wikidata" && d.lang === "en");
   const hint = reservationHint(p);
-  const alts = altsIn || (prof ? placeAlternatives(p, cityPlaces, prof.weights) : []);
+  const alts = altsIn || (prof ? placeAlternatives(p, cityPlaces) : []);
   // docked: 지도와 목록이 나란한 화면(아이패드)에서는 목록 칸 위에만 띄워 지도와 대안 표시를 가리지 않는다(D-039)
   return html`<div class=${"sheet" + (docked ? " docked" : "")} role="dialog" aria-label=${name}>
     <button class="close" aria-label="닫기" onClick=${onClose}>✕</button>

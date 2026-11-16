@@ -1,11 +1,11 @@
 // S1 입력(흐름 1, F-01~F-03). docs/04-wireframes.md S1. 단계: 기본 정보 → 취향·여행지(나라 아래 도시·섬 카드, D-030. 고른 취향에 맞는 곳을 추천, D-039) → 공항·여행 형태
-import { useState } from "../../lib.js";
+import { useState, useMemo } from "../../lib.js";
 import { inputFilterCount, clearedInput } from "../../state/nav.js";
 import { html } from "../components/ui.js";
 import { validateTrip, tripDays } from "../../state/store.js";
 import { CAT_ICON } from "../../util/format.js";
 import { airportLabel, airportSub, searchAirports } from "../../util/airports.js";
-import { destinationList, filterDestinations, searchOthers, nearestAirport, regionOptions, fmtPop, tasteMatch, sortByTaste } from "../../util/destinations.js";
+import { destinationList, filterDestinations, searchOthers, nearestAirport, regionOptions, fmtPop, tasteRanking, sortDestinations, onlyDestinations, isPopular, POPULAR_N, TASTE_TOP_N } from "../../util/destinations.js";
 import { destName, isIsland } from "../../data/dest.js";
 
 const BUDGET = [["low", "저가"], ["mid", "중가"], ["high", "고가"]];
@@ -30,8 +30,9 @@ function AirportPick({ label, value, time, airports, cities, cityIds, ro, onPick
 const COUNTRY = "스페인"; // 요구사항 3절: 1차 스페인. 나라 선택은 나라가 늘면 연다
 
 // 여행지 카드(D-030): 요약 정보로 고르게 한다. 등급은 참고 표시
-function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle, ko = {} }) {
-  const matched = tasteMatch(c, tastes).matched; // 고른 취향이 이 여행지의 중심 범주면 추천(D-039)
+function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle, ko = {}, rank = null, tasteNames = "" }) {
+  const tr = rank && rank.top ? rank : null; // 취향 추천(취향 점수 상위 10곳, D-049)
+  const pop = isPopular(c);
   const lines = ko.lines || {}, koNames = ko.names || {};
   const ap = nearestAirport(c, airports);
   const region = c._regionName;
@@ -41,27 +42,30 @@ function DestCard({ c, selected, ro, tastes, catName, airports, cities, onToggle
     <div class="body">
       <div class="title">${destName(c)} <span class="note">${c.n?.en && c.n.en !== destName(c) ? c.n.en : c.n?.es && c.n.es !== destName(c) ? c.n.es : ""}${c.n?.ko_src === "generated" ? " · 한글 표기 생성" : ""}</span></div>
       <div class="chips meta">
-        ${matched.length > 0 && html`<span class="chip ok rec" title="고른 취향이 중심인 여행지">★ 추천</span>`}
+        ${pop && html`<span class="chip star pop" title="참고 순위(해외에 알려진 명소 수, 가이드 수록 장소 수, 영문 조회수) 상위 ${POPULAR_N}곳">인기 ${c.dest.rank}위</span>`}
+        ${tr && html`<span class="chip ok rec" title="고른 취향에 가장 잘 맞는 ${TASTE_TOP_N}곳">★ 취향 추천</span>`}
         ${isIsland(c) && html`<span class="chip user">🏝 섬</span>`}
         ${(c.focus || []).map((f, i) => html`<span class=${"chip " + (tastes.includes(f) ? "on" : "user")}>${CAT_ICON[f] || ""} ${catName(f)}${i === 0 ? " 중심" : ""}</span>`)}
-        ${c.dest ? html`<span class="chip est" title="인기 참고 등급(E1 4절 15항)">참고 ${c.dest.tier}등급</span>` : c.island ? html`<span class="chip x">${destName(cities.find((x) => x.id === c.island)) || "섬"}에 포함</span>` : html`<span class="chip x">목록 밖</span>`}
+        ${c.dest ? (pop ? "" : html`<span class="chip est" title="인기 참고 등급(E1 4절 15항)">참고 ${c.dest.tier}등급</span>`) : c.island ? html`<span class="chip x">${destName(cities.find((x) => x.id === c.island)) || "섬"}에 포함</span>` : html`<span class="chip x">목록 밖</span>`}
         ${c.dest?.unesco > 0 && html`<span class="chip star">유네스코 ${c.dest.unesco}</span>`}
       </div>
+      ${tr && html`<div class="sub recwhy">취향 추천 이유: 이 여행지 장소 조회수의 ${Math.round(tr.share * 100)}%가 고른 취향(${tasteNames})의 장소입니다.</div>`}
       ${(c.hl || []).length > 0 && html`<ul class="hl" aria-label="대표 명소">${c.hl.map((h) => html`<li><b>${h.n.ko || koNames[h.id] || h.n.en || h.n.local}</b>${lines[h.id] ? html` <span class="line">${lines[h.id]}</span>` : ""}</li>`)}</ul>`}
       ${towns.length > 0 && html`<div class="sub">주요 도시: ${towns.join(" · ")}${c.members.length > towns.length ? ` 외 ${c.members.length - towns.length}곳` : ""}</div>`}
       ${meta && html`<div class="note">${meta}</div>`}
       ${c.ko?.summary ? html`<p class="lead ko">${c.ko.summary}</p>` : c.wv?.lead && html`<p class="lead">${c.wv.lead}</p>`}
+      ${c.ko?.food && html`<div class="sub food" title="여행 가이드(Wikivoyage)의 먹거리 절에 나오는 음식">🍽 대표 음식: ${c.ko.food}</div>`}
     </div>
     <button class="btn secondary pick" disabled=${ro} aria-label=${selected ? "선택 해제" : "선택"} aria-pressed=${selected} onClick=${() => onToggle(c.id)}>${selected ? "✓" : "+"}</button>
   </div>`;
 }
 
-export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone, ui, setUi, ko = {}, onRemoveDest }) {
+export function S1Input({ trip, setTrip, cities, airports, categories, regions = [], role, onDone, ui, setUi, ko = {}, onRemoveDest, destViews = null }) {
   // 단계와 여행지 목록의 검색어·필터는 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
-  const [local, setLocal] = useState({ step: 1, q: "", kind: "all", rec: false, region: "" });
+  const [local, setLocal] = useState({ step: 1, q: "", kind: "all", only: "", sort: "pop", region: "" });
   const view = ui || local, patch = setUi || ((p) => setLocal((s) => ({ ...s, ...p })));
-  const { step, q, kind, rec, region } = view;
-  const setStep = (s) => patch({ step: s }), setQ = (v) => patch({ q: v }), setKind = (v) => patch({ kind: v }), setRec = (v) => patch({ rec: v }), setRegion = (v) => patch({ region: v });
+  const { step, q, kind, region } = view;
+  const setStep = (s) => patch({ step: s }), setQ = (v) => patch({ q: v }), setKind = (v) => patch({ kind: v }), setOnly = (v) => patch({ only: v }), setSort = (v) => patch({ sort: v }), setRegion = (v) => patch({ region: v });
   const [showErr, setShowErr] = useState(false);
   const err = validateTrip(trip);
   // 단계 표시를 눌러 이동한다. 앞 단계는 언제나, 뒤 단계는 앞 단계의 필수 입력이 채워졌을 때만
@@ -74,9 +78,13 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
   const regionName = (c) => { const r = regions.find((x) => x.id === c.region?.community); return r ? r.n?.local || r.n?.es : isIsland(c) ? "섬" : ""; };
   const list = destinationList(cities).map((c) => ({ ...c, _regionName: regionName(c) }));
   const tastes = trip.tastes || [];
-  const onlyRec = rec && tastes.length > 0; // "추천만 보기": 고른 취향이 중심인 여행지만
-  const shown = sortByTaste(filterDestinations(list, { q, kind, focus: onlyRec ? tastes : [], region }), tastes);
-  const nRec = tastes.length ? shown.filter((c) => tasteMatch(c, tastes).matched.length > 0).length : 0;
+  // 인기와 취향 추천을 따로 본다(D-049). 기본 순서는 인기순(참고 순위)이고 취향을 골라도 바뀌지 않는다
+  const ranking = useMemo(() => tasteRanking(list, destViews || new Map(), tastes), [cities, destViews, tastes.join(",")]);
+  const only = view.only === "taste" && !tastes.length ? "" : view.only || "";
+  const sort = view.sort === "taste" && tastes.length ? "taste" : "pop";
+  const shown = sortDestinations(onlyDestinations(filterDestinations(list, { q, kind, region }), only, ranking), sort, ranking);
+  const nRec = shown.filter((c) => ranking.get(c.id)?.top).length, nPop = shown.filter(isPopular).length;
+  const tasteNames = tastes.map(catName).join(", ");
   const toggleTaste = (id) => upd({ tastes: tastes.includes(id) ? tastes.filter((x) => x !== id) : [...tastes, id] });
   const others = q.trim() ? searchOthers(cities, q).map((c) => ({ ...c, _regionName: regionName(c) })) : [];
   const regionOpts = regionOptions(list, regions);
@@ -96,19 +104,21 @@ export function S1Input({ trip, setTrip, cities, airports, categories, regions =
     ${step === 2 && html`
       <div class="field"><label>내 취향 (여러 개 고를 수 있습니다)</label>
         <div class="chips tastes">${categories.map((c) => html`<button type="button" class=${"chip taste " + (tastes.includes(c.id) ? "on" : "")} disabled=${ro} aria-pressed=${tastes.includes(c.id)} onClick=${() => toggleTaste(c.id)}>${CAT_ICON[c.id] || ""} ${c.ko}</button>`)}</div>
-        <span class="note">고른 취향이 중심인 여행지에 "추천"이 붙고 위로 올라옵니다. 고르지 않으면 인기 순으로 보입니다. 취향은 장소 추천에도 쓰입니다(E2).</span>
+        <span class="note">취향을 고르면 가장 잘 맞는 여행지 ${TASTE_TOP_N}곳에 "★ 취향 추천"이 붙습니다. 목록 순서는 인기순 그대로이고, 아래에서 취향순으로 바꿔 볼 수 있습니다. 취향은 장소 추천에도 쓰입니다(E2).</span>
         <details class="tastehelp"><summary>범주 설명 보기</summary>${categories.map((c) => html`<div class="note"><b>${CAT_ICON[c.id] || ""} ${c.ko}</b> ${c.desc ? `${c.desc} · ` : ""}예: ${(c.examples || []).map((e) => e.n).join(", ")}</div>`)}</details></div>
-      <p class="note">${COUNTRY}의 여행지 ${list.length}곳(도시 ${list.length - nIsland}, 섬 ${nIsland})입니다. 소개와 대표 명소를 보고 가고 싶은 곳을 고르세요. 등급은 인기를 나타내는 참고값입니다.</p>
+      <p class="note">${COUNTRY}의 여행지 ${list.length}곳(도시 ${list.length - nIsland}, 섬 ${nIsland})입니다. 소개와 대표 명소를 보고 가고 싶은 곳을 고르세요. "인기 N위"는 해외에 알려진 명소 수, 여행 가이드에 실린 장소 수, 영문 위키백과 조회수로 매긴 참고 순위입니다(실제 방문객 수가 아닙니다).</p>
       <div class="field"><label>선택한 여행지 ${trip.cities.length}곳</label>
         <div class="chips picked">${trip.cities.length === 0 ? html`<span class="note">아직 없습니다. 아래 카드의 + 를 누르세요.</span>` : trip.cities.map((id) => { const c = cities.find((x) => x.id === id); return html`<span class="chip on" onClick=${() => toggleCity(id)}>${c ? destName(c) : id}${ro ? "" : " ×"}</span>`; })}</div>
         ${showErr && err.cities && html`<span class="error">${err.cities}</span>`}</div>
       <div class="field"><input placeholder="여행지 검색 (도시·섬 이름, 대표 명소)" value=${q} onInput=${(e) => setQ(e.target.value)} />
         <div class="destfilter"><div class="seg">${[["all", "전체"], ["city", "도시"], ["island", "섬"]].map(([k, v]) => html`<button class=${kind === k ? "on" : ""} onClick=${() => setKind(k)}>${v}</button>`)}</div>
           <select aria-label="지역" value=${region} onChange=${(e) => setRegion(e.target.value)}><option value="">전체 지역</option>${regionOpts.map((r) => html`<option value=${r.id}>${r.name} (${r.n})</option>`)}</select></div>
-        ${tastes.length > 0 && html`<div class="chips"><button type="button" class=${"chip reconly " + (onlyRec ? "on" : "")} aria-pressed=${onlyRec} onClick=${() => setRec(!rec)}>★ 추천만 보기</button></div>`}</div>
-      <p class="note">표시 ${shown.length}곳${tastes.length ? ` · 추천 ${nRec}곳` : ""}${nFilters > 0 && html` · <button type="button" class="linkbtn" onClick=${() => patch(clearedInput())}>필터 지우기</button>`}</p>
+        <div class="destsort"><div class="seg sortseg" aria-label="정렬"><button type="button" class=${sort === "pop" ? "on" : ""} onClick=${() => setSort("pop")}>인기순</button><button type="button" class=${sort === "taste" ? "on" : ""} disabled=${!tastes.length} title=${tastes.length ? "" : "취향을 고르면 쓸 수 있습니다"} onClick=${() => setSort("taste")}>취향순</button></div>
+          <div class="chips"><button type="button" class=${"chip poponly " + (only === "pop" ? "on" : "")} aria-pressed=${only === "pop"} onClick=${() => setOnly(only === "pop" ? "" : "pop")}>인기만</button>
+            ${tastes.length > 0 && html`<button type="button" class=${"chip reconly " + (only === "taste" ? "on" : "")} aria-pressed=${only === "taste"} onClick=${() => setOnly(only === "taste" ? "" : "taste")}>★ 취향 추천만</button>`}</div></div></div>
+      <p class="note">표시 ${shown.length}곳 · 인기 ${nPop}곳${tastes.length ? ` · 취향 추천 ${nRec}곳` : ""}${nFilters > 0 && html` · <button type="button" class="linkbtn" onClick=${() => patch(clearedInput())}>필터 지우기</button>`}</p>
       <div class="destlist">
-        ${shown.map((c) => html`<${DestCard} key=${c.id} c=${c} selected=${trip.cities.includes(c.id)} ro=${ro} tastes=${tastes} catName=${catName} airports=${airports} cities=${cities} onToggle=${toggleCity} ko=${ko} />`)}
+        ${shown.map((c) => html`<${DestCard} key=${c.id} c=${c} selected=${trip.cities.includes(c.id)} ro=${ro} tastes=${tastes} rank=${ranking.get(c.id)} tasteNames=${tasteNames} catName=${catName} airports=${airports} cities=${cities} onToggle=${toggleCity} ko=${ko} />`)}
         ${shown.length === 0 && others.length === 0 && html`<div class="empty">조건에 맞는 여행지가 없습니다.</div>`}
         ${others.length > 0 && html`<h2 style="margin:12px 0 8px">목록 밖 지자체</h2><p class="note">여행지 목록에는 없지만 이름으로 찾은 곳입니다. 섬에 속한 곳은 섬 여행지에 포함되어 있고, 그 밖의 곳은 데이터가 적을 수 있습니다.</p>
           ${others.map((c) => html`<${DestCard} key=${c.id} c=${c} selected=${trip.cities.includes(c.id)} ro=${ro} tastes=${tastes} catName=${catName} airports=${airports} cities=${cities} onToggle=${toggleCity} ko=${ko} />`)}`}

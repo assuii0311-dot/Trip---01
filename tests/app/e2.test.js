@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { profile, percentiles, scorePlace, recommend, cityAlternatives, placeAlternatives, cityNights, lodgingZones, reservationHint, WEIGHTS } from "../../app/src/engines/e2.js";
+import { profile, popularity, diversify, recommend, cityAlternatives, placeAlternatives, cityNights, lodgingZones, reservationHint, BUNDLE_SHARE } from "../../app/src/engines/e2.js";
 
 const CATS = [{ id: "museum", ko: "박물관·미술관" }, { id: "heritage", ko: "유적·기념물" }, { id: "cafe", ko: "카페·바" }, { id: "park", ko: "공원·정원" }];
 const mk = (id, cat, sl, en, es, her = [], extra = {}) => ({ id, cat: [cat], her, lat: 40.41 + Math.random() * 0, lon: -3.7, pop: { sl, pv: { en, es }, en_share: en + es ? en / (en + es) : null }, ...extra });
@@ -19,30 +19,56 @@ test("profile: 선택 범주 1.0, 비선택 0.3, 미선택이면 전부 1.0", ()
   assert.equal(pr.weights.museum, 1.0); assert.equal(pr.weights.cafe, 0.3); assert.ok(pr.sentence.includes("박물관·미술관 중심"));
   assert.equal(profile({ tastes: [], budget: "low" }, CATS).weights.cafe, 1.0);
 });
-test("percentiles: 결정적, 0~1", () => { const f = percentiles([0, 10, 20, 30]); assert.equal(f(0), 0); assert.equal(f(30), 1); assert.equal(f(20), 2 / 3); });
-test("scorePlace: 가중치 합 1, 근거 두 개", () => {
-  assert.equal(WEIGHTS.match + WEIGHTS.rep + WEIGHTS.heritage, 1);
-  const s = scorePlace(P[0], { museum: 1 }, 1, "landmark");
-  assert.equal(s.score, 1); assert.deepEqual(s.reasons, ["취향 일치", "대표성"]);
-  assert.equal(scorePlace(P[5], { cafe: 0.3 }, 0, "landmark").score, 0.15);
+test("popularity: 실제 크기의 로그 비율, 0~1, 큰 도시에서도 상위권이 동점이 아니다 (D-049)", () => {
+  const pop = popularity(P);
+  assert.equal(pop(P[0]), 1); assert.equal(pop(P[5]), 0); // 사이트링크와 조회수가 모두 가장 큰 곳이 1, 둘 다 0이면 0
+  assert.ok(pop(P[3]) > pop(P[1]) && pop(P[1]) > pop(P[2]) && pop(P[2]) > pop(P[4]) && pop(P[4]) > pop(P[6]));
+  // 예전 백분위 방식은 장소가 수천 곳이면 상위권이 같은 값이 됐다. 지금은 5,000곳 가운데 위 20곳의 점수가 모두 다르다
+  const many = Array.from({ length: 5000 }, (_, i) => mk("m" + i, "heritage", 1 + (i % 200), 10 * (i + 1), 5 * (i + 1)));
+  const top = many.map(popularity(many)).sort((a, b) => b - a).slice(0, 20);
+  assert.equal(new Set(top).size, 20);
+  assert.equal(popularity([])({ pop: {} }), 0);
 });
-test("recommend: 점수순, 같은 범주 연속 3개 제한, 결정적", () => {
-  const w = profile({ tastes: ["museum"] }, CATS).weights;
-  const r1 = recommend(P, { weights: w, dayCapacity: 4, nights: 1, limit: 5 });
-  const r2 = recommend(P, { weights: w, dayCapacity: 4, nights: 1, limit: 5 });
-  assert.deepEqual(r1.map((x) => x.p.id), r2.map((x) => x.p.id));
-  assert.equal(r1[0].p.id, "prado"); assert.ok(r1[0].landmark);
-  const cats = r1.map((x) => x.p.cat[0]); assert.ok(!(cats[0] === cats[1] && cats[1] === cats[2] && cats[2] === cats[3]));
-  assert.equal(recommend(P, { weights: w, dayCapacity: 4, nights: 2 }).length, Math.min(P.length, 12));
+test("diversify: 같은 첫 범주 3곳 뒤에는 다른 범주가 나올 때까지 미뤘다가 다시 끼운다", () => {
+  const s = (id, cat) => ({ p: { id, cat: [cat] } });
+  const L = [s("a1", "A"), s("a2", "A"), s("a3", "A"), s("a4", "A"), s("a5", "A"), s("b1", "B"), s("a6", "A"), s("c1", "C")];
+  assert.deepEqual(diversify(L, 8).map((x) => x.p.id), ["a1", "a2", "a3", "b1", "a4", "a5", "a6", "c1"]);
+  assert.deepEqual(diversify(L, 5).map((x) => x.p.id), ["a1", "a2", "a3", "b1", "a4"]);
+  assert.deepEqual(diversify(L.slice(0, 5), 5).map((x) => x.p.id), ["a1", "a2", "a3", "a4", "a5"]); // 한 범주뿐이면 그대로 잇는다
 });
-test("cityAlternatives: 그 밖 중심 세트는 대표성 낮은 곳이 앞", () => {
-  const w = profile({ tastes: [] }, CATS).weights;
-  const alt = cityAlternatives(P, { weights: w, limit: 3 });
-  assert.equal(alt.landmark[0].p.id, "prado"); assert.notEqual(alt.other[0].p.id, "prado");
+test("recommend: 대표 명소와 취향 추천의 두 묶음, 수는 하루 수용 × 일수, 결정적 (D-049)", () => {
+  const r1 = recommend(P, { tastes: ["museum"], dayCapacity: 4, days: 1 });
+  assert.deepEqual(r1.map((x) => [x.p.id, x.bundle]), [["prado", "top"], ["palacio", "top"], ["reina", "taste"], ["thyssen", "taste"]]);
+  assert.deepEqual(r1.map((x) => x.p.id), recommend(P, { tastes: ["museum"], dayCapacity: 4, days: 1 }).map((x) => x.p.id));
+  assert.equal(r1[0].score, 1); assert.deepEqual(r1[0].reasons, ["대표 명소", "취향 일치"]); assert.deepEqual(r1[1].reasons, ["대표 명소", "유산 지정"]); assert.deepEqual(r1[2].reasons, ["취향 일치", "유산 지정"]);
+  assert.ok(r1[0].landmark);
+  assert.equal(recommend(P, { tastes: ["museum"], dayCapacity: 4, days: 2 }).length, P.length); // 후보보다 많이 추천하지 않는다(8곳 요청, 후보 7곳)
+  assert.equal(recommend(P, { tastes: ["museum"], dayCapacity: 2, days: 3 }).length, 6); // 1.5배를 곱하지 않는다
+  // 취향을 고르지 않으면 전부 대표 명소이고 인기 점수순이다
+  const none = recommend(P, { tastes: [], dayCapacity: 4, days: 1 });
+  assert.deepEqual(none.map((x) => [x.p.id, x.bundle]), [["prado", "top"], ["palacio", "top"], ["reina", "top"], ["thyssen", "top"]]);
 });
-test("placeAlternatives: 같은 범주 2km 안 상위 2", () => {
-  const alts = placeAlternatives(P[0], P, { museum: 1 });
-  assert.deepEqual(alts.map((a) => a.p.id), ["reina", "thyssen"]);
+test("recommend: 묶음의 몫은 추천 기준으로 정하고, 취향에 맞는 곳이 모자라면 인기순으로 채운다", () => {
+  assert.deepEqual(BUNDLE_SHARE, { landmark: 0.75, balance: 0.5, other: 0.25 });
+  const count = (balance) => recommend(P, { tastes: ["museum", "heritage"], balance, limit: 4 }).filter((x) => x.bundle === "top").length;
+  assert.equal(count("landmark"), 3); assert.equal(count("balance"), 2); assert.equal(count("other"), 1);
+  const r = recommend(P, { tastes: ["park"], balance: "other", limit: 4 }); // 공원은 한 곳뿐이라 나머지 두 자리는 대표 명소로 채운다
+  assert.deepEqual(r.map((x) => [x.p.id, x.bundle]), [["prado", "top"], ["palacio", "top"], ["reina", "top"], ["retiro", "taste"]]);
+  // 취향을 하나만 골라도 취향 묶음은 그 범주로 찬다(예전에는 연속 3곳 제한 때문에 3곳뿐이었다)
+  const mus = Array.from({ length: 12 }, (_, i) => mk("mu" + i, "museum", 30 - i, 3000 - i * 100, 1000));
+  const her = Array.from({ length: 12 }, (_, i) => mk("he" + i, "heritage", 90 - i, 9000 - i * 100, 3000));
+  const rr = recommend([...mus, ...her], { tastes: ["museum"], limit: 12 });
+  assert.equal(rr.filter((x) => x.bundle === "taste").length, 6); assert.ok(rr.filter((x) => x.bundle === "taste").every((x) => x.p.cat[0] === "museum"));
+  assert.ok(rr.filter((x) => x.bundle === "top").every((x) => x.p.cat[0] === "heritage"));
+});
+test("cityAlternatives: 대표 명소 중심 세트와 취향 중심 세트는 묶음의 몫이 다르다", () => {
+  const alt = cityAlternatives(P, { tastes: ["park", "cafe"], limit: 4 });
+  assert.equal(alt.landmark[0].p.id, "prado"); assert.equal(alt.other[0].p.id, "prado");
+  assert.equal(alt.landmark.filter((x) => x.bundle === "taste").length, 1); assert.equal(alt.other.filter((x) => x.bundle === "taste").length, 2); // 공원·카페는 두 곳뿐
+});
+test("placeAlternatives: 같은 범주 2km 안 인기 점수 상위 2", () => {
+  const alts = placeAlternatives(P[0], P);
+  assert.deepEqual(alts.map((a) => a.p.id), ["reina", "thyssen"]); assert.ok(alts[0].score > alts[1].score);
 });
 test("cityNights: 비례 배분과 남는 밤", () => {
   assert.deepEqual(cityNights({ Q2807: 12, Q1492: 8 }, 7, 4), { Q2807: 4, Q1492: 3 });
@@ -72,6 +98,6 @@ import { recommendForDestination, RECOMMEND_TIER2_CATS } from "../../app/src/eng
 test("recommendForDestination: 1등급 전부와 2등급의 식당·카페·시장만 후보 (D-039)", () => {
   const mk = (id, tier, cat, sl) => ({ id, tier, cat: [cat], pop: { sl, pv: null, en_share: null }, lat: 40, lon: -3, her: [] });
   const places = [mk("a", 1, "museum", 30), mk("b", 2, "restaurant", 0), mk("c", 2, "shop", 0), mk("d", 2, "cafe", 0)];
-  const ids = recommendForDestination(places, { weights: { museum: 1, restaurant: 1, cafe: 1, shop: 1 }, limit: 10 }).map((r) => r.p.id).sort();
+  const ids = recommendForDestination(places, { tastes: ["museum", "restaurant", "cafe", "shop"], limit: 10 }).map((r) => r.p.id).sort();
   assert.deepEqual(ids, ["a", "b", "d"]); assert.ok(RECOMMEND_TIER2_CATS.includes("market"));
 });

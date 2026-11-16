@@ -32,9 +32,9 @@ test("nav: 부분 변경은 나머지를 지키고 입력을 바꾸지 않는다
 });
 
 test("nav: 저장해 둔 상태를 지금 계획에 맞게 다듬는다", () => {
-  const saved = { tab: "explore", inputStep: 3, exploreTab: "explore", planTab: "itinerary", detail: "Q1", input: { q: "sev", kind: "island", rec: true, focus: ["beach", 3], region: "Q5783" }, explore: { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" } };
+  const saved = { tab: "explore", inputStep: 3, exploreTab: "explore", planTab: "itinerary", detail: "Q1", input: { q: "sev", kind: "island", rec: true, only: "taste", sort: "taste", focus: ["beach", 3], region: "Q5783" }, explore: { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" } };
   const ok = sanitizeNav(saved, { cityIds: ["Q2807", "Q8717"], hasPlace: (id) => id === "Q1" });
-  assert.equal(ok.tab, "explore"); assert.equal(ok.inputStep, 3); assert.equal(ok.detail, "Q1"); assert.deepEqual(ok.input, { q: "sev", kind: "island", rec: true, region: "Q5783" });
+  assert.equal(ok.tab, "explore"); assert.equal(ok.inputStep, 3); assert.equal(ok.detail, "Q1"); assert.deepEqual(ok.input, { q: "sev", kind: "island", only: "taste", sort: "taste", region: "Q5783" }); // 예전 값 rec는 버린다(D-049)
   assert.equal(sanitizeNav({ ...saved, inputStep: 4 }).inputStep, 1); // 예전 4단계 값은 처음으로
   assert.deepEqual(ok.explore, { city: "Q8717", list: "all", q: "museo", cats: ["museum"], balance: "other" });
   const moved = sanitizeNav(saved, { cityIds: ["Q2807"] }); // 여행지가 바뀌었으면 보던 도시를 비우고, 열 수 없는 상세는 닫는다
@@ -53,10 +53,10 @@ test("nav: 기기에 적고 읽기. 열어 둔 상세는 적지 않는다", () =
 });
 
 test("nav: 걸어 둔 필터 수와 지우기", () => {
-  const n = applyNav(defaultNav(), { explore: { q: " museo ", cats: ["museum", "heritage"] }, input: { q: "ma", kind: "island", rec: true, region: "Q5783" } });
+  const n = applyNav(defaultNav(), { explore: { q: " museo ", cats: ["museum", "heritage"] }, input: { q: "ma", kind: "island", only: "pop", sort: "taste", region: "Q5783" } });
   assert.equal(exploreFilterCount(n.explore), 3); assert.equal(inputFilterCount(n.input), 4);
   const c = applyNav(n, { explore: clearedExplore(), input: clearedInput() });
-  assert.equal(exploreFilterCount(c.explore), 0); assert.equal(inputFilterCount(c.input), 0);
+  assert.equal(exploreFilterCount(c.explore), 0); assert.equal(inputFilterCount(c.input), 0); assert.equal(c.input.sort, "taste"); // 정렬은 필터가 아니라 남는다
   assert.equal(exploreFilterCount(applyNav(defaultNav(), { explore: { q: "   " } }).explore), 0);
 });
 
