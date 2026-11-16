@@ -7,7 +7,7 @@ import { S3Explore } from "./screens/s3_explore.js";
 import { S4Arrange } from "./screens/s4_arrange.js";
 import { S5Itinerary } from "./screens/s5_itinerary.js";
 import { generate, toMin, toHHMM } from "../engines/e4.js";
-import { makeIntraIndex, makeTransitIndex, cityLeg, intercityLeg } from "../engines/e3.js";
+import { makeIntraIndex, makeTransitIndex, cityLeg, intercityLeg, makeIslandIndex } from "../engines/e3.js";
 import { dateList } from "../state/plan.js";
 import { S6Detail } from "./screens/s6_detail.js";
 import { S7Share } from "./screens/s7_share.js";
@@ -126,7 +126,8 @@ export function App({ data, loader }) {
     const parts = await Promise.all(ids.map((m) => muniTravel(m, !island || (cityById(m)?.transit_feeds || []).length > 0)));
     const inter = await loader.load("travel/intercity.json.gz").catch(() => null);
     const intra = parts.some((x) => x.intra) ? { lookup: (a, b) => { for (const x of parts) { const r = x.intra && x.intra.lookup(a, b); if (r) return r; } return null; } } : null;
-    const t = { intra, tidx: (parts.find((x) => x.tidx) || {}).tidx || null, taxi: dest?.taxi_fare || null, inter };
+    const islFile = island && (dest.members || []).length > 1 ? await loader.load(`travel/island_${destId}.json.gz`).catch(() => null) : null; // 섬 안 지자체 간 차량 행렬(T-048). 없으면 직선 추정
+    const t = { intra, tidx: (parts.find((x) => x.tidx) || {}).tidx || null, taxi: dest?.taxi_fare || null, inter, island: islFile ? makeIslandIndex(islFile) : null };
     travelCache.set(destId, t);
     return (a, b) => { const leg = cityLeg(a, b, t); return { ...leg.best, alternatives: leg.alternatives }; };
   }
