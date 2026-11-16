@@ -8,7 +8,7 @@ import { recommendForDestination, cityAlternatives } from "../../engines/e2.js";
 import { CAT_ICON } from "../../util/format.js";
 import { inDest, destName, isIsland } from "../../data/dest.js";
 
-export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, ui, setUi, role = "local", altIds = [] }) {
+export function S3Explore({ trip, cities, categories, tier1, loader, selection, onToggleSelect, onOpenDetail, selectedId, prof, nights, ui, setUi, role = "local", altIds = [], onClearPicks, onNext }) {
   const canPick = role !== "viewer"; // 공유자는 열람만(R-22). 서브 수립자의 선택은 제안으로 보내진다
   const tripCities = trip.cities.length ? trip.cities : cities.filter((c) => c.stratum === "big").sort((a, b) => (b.pop || 0) - (a.pop || 0)).slice(0, 10).map((c) => c.id);
   // 보던 도시, 추천/전체, 검색어, 범주 필터, 추천 기준은 App이 든다(다른 화면에 다녀와도 남는다, D-036). ui가 없으면 화면 안에서만 기억한다
@@ -83,6 +83,7 @@ export function S3Explore({ trip, cities, categories, tier1, loader, selection, 
           <div class="body"><div class="title">${placeName(p)}</div>${altNames(p) && html`<div class="sub">${altNames(p)}</div>`}${(() => { const ln = placeLine(p); return ln && html`<div class=${"line " + (ln.lang === "ko" ? "" : "orig")}>${ln.text}</div>`; })()}
             <div class="meta chips">${isForeignLandmark(p) && html`<${Chip} kind="star">★ 대표 명소</${Chip}>`}${p.cat.slice(0, 2).map((c) => html`<${Chip}>${catName(c)}</${Chip}>`)}${p.hrs == null && html`<${Chip} kind="warn">⚠ 영업시간</${Chip}>`}${p.ver === false && html`<${Chip} kind="x">◌ 검증 안 됨</${Chip}>`}${p.tier === 1 && html`<${Chip} kind="est">1등급</${Chip}>`}</div></div>
           ${canPick && html`<button class="btn secondary" style="min-width:44px;padding:4px 10px" aria-label="선택" onClick=${(e) => { e.stopPropagation(); onToggleSelect(p.id); }}>${selection.includes(p.id) ? "✓" : "+"}</button>`}</div>`)}`}
+      <div class="listnav"><button type="button" class="btn secondary clearcity" disabled=${pickedHere === 0 || role === "viewer" || role === "sub"} onClick=${() => onClearPicks && onClearPicks(cityId)}>이 여행지 ${pickedHere}곳 지우기</button><button type="button" class="btn tonext" onClick=${() => onNext && onNext()}>일정 만들기 ▶ <span style="font-weight:400">고른 장소 ${selection.length}곳</span></button></div>
     </div>
     <div class="mapwrap"><div class=${"map " + (mapOpen ? "" : "collapsed")} ref=${mapEl}></div>
       ${mapOpen && html`<div class="maplegend" aria-label="지도 표시"><span><i class="dot picked"></i>고른 곳 ${pickedHere}</span>${alt.size > 0 && html`<span><i class="dot alt"></i>대안 ${alt.size}</span>`}<span><i class="dot landmark"></i>대표 명소</span><span><i class="dot other"></i>그 밖</span></div>`}</div>

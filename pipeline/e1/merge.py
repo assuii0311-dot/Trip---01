@@ -33,7 +33,10 @@ def place_from_group(g, pageviews, foreign_cfg=None):
             o0 = max(osm, key=lambda o: max((sim(o.get(k), l) for k in ("name", "name:es", "name:en", "name:ca", "name:eu", "name:gl") for l in wd["labels"].values() if o.get(k)), default=0.0))
         else:
             o0 = osm[0]
-    if o0:
+    wdname = bool(o0 and o0.get("_wdname"))  # 대표 요소의 이름이 이 항목과 다른 종류를 가리킨다(D-043): 이름과 좌표는 Wikidata 것을 쓴다
+    if wdname and wd and wd["coord"]:
+        lat, lon, cs = wd["coord"][0], wd["coord"][1], "wikidata"
+    elif o0:
         lat, lon, cs = o0["lat"], o0["lon"], "osm"
     elif wd and wd["coord"]:
         lat, lon, cs = wd["coord"][0], wd["coord"][1], "wikidata"
@@ -48,8 +51,11 @@ def place_from_group(g, pageviews, foreign_cfg=None):
     labels = wd["labels"] if wd else {}
     wv_en = next((w["name"] for w in wv if w["lang"] == "en" and w.get("name")), None)
     wv_es = next((w["name"] for w in wv if w["lang"] == "es" and w.get("name")), None)
+    if wdname:
+        o0 = dict(o0, **{k: None for k in ("name", "name:es", "name:en", "name:ca", "name:eu", "name:gl", "name:ko")})
+    local_label = labels.get("es") or ((labels.get("ca") or labels.get("gl") or labels.get("eu")) if wdname else None)  # 스페인어 이름이 없으면 현지 언어 이름을 원어 이름으로
     names = {
-        "local": (o0 or {}).get("name") or labels.get("es") or wv_es or wv_en or labels.get("en"),
+        "local": (o0 or {}).get("name") or local_label or wv_es or wv_en or labels.get("en"),
         "es": (o0 or {}).get("name:es") or labels.get("es") or wv_es,
         "en": (o0 or {}).get("name:en") or labels.get("en") or wv_en,
         "ko": (o0 or {}).get("name:ko") or labels.get("ko"),

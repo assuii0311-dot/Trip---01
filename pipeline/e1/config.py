@@ -8,6 +8,21 @@ CATEGORIES = {
     "park": "공원·정원", "beach": "해변", "square": "광장·거리", "market": "시장·쇼핑",
     "restaurant": "식당", "cafe": "카페·바", "lodging": "숙박", "activity": "체험·공연",
 }
+# 범주의 뜻(입력 화면의 범주 설명). 아래 대응표(OSM 태그, Wikidata 클래스, Wikivoyage 유형)에서 그 범주로 들어가는 것을 풀어 쓴 것이다. 대응표를 바꾸면 함께 고친다
+CATEGORY_DESC = {
+    "heritage": "성, 궁전, 유적, 성문과 성벽, 탑, 옛 다리, 기념물과 동상, 시청 같은 역사적 건물. 다른 범주에 들지 않는 문화재와 가이드의 일반 볼거리도 여기에 든다",
+    "religious": "성당, 대성당, 수도원, 예배당, 모스크, 유대교 회당",
+    "museum": "박물관, 미술관, 갤러리",
+    "nature": "산과 봉우리, 화산, 곶과 절벽, 폭포, 동굴, 샘, 전망대, 자연 보호 구역",
+    "park": "공원, 정원, 소풍 장소",
+    "beach": "해변과 해변 휴양지",
+    "square": "광장, 이름난 거리, 분수",
+    "market": "시장, 쇼핑센터, 가게",
+    "restaurant": "식당, 패스트푸드점, 푸드코트",
+    "cafe": "카페, 바, 펍, 아이스크림 가게",
+    "lodging": "호텔, 호스텔, 게스트하우스, 아파트형 숙소, 캠핑장",
+    "activity": "극장·영화관·공연장, 경기장, 테마파크·동물원·수족관, 와이너리, 마리나, 골프장",
+}
 
 # OSM key=value → 범주. None은 장소에서 제외(잡음 또는 다른 개체). 목록에 없는 kept 태그는 키 기본값을 쓴다
 OSM_TAG_CATEGORY = {
@@ -65,6 +80,7 @@ WD_CLASS_CATEGORY = {
     "Q2074737": None, "Q515": None, "Q3957": None, "Q532": None, "Q55488": None, "Q1248784": None,
 }
 WD_SETTLEMENT_CLASSES = {"Q2074737", "Q515", "Q3957", "Q532"}
+MUNICIPALITY_SUPPLEMENT = ["Q5823"]  # 수집 질의에서 빠진 지자체(세우타, T-049). e1.wikidata_supplement가 Wikidata에서 받아 지자체 파일에 보탠다
 WD_AIRPORT_CLASS = "Q1248784"
 WD_STATION_CLASS = "Q55488"
 WD_WORLD_HERITAGE = "Q9259"
@@ -74,6 +90,8 @@ R_MATCH_M = 150.0
 SIM_MATCH = 0.6
 R_MISMATCH_M = 500.0
 SIM_MISMATCH = 0.4
+TOKEN_AGREE_STRICT = 0.7   # 상업 시설(식당·카페·숙소·가게)의 이름 일치: 양쪽 각각에서 겹친 낱말의 무게 비율 중 작은 값. 추정값
+SIM_STRONG = 0.8   # 이름 일치: 글자 유사도가 이 이상이면 낱말이 달라도 같은 이름으로 본다(Javier/Xabier 같은 철자 차이). 상업 시설에는 쓰지 않는다
 DISTRICT_RADIUS_M = 1500.0
 LODGING_CENTER_RADIUS_M = 3000.0
 

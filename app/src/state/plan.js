@@ -61,6 +61,28 @@ export function moveInDay(plan, date, from, to) {
   return { ...plan, days: { ...plan.days, [date]: ids } };
 }
 
+/** 고른 장소 여러 곳을 한 번에 뺀다. 날짜 배치에서도 빼고, 직접 추가한 장소는 정의까지 지운다(다시 고를 길이 없다). 예약·체류 시간 메모는 남긴다(묶음 13) */
+export function removeSelections(plan, ids) {
+  const drop = new Set(ids); if (!drop.size) return plan;
+  return { ...plan, selection: plan.selection.filter((id) => !drop.has(id)),
+    days: Object.fromEntries(Object.entries(plan.days).map(([d, a]) => [d, a.filter((id) => !drop.has(id))])),
+    custom: Object.fromEntries(Object.entries(plan.custom || {}).filter(([k]) => !drop.has(k))) };
+}
+
+/** 여행지를 빼면서 그 여행지에서 고른 장소도 함께 뺀다. placeIds는 그 여행지에 속한 고른 장소다(묶음 13) */
+export function removeDestination(plan, destId, placeIds = []) {
+  const p = removeSelections(plan, placeIds);
+  return { ...p, trip: { ...p.trip, cities: p.trip.cities.filter((x) => x !== destId) }, lodging: Object.fromEntries(Object.entries(p.lodging || {}).filter(([k]) => k !== destId)) };
+}
+
+/** 여러 장소의 날짜 배치를 한 번에 바꾼다. byDate {날짜: [장소]}의 장소는 다른 날에서 빼고 그 날 끝에 순서대로 넣는다. clear의 장소는 미배치로 돌린다(묶음 13) */
+export function assignMany(plan, byDate = {}, clear = []) {
+  const moved = new Set([...Object.values(byDate).flat(), ...clear]);
+  const days = Object.fromEntries(Object.entries(plan.days).map(([d, a]) => [d, a.filter((id) => !moved.has(id))]));
+  for (const [d, ids] of Object.entries(byDate)) days[d] = [...(days[d] || []), ...ids];
+  return { ...plan, days };
+}
+
 export function unassigned(plan) { const placed = new Set(Object.values(plan.days).flat()); return plan.selection.filter((id) => !placed.has(id)); }
 
 /** 직접 추가 장소(R-07): 교차검증 "사용자 추가" */

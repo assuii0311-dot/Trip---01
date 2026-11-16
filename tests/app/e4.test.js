@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dwellOf, mealSlots, clusterPlaces, orderRoute, parseHours, placeDay, generate, toMin, toHHMM } from "../../app/src/engines/e4.js";
+import { readFileSync } from "node:fs";
+import { dwellOf, mealSlots, clusterPlaces, orderRoute, parseHours, placeDay, generate, memoTravel, spreadOverDays, toMin, toHHMM } from "../../app/src/engines/e4.js";
 
 const mk = (id, lat, lon, cat = "heritage", hrs = null) => ({ id, lat, lon, cat: [cat], hrs });
 const P = [mk("prado", 40.4138, -3.6921, "museum", "Mon-Sat 10:00-20:00"), mk("retiro", 40.4150, -3.6840, "park"), mk("mayor", 40.4154, -3.7074, "square"), mk("palacio", 40.4180, -3.7143, "heritage", "10:00-18:00"), mk("sol", 40.4169, -3.7033, "square"), mk("debod", 40.4240, -3.7178, "heritage"), mk("eat1", 40.4160, -3.7050, "restaurant")];
@@ -39,4 +40,38 @@ test("generate: 배치된 장소는 그 날에, 나머지는 도시 묶음으로
   const r2 = generate({ days: [{ date: "2027-05-01", cityId: "Q2807", origin: { lat: 40.4169, lon: -3.7033 } }, { date: "2027-05-02", cityId: "Q2807", origin: { lat: 40.4169, lon: -3.7033 } }], placesByCity: { Q2807: P, __all: all }, assigned: { "2027-05-02": ["debod"] }, travelFor: () => travel, meals: ["normal"], dayStart: "09:00", dayEnd: "22:00" });
   assert.deepEqual(r, r2);
   assert.equal(toHHMM(toMin("13:05")), "13:05");
+});
+
+// 고정 입력: 마드리드 10일 여행의 추천 54곳(앱의 "추천 모두 담기" 결과). expected는 구간 기억을 넣기 전 엔진의 출력이다(T-052)
+test("generate: 장소가 많아도 같은 구간의 이동 계산은 한 번만 하고 일정은 전과 같다(T-052)", () => {
+  const fx = JSON.parse(readFileSync(new URL("./fixtures/madrid54.json", import.meta.url), "utf8"));
+  const km = (a, b) => { const p = Math.PI / 180, x = Math.sin((b.lat - a.lat) * p / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin((b.lon - a.lon) * p / 2) ** 2; return 12742 * Math.asin(Math.sqrt(x)); };
+  let calls = 0; const tr = (a, b) => { calls++; const d = km(a, b); return { min: Math.round(d * 14), mode: "walk", m: Math.round(d * 1000) }; };
+  const days = Array.from({ length: 10 }, (_, i) => ({ date: `2027-05-${String(i + 1).padStart(2, "0")}`, cityId: "Q2807", origin: { lat: 40.4169, lon: -3.7033 } }));
+  const r = generate({ days, placesByCity: { Q2807: fx.places, __all: new Map(fx.places.map((p) => [p.id, p])) }, travelFor: () => tr, meals: ["normal"], dayStart: "09:00", dayEnd: "22:00" });
+  const got = { days: r.days.map((d) => d.items.filter((i) => i.kind === "place").map((i) => [i.id, i.start])), overflow: r.overflow.map((o) => o.id) };
+  assert.deepEqual(got, fx.expected);
+  const n = fx.places.length;
+  assert.ok(calls <= n * n, `이동 계산 ${calls}회: 구간 수(장소 쌍 n(n-1) + 출발지 n = ${n * n})를 넘으면 안 된다`); // 고치기 전에는 30,047회
+});
+test("memoTravel: 같은 구간은 한 번만 계산하고, id가 없는 출발지는 좌표로 구분한다", () => {
+  let calls = 0; const t = memoTravel((a, b) => { calls++; return { min: 1 }; });
+  const o1 = { lat: 1, lon: 2 }, o2 = { lat: 1, lon: 3 }, x = { id: "x", lat: 0, lon: 0 }, y = { id: "y", lat: 0, lon: 1 };
+  t(o1, x); t(o1, x); t(o2, x); t(x, y); t(y, x); t(x, y);
+  assert.equal(calls, 4);
+});
+
+// 묶음 13: 배치 화면의 자동 배정. 고정 입력은 마드리드 추천 54곳
+test("spreadOverDays: 하루 용량을 넘지 않게 날짜에 나누고, 남는 곳은 미배치로 돌려준다", () => {
+  const fx = JSON.parse(readFileSync(new URL("./fixtures/madrid54.json", import.meta.url), "utf8"));
+  const dates = Array.from({ length: 10 }, (_, i) => `2027-05-${String(i + 1).padStart(2, "0")}`);
+  const r = spreadOverDays(fx.places, dates, 4);
+  const placed = Object.values(r.byDate).flat();
+  assert.ok(Object.values(r.byDate).every((ids) => ids.length >= 1 && ids.length <= 4));
+  assert.equal(placed.length, 40); assert.equal(r.rest.length, 14); // 10일 × 4곳
+  assert.equal(new Set([...placed, ...r.rest]).size, 54); // 빠지거나 겹친 장소가 없다
+  assert.deepEqual(spreadOverDays(fx.places, dates, 4), r); // 같은 입력에 같은 결과
+  const few = spreadOverDays(fx.places.slice(0, 6), dates.slice(0, 3), 4);
+  assert.equal(Object.values(few.byDate).flat().length, 6); assert.deepEqual(few.rest, []);
+  assert.deepEqual(spreadOverDays(fx.places.slice(0, 2), [], 4), { byDate: {}, rest: fx.places.slice(0, 2).map((p) => p.id) });
 });

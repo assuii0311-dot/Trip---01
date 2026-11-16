@@ -120,12 +120,12 @@ def main():
             sctx, sp = open_app(b, gh, "sub", url, {"trip01.sync.v1": {"repo": REPO, "key": KEY, "token": "tok-sub"}}, res)
             s = res["sub"] = {}
             s["boot_notice"] = toast(sp); s["role"] = settings_text(sp, "역할"); s["header"] = sp.locator("header.top .chip").last.inner_text()
-            tab(sp, "일정"); sp.wait_for_selector("select[aria-label='날짜']", timeout=10000)
-            sp.locator("select[aria-label='날짜']").first.select_option("2027-05-03"); sp.wait_for_selector(".sheet.proposal", timeout=5000)
+            tab(sp, "일정"); sp.wait_for_selector(".arr .mini.place", timeout=10000)
+            sp.locator(".mini.place").first.click(); sp.locator(".daybox[data-drop='2027-05-03'] .dayhead").click(); sp.wait_for_selector(".sheet.proposal", timeout=5000)  # 집고 날짜를 누르면 제안으로 바뀐다(묶음 13)
             s["proposal_text"] = sp.locator(".sheet.proposal .what").inner_text(); sp.fill(".sheet.proposal textarea", "마지막 날이 한가하다")
             sp.screenshot(path=str(shots / "sub_proposal.png")); sp.click(".sheet.proposal button:has-text('제안 보내기')")
             sp.wait_for_selector(".toast:has-text('제안을 보냈습니다')", timeout=10000); s["sent_notice"] = sp.locator(".toast").inner_text()
-            s["select_value_after"] = sp.locator("select[aria-label='날짜']").first.input_value()  # 계획은 그대로여야 한다
+            s["select_value_after"] = sp.locator(".mini.place .daytag").first.inner_text()  # 계획은 그대로여야 한다(미배치)
             s["edit_controls_hidden"] = {"일정 생성": sp.locator("button:has-text('일정 생성')").count(), "순서 버튼": sp.locator("button[aria-label='위로']").count(), "직접 추가": sp.locator("text=직접 추가").count()}  # 서브에게는 본문 편집 요소가 없다
             tab(sp, "공유"); sp.click("button:has-text('메모 제안 쓰기')"); sp.wait_for_selector(".sheet.proposal", timeout=5000)
             sp.fill(".sheet.proposal textarea", "숙소는 역 근처가 좋겠다"); sp.click(".sheet.proposal button:has-text('제안 보내기')"); sp.wait_for_timeout(1500)
@@ -140,8 +140,8 @@ def main():
             v["boot_notice"] = toast(vp); v["repo_prefilled"] = vp.locator("input[placeholder*='trip-2027']").input_value()
             vp.locator("input[type=password]").first.fill(KEY); vp.click("button:has-text('불러오기')"); vp.wait_for_selector("text=불러옴:", timeout=30000)
             v["role"] = settings_text(vp, "역할"); v["save_disabled"] = vp.locator("button.btn:text-is('저장')").is_disabled()
-            tab(vp, "일정"); vp.wait_for_selector("select[aria-label='날짜']", timeout=10000); v["date_select_disabled"] = vp.locator("select[aria-label='날짜']").first.is_disabled(); v["edit_controls"] = vp.locator("button:has-text('일정 생성'), button[aria-label='위로'], button[aria-label='선택']").count()
-            v["guard"] = vp.evaluate("(() => { const el = document.querySelector(\"select[aria-label='날짜']\"); el.disabled = false; el.value = '2027-05-03'; el.dispatchEvent(new Event('change', { bubbles: true })); return true; })()"); v["blocked_notice"] = toast(vp)  # 잠금을 억지로 풀어도 반영되지 않는다
+            tab(vp, "일정"); vp.wait_for_selector(".arr .mini.place", timeout=10000); v["date_select_disabled"] = vp.locator(".arr .grip").count() == 0; v["edit_controls"] = vp.locator("button:has-text('일정 생성'), button[aria-label='위로'], button[aria-label='선택'], button.autoassign").count()
+            day_before = vp.locator(".mini.place .daytag").first.inner_text(); vp.locator(".mini.place").first.click(); vp.locator(".daybox[data-drop='2027-05-03'] .dayhead").click(); vp.wait_for_timeout(300); v["guard"] = vp.locator(".mini.place .daytag").first.inner_text() == day_before and vp.locator(".mini.place.held").count() == 0; v["blocked_notice"] = toast(vp)  # 공유자는 집을 수 없고 날짜를 눌러도 반영되지 않는다
             tab(vp, "공유"); v["proposals_note"] = vp.locator("section.section").first.inner_text().replace("\n", " ")[:70]
             before = gh.count("viewer"); vp.reload(wait_until="networkidle"); vp.wait_for_selector("nav.tabs", timeout=30000); v["reload_notice"] = toast(vp)
             v["api_calls_on_reopen"] = gh.count("viewer") - before; v["put_calls"] = gh.count("viewer", "PUT"); vp.screenshot(path=str(shots / "viewer.png"))
@@ -155,19 +155,19 @@ def main():
             mp.locator(".card.proposal.pending:has-text('숙소') button:has-text('거절')").click(); mp.wait_for_selector("text=거절했습니다", timeout=30000)
             m["statuses"] = sorted(x.split("\n")[0][:30] + " → " + ("승인" if "승인:" in x else "거절" if "거절:" in x else "대기") for x in mp.locator(".card.proposal").all_inner_texts())
             m["trip_commit_changed"] = gh.commits["trip.json.enc"] != commit_after_roles; m["proposal_files_kept"] = len([k for k in gh.files if k.startswith("proposals/")])
-            tab(mp, "일정"); mp.wait_for_selector("select[aria-label='날짜']", timeout=10000); m["first_place_day_after_approve"] = mp.locator("select[aria-label='날짜']").first.input_value()
+            tab(mp, "일정"); mp.wait_for_selector(".arr .mini.place", timeout=10000); m["first_place_day_after_approve"] = mp.locator(".mini.place .daytag").first.inner_text()
 
             # --- 충돌: 다른 기기가 먼저 저장한 상황을 만들고(본문 커밋만 바꾼다) 메인이 편집 후 저장
             gh.put("trip.json.enc", gh.files["trip.json.enc"]["content"])
-            mp.locator("select[aria-label='날짜']").nth(1).select_option("2027-05-03"); mp.wait_for_timeout(300)
+            mp.locator(".mini.place").nth(1).click(); mp.locator(".daybox[data-drop='2027-05-03'] .dayhead").click(); mp.wait_for_timeout(300)
             tab(mp, "설정"); mp.click("button.btn:text-is('저장')"); mp.wait_for_selector("div[aria-label='저장 충돌']", timeout=30000); m["conflict_dialog"] = True
             mp.screenshot(path=str(shots / "main_conflict.png")); mp.click("button:has-text('최신 불러오기')"); mp.wait_for_selector(".toast:has-text('최신 계획을 불러왔습니다')", timeout=30000); m["conflict_notice"] = mp.locator(".toast").inner_text()
             tab(mp, "설정"); m["mine_card"] = mp.locator("text=보존된 내 변경").count()
             mp.click("button:has-text('다시 적용')"); mp.wait_for_timeout(500); mp.click("button.btn:text-is('저장')"); mp.wait_for_selector("text=저장됨:", timeout=30000); m["saved_after_restore"] = True
             # --- 저장 안 된 내 변경은 다시 열어도 남는다
-            tab(mp, "일정"); mp.wait_for_selector("select[aria-label='날짜']", timeout=10000); mp.locator("select[aria-label='날짜']").first.select_option("2027-05-02"); mp.wait_for_timeout(400)
+            tab(mp, "일정"); mp.wait_for_selector(".arr .mini.place", timeout=10000); mp.locator(".mini.place").first.click(); mp.locator(".daybox[data-drop='2027-05-02'] .dayhead").click(); mp.wait_for_timeout(400)
             mp.reload(wait_until="networkidle"); mp.wait_for_selector("nav.tabs", timeout=30000); m["reopen_with_draft_notice"] = toast(mp)
-            tab(mp, "일정"); mp.wait_for_selector("select[aria-label='날짜']", timeout=10000); m["draft_kept_value"] = mp.locator("select[aria-label='날짜']").first.input_value(); m["header_dirty"] = mp.locator("header.top .chip").last.inner_text()
+            tab(mp, "일정"); mp.wait_for_selector(".arr .mini.place", timeout=10000); m["draft_kept_value"] = mp.locator(".mini.place .daytag").first.inner_text(); m["header_dirty"] = mp.locator("header.top .chip").last.inner_text()
 
             # --- 서브: 화면에 다시 오면 처리 결과가 보인다
             tab(sp, "공유"); sp.click("section.proposals button:has-text('새로 고침')"); sp.wait_for_selector(".card.proposal.approved", timeout=10000)

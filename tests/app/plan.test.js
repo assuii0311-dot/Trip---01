@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { emptyPlan, migrate, loadPlan, savePlan, dateList, toggleSelect, assignDay, moveInDay, unassigned, addCustomPlace, setLodging, lodgingCheck } from "../../app/src/state/plan.js";
+import { emptyPlan, migrate, loadPlan, savePlan, dateList, toggleSelect, assignDay, moveInDay, unassigned, addCustomPlace, setLodging, lodgingCheck, removeSelections, removeDestination, assignMany } from "../../app/src/state/plan.js";
 
 const trip = { start: "2027-05-01", end: "2027-05-04", cities: ["Q2807"], people: 2 };
 
@@ -38,4 +38,24 @@ test("addSelections: 여러 곳을 한 번에 담되 이미 있는 곳과 중복
   const out = addSelections(plan, ["Q2", "Q1", "Q3", "Q2"]);
   assert.deepEqual(out.selection, ["Q1", "Q2", "Q3"]); assert.deepEqual(plan.selection, ["Q1"]);
   assert.equal(addSelections(plan, ["Q1"]), plan); assert.equal(addSelections(plan, []), plan);
+});
+
+
+// 묶음 13: 고른 장소 한꺼번에 빼기, 여행지 빼기, 날짜 한꺼번에 배정
+test("removeSelections: 선택과 날짜 배치에서 빼고, 직접 추가한 장소는 정의도 지운다", () => {
+  const plan = { ...emptyPlan(), selection: ["a", "b", "user:1", "c"], days: { "2027-05-01": ["a", "user:1"], "2027-05-02": ["b"] }, custom: { "user:1": { id: "user:1" } }, reservations: { a: { status: "required" } } };
+  const r = removeSelections(plan, ["a", "user:1"]);
+  assert.deepEqual(r.selection, ["b", "c"]); assert.deepEqual(r.days, { "2027-05-01": [], "2027-05-02": ["b"] }); assert.deepEqual(r.custom, {});
+  assert.deepEqual(r.reservations, { a: { status: "required" } }); // 예약 메모는 남긴다
+  assert.equal(removeSelections(plan, []), plan); assert.deepEqual(plan.selection, ["a", "b", "user:1", "c"]); // 입력은 바꾸지 않는다
+});
+test("removeDestination: 여행지와 그 여행지의 고른 장소, 숙박 설정을 함께 뺀다", () => {
+  const plan = { ...emptyPlan(), trip: { ...emptyPlan().trip, cities: ["Q2807", "Q8828"] }, selection: ["m1", "p1", "p2"], days: { "2027-05-03": ["p1"] }, lodging: { Q2807: { nights: 3 }, Q8828: { nights: 2 } } };
+  const r = removeDestination(plan, "Q8828", ["p1", "p2"]);
+  assert.deepEqual(r.trip.cities, ["Q2807"]); assert.deepEqual(r.selection, ["m1"]); assert.deepEqual(r.days, { "2027-05-03": [] }); assert.deepEqual(r.lodging, { Q2807: { nights: 3 } });
+});
+test("assignMany: 여러 장소를 날짜에 넣고 일부는 미배치로 돌린다", () => {
+  const plan = { ...emptyPlan(), selection: ["a", "b", "c", "d"], days: { "2027-05-01": ["a", "b"], "2027-05-02": ["c"] } };
+  const r = assignMany(plan, { "2027-05-02": ["a"], "2027-05-03": ["d"] }, ["b"]);
+  assert.deepEqual(r.days, { "2027-05-01": [], "2027-05-02": ["c", "a"], "2027-05-03": ["d"] });
 });

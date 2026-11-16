@@ -6,6 +6,7 @@ export const PARAMS = {
   walkCorrection: 1.12, carCorrection: 1.23, walkPreferM: 1500, // D-025 (c)(e)
   stopRadiusM: 400, waitMin: { 1: 5, 0: 6, 3: 8, 2: 8, 7: 6 }, speedKmh: { 1: 30, 0: 18, 3: 14, 2: 40, 7: 12 }, transferMin: 6, // D-025 (d)
   taxiWaitMin: 2, flightKmh: 700, flightProcMin: 120, ferryKmh: 35, ferryProcMin: 60, // D-025 (f)
+  islandMatrixMinM: 5000, islandMuniMaxM: 15000, // 섬 안 지자체 간 행렬(T-048): 직선 5km 이상 떨어진 구간에만 쓰고, 소속을 모르는 지점은 15km 안의 가장 가까운 지자체로 본다(추정값)
 };
 const MODE_KO = { walk: "도보", transit: "대중교통", taxi: "택시", car: "차량", train: "기차", flight: "비행기", ferry: "배" };
 
@@ -16,6 +17,24 @@ export function straightWalk(a, b) {
 export function straightCar(a, b) {
   const d = hav(a.lat, a.lon, b.lat, b.lon) * PARAMS.carDetour;
   return { min: Math.round(d / 1000 / PARAMS.cityCarKmh * 60), m: Math.round(d), confidence: "estimate" };
+}
+
+/** 섬 안 지자체 간 차량 행렬(travel/island_<섬>.json.gz, T-048)의 색인 */
+export function makeIslandIndex(file) {
+  const index = new Map(file.cities.map((c, i) => [c.id, i]));
+  const nearest = (p) => { let bi = null, bd = Infinity; file.cities.forEach((c, i) => { const d = hav(p.lat, p.lon, c.lat, c.lon); if (d < bd) { bd = d; bi = i; } }); return bd <= PARAMS.islandMuniMaxM ? bi : null; };
+  return { muniOf(p) { const i = p.city != null ? index.get(p.city) : undefined; return i != null ? i : nearest(p); }, car_min: file.car_min, car_km: file.car_km };
+}
+/**
+ * 섬 안에서 서로 다른 지자체에 있는 두 지점의 차량 시간. 지자체 중심 사이의 사전 계산값이라 지점이 중심에서 멀면 어긋난다(추정으로 표시).
+ * 가까운 구간(직선 5km 미만)과 같은 지자체 안, 행렬에 없는 쌍은 null을 돌려주고 호출한 쪽이 직선 추정을 쓴다.
+ */
+export function islandCar(a, b, island) {
+  if (!island || hav(a.lat, a.lon, b.lat, b.lon) < PARAMS.islandMatrixMinM) return null;
+  const i = island.muniOf(a), j = island.muniOf(b);
+  if (i == null || j == null || i === j) return null;
+  const min = island.car_min[i][j], km = island.car_km[i][j];
+  return min == null || km == null ? null : { min, m: Math.round(km * 1000), confidence: "estimate", source: "island_matrix" };
 }
 
 /** 도시 안 사전 계산 색인(travel/<city>.json.gz) */
@@ -77,12 +96,12 @@ export function transitEstimate(a, b, tidx) {
 export function gmapsTransit(a, b) { return `https://www.google.com/maps/dir/?api=1&origin=${a.lat.toFixed(6)},${a.lon.toFixed(6)}&destination=${b.lat.toFixed(6)},${b.lon.toFixed(6)}&travelmode=transit`; }
 
 /** 도시 안 구간의 수단별 선택지와 최적안(E3 4절 7항) */
-export function cityLeg(a, b, { intra, tidx, taxi } = {}) {
+export function cityLeg(a, b, { intra, tidx, taxi, island } = {}) {
   const w = walkTime(a, b, intra);
   const options = [{ mode: "walk", min: w.min, m: w.m, confidence: w.confidence }];
   const t = transitEstimate(a, b, tidx);
   if (t) options.push({ mode: "transit", min: t.min, legs: t.legs, transfers: t.transfers, confidence: "estimate", link: gmapsTransit(a, b) });
-  const c = straightCar(a, b);
+  const c = islandCar(a, b, island) || straightCar(a, b); // 섬 안의 먼 구간은 지자체 간 사전 계산값(T-048)
   options.push({ mode: "taxi", min: c.min + PARAMS.taxiWaitMin, m: c.m, confidence: "estimate", fare: taxi ? Math.max(taxi.min_eur, taxi.base_eur + c.m / 1000 * taxi.per_km_eur) : null });
   let best;
   if (w.m <= PARAMS.walkPreferM) best = options[0]; else best = [...options].sort((x, y) => x.min - y.min)[0];

@@ -37,14 +37,55 @@ export function clusterPlaces(places, k) {
   return groups.filter((g) => g.length);
 }
 
-/** 최근접 이웃 + 2-opt. start는 {lat, lon}. travel(a,b)는 분 */
+/**
+ * 한 여행지의 장소를 그 여행지의 날짜들에 나눈다(배치 화면의 "자동 배정", 묶음 13).
+ * 좌표로 묶고(clusterPlaces) 서쪽 묶음부터 날짜 순으로 놓는다(generate와 같은 규칙). 하루 capacity곳을 넘는 묶음은
+ * 중심에서 먼 장소부터, 자리가 남은 가장 가까운 묶음으로 옮긴다. 어디에도 자리가 없으면 rest(미배치)로 돌려준다.
+ * 하루 안의 순서는 묶음 중심에서 가까운 곳부터 이어 가는 최근접 순서다.
+ */
+export function spreadOverDays(places, dates, capacity = 4) {
+  if (!dates.length || !places.length) return { byDate: {}, rest: places.map((p) => p.id) };
+  const cen = (g) => [g.reduce((s, p) => s + p.lat, 0) / g.length, g.reduce((s, p) => s + p.lon, 0) / g.length];
+  const groups = clusterPlaces(places, dates.length).map((g) => g.map((i) => places[i]));
+  groups.sort((a, b) => cen(a)[1] - cen(b)[1] || cen(a)[0] - cen(b)[0] || (a[0].id < b[0].id ? -1 : 1));
+  while (groups.length < dates.length) groups.push([]);
+  const rest = [];
+  for (let guard = places.length * 2; guard > 0; guard--) {
+    const gi = groups.findIndex((g) => g.length > capacity); if (gi < 0) break;
+    const g = groups[gi]; const [la, lo] = cen(g);
+    let fi = 0, fd = -1; g.forEach((p, i) => { const d = hav(p.lat, p.lon, la, lo); if (d > fd || (d === fd && p.id < g[fi].id)) { fd = d; fi = i; } });
+    const [p] = g.splice(fi, 1);
+    let ti = -1, td = Infinity;
+    groups.forEach((h, i) => { if (i === gi || h.length >= capacity) return; const d = h.length ? hav(p.lat, p.lon, ...cen(h)) : 1e12; if (d < td) { td = d; ti = i; } });
+    if (ti < 0) rest.push(p.id); else groups[ti].push(p);
+  }
+  const byDate = {};
+  groups.forEach((g, i) => {
+    if (!g.length) return;
+    const [la, lo] = cen(g);
+    byDate[dates[i]] = orderRoute(g, { lat: la, lon: lo }, (a, b) => hav(a.lat, a.lon, b.lat, b.lon)).map((k) => g[k].id);
+  });
+  return { byDate, rest };
+}
+
+export const TWO_OPT_MAX_PASSES = 50; // 순서 다듬기(2-opt)의 반복 상한(T-052). 추정: 보통 10번 안에 멈춘다
+
+/** 같은 구간의 이동 계산을 한 번만 하게 감싼다(T-052). 열쇠는 장소 id, 없으면 좌표 */
+export function memoTravel(travel) {
+  const cache = new Map(); const k = (x) => x.id ?? `${x.lat},${x.lon}`;
+  return (a, b) => { const key = `${k(a)}>${k(b)}`; let v = cache.get(key); if (v === undefined) { v = travel(a, b); cache.set(key, v); } return v; };
+}
+
+/** 최근접 이웃 + 2-opt. start는 {lat, lon}. travel(a,b)는 분. 같은 구간은 한 번만 계산하고 2-opt는 TWO_OPT_MAX_PASSES번까지 돈다 */
 export function orderRoute(places, start, travel) {
   if (places.length <= 1) return [...places.keys()];
+  const n = places.length; const seen = new Map(); // 구간(출발 -1 = start, 도착) → 분
+  const tv = (i, j) => { const key = (i + 1) * (n + 1) + j; let v = seen.get(key); if (v === undefined) { v = travel(i < 0 ? start : places[i], places[j]); seen.set(key, v); } return v; };
   let order = []; const left = new Set(places.keys()); let cur = start;
   while (left.size) { let bi = null, bd = Infinity; for (const i of left) { const d = hav(cur.lat, cur.lon, places[i].lat, places[i].lon); if (d < bd) { bd = d; bi = i; } } order.push(bi); left.delete(bi); cur = places[bi]; }
-  const cost = (o) => o.reduce((s, i, k) => s + (k === 0 ? travel(start, places[i]) : travel(places[o[k - 1]], places[i])), 0);
+  const cost = (o) => o.reduce((s, i, k) => s + tv(k === 0 ? -1 : o[k - 1], i), 0);
   let improved = true, c0 = cost(order);
-  while (improved) { improved = false; for (let i = 0; i < order.length - 1; i++) for (let j = i + 1; j < order.length; j++) { const o2 = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1)); const c2 = cost(o2); if (c2 < c0 - 0.5) { order = o2; c0 = c2; improved = true; } } }
+  for (let pass = 0; improved && pass < TWO_OPT_MAX_PASSES; pass++) { improved = false; for (let i = 0; i < order.length - 1; i++) for (let j = i + 1; j < order.length; j++) { const o2 = order.slice(0, i).concat(order.slice(i, j + 1).reverse(), order.slice(j + 1)); const c2 = cost(o2); if (c2 < c0 - 0.5) { order = o2; c0 = c2; improved = true; } } }
   return order;
 }
 
@@ -91,6 +132,7 @@ export function placeDay({ start, end, places, origin, travel, meals = [], hours
  */
 export function generate({ days, placesByCity, assigned = {}, dwellOverrides = {}, fixed = {}, travelFor, meals, dayStart, dayEnd, edges = {} }) {
   const out = []; const overflow = [];
+  const memo = {}; const tf = (cid) => (memo[cid] ||= memoTravel(travelFor(cid))); // 넘친 장소가 다음 날로 넘어가며 같은 구간을 다시 묻는다(T-052)
   const byCityDays = {}; days.forEach((d, i) => { (byCityDays[d.cityId] ||= []).push(i); });
   const planned = new Set(Object.values(assigned).flat());
   const auto = {}; // dayIndex → place objects
@@ -107,7 +149,7 @@ export function generate({ days, placesByCity, assigned = {}, dwellOverrides = {
     let start = dayStart, end = dayEnd;
     if (d.edge === "arrive" && d.arriveAt) start = toHHMM(Math.max(toMin(dayStart), toMin(d.arriveAt)));
     if (d.edge === "depart" && d.departAt) end = toHHMM(Math.max(toMin(dayStart), toMin(d.departAt) - (EDGE_BUFFER_MIN[d.departMode] ?? 60)));
-    const day = placeDay({ start, end, places: list.map((p) => ({ p, dwell: dwellOf(p, dwellOverrides), fixedAt: fixed[p.id] ? toMin(fixed[p.id]) : null })), origin: d.origin, travel: travelFor(d.cityId), meals, order: d.lockedOrder ? d.lockedOrder.map((id) => list.findIndex((p) => p.id === id)).filter((i) => i >= 0) : undefined });
+    const day = placeDay({ start, end, places: list.map((p) => ({ p, dwell: dwellOf(p, dwellOverrides), fixedAt: fixed[p.id] ? toMin(fixed[p.id]) : null })), origin: d.origin, travel: tf(d.cityId), meals, order: d.lockedOrder ? d.lockedOrder.map((id) => list.findIndex((p) => p.id === id)).filter((i) => i >= 0) : undefined });
     out.push({ date: d.date, cityId: d.cityId, origin: d.origin, ...day });
     // 넘친 장소는 같은 도시의 다음 날로 넘긴다(한 번만)
     if (day.overflow.length && di + 1 < days.length && days[di + 1].cityId === d.cityId) auto[di + 1] = (auto[di + 1] || []).concat(day.overflow.map((id) => placesByCity.__all.get(id)));

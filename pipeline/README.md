@@ -9,12 +9,15 @@
 ```
 # 0) 원시 데이터: <루트>/wikidata/*.jsonl, P1435.jsonl, sitelinks.jsonl (poc/wikidata_*.py), <루트>/osm/out/pois.jsonl (poc/osm_extract.py)
 #    OSM은 스페인 추출본과 카나리아 추출본 두 개다(D-031). 카나리아는 poc/osm_extract.py <canarias.osm.pbf> <루트>/osm_canarias/out 으로 따로 뽑는다
+#    수집 질의에서 빠진 지자체(config.MUNICIPALITY_SUPPLEMENT, 세우타)는 하나씩 받아 지자체 파일에 보탠다. 그 뒤 3)과 5)를 돌려야 이름과 조회수가 채워진다
+<venv>/bin/python -I pipeline/run.py e1.wikidata_supplement <루트>/wikidata
 # 1) Wikivoyage 전체 필드 추출 (약 2분)
 <venv>/bin/python -I pipeline/run.py e1.wikivoyage en <enwikivoyage 덤프.bz2> <루트>/e1/wv_en
 <venv>/bin/python -I pipeline/run.py e1.wikivoyage es <eswikivoyage 덤프.bz2> <루트>/e1/wv_es
 # 2) 행정 경계 (약 4분, 메모리 1GB)
 <venv>/bin/python -I pipeline/e1/osm_boundaries.py <spain.osm.pbf> <루트>/e1/boundaries.jsonl
 <venv>/bin/python -I pipeline/e1/osm_boundaries.py <canarias.osm.pbf> <루트>/e1/boundaries_canarias.jsonl
+#    추출본에서 경계선이 잘려 다각형으로 조립되지 않은 스페인 지자체(세우타)는 경계선 점들의 볼록 껍질로 보탠다(근사, 레코드에 approx. 약 5분 더 걸린다)
 # 3) 라벨·설명·위키 제목 (SPARQL, 100개 묶음 초당 1회, 약 25분. 중단 후 재개 가능)
 <venv>/bin/python -I pipeline/e1/wikidata_labels.py <루트>/wikidata <루트>/e1/labels.jsonl
 # 4) 공항(D-029)과 섬(D-030). 섬 폴리곤은 스페인 추출본과 카나리아 추출본에서 따로 뽑는다(openstreetmap.fr 스페인 추출본에 카나리아 제도가 없다)
@@ -46,6 +49,19 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 ```
 
 대상 장소가 2곳 미만이 된 도시는 건너뛰되, 예전 파일이 남아 있으면 빈 쌍으로 다시 쓴다.
+
+## 실행 순서 (E3 섬 안 차량 행렬, T-048)
+
+섬 여행지마다 소속 지자체 중심 사이의 차량 시간을 계산한다. 타일이 덮지 않는 섬은 건너뛴다.
+
+```
+# 카나리아 섬: 카나리아 추출본 타일
+<venv>/bin/python -I pipeline/run.py e3.island <카나리아 타일> data/cities.json.gz --out data/travel
+# 발레아레스 섬: 스페인 추출본 타일(또는 발레아레스 범위만 잘라 만든 타일). 섬 ID를 지정할 수 있다
+<venv>/bin/python -I pipeline/run.py e3.island <스페인 타일> data/cities.json.gz --out data/travel --islands Q8828,Q52636,Q52631,Q31916364
+```
+
+출력은 `data/travel/island_<섬 ID>.json.gz`다.
 
 ## 실행 순서 (E5 여행지 한국어 소개)
 
@@ -85,7 +101,7 @@ python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>
 |---|---|
 | cities.json.gz | 지자체 8,000여 건과 섬 여행지(kind island, 소속 지자체 members): 명칭, 좌표, 인구, 층, 행정 소속, 가이드 문서와 소개 문장·개요, 장소 수, 숙박 밀도, 구역, 가격대 분포, 교통 피드, 택시 요금표. 여행지 필드(D-030): dest(참고 등급·순위·선정 근거), focus(취향 중심 범주), hl(대표 명소), island(소속 섬) |
 | regions.json.gz | 자치주·주(OSM 행정 경계)와 Wikivoyage 지역 문서 |
-| categories.json.gz | 상위 범주 12개와 대응표, 범주별 1등급 수와 예시 |
+| categories.json.gz | 상위 범주 12개와 대응표, 범주별 1등급 수, 범주의 뜻(`desc`, 설정 `CATEGORY_DESC`)과 예시(그 범주가 첫 범주인 장소) |
 | places_tier1.json.gz | 1등급 장소 전체 |
 | places_tier2/<city>.json.gz | 2등급 장소를 도시별로 |
 | sources/<xx>.json.gz | Wikivoyage 목록 본문(설명 출처). 키 `장소ID|언어|문서|목록번호`, 샤드는 md5(장소ID)의 앞 두 자리 |
