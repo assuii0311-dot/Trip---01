@@ -10,7 +10,7 @@
 
 ## 외부 호출 규칙
 
-- User-Agent는 `Trip01-PoC/0.1 (https://github.com/assuii0311-dot/Trip---01)`.
+- User-Agent는 `place-data-pipeline/0.1 (batch; 1 req/s)`. 계정 이름이나 저장소 주소 같은 개인 정보는 넣지 않는다(D-054).
 - 동시 요청 1개. 초당 1회 이하. 429 응답은 Retry-After만큼 기다린 뒤 재시도.
 - 경로 계산 공개 서버(OSRM, FOSSGIS, Transitous)는 합계 500건 이하의 표본 요청만.
 - 대량 수집은 API가 아니라 덤프와 추출본 파일로 한다.

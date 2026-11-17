@@ -14,7 +14,7 @@ import time
 
 import requests
 
-UA = "Trip01-E1/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 SPARQL = "https://query.wikidata.org/sparql"
 BATCH = 100
 LANGS = ["es", "en", "ko", "ca", "eu", "gl"]

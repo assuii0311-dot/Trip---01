@@ -14,7 +14,7 @@ import zipfile
 
 import requests
 
-UA = "Trip01-PoC/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 FEEDS = [
     ("Renfe 고속·장거리·중거리", "https://ssl.renfe.com/gtransit/Fichero_AV_LD/google_transit.zip", "CC BY 4.0"),
     ("Renfe Cercanías(광역전철)", "https://ssl.renfe.com/ftransit/Fichero_CER_FOMENTO/fomento_transit.zip", "CC BY 4.0"),

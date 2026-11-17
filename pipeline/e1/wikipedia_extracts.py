@@ -15,7 +15,7 @@ import os
 import sys
 import time
 
-UA = "Trip01-E1/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 BATCH = 20
 LANGS = ("ko", "en", "es")
 MAX_CHARS = 6000  # 머리 문단이 아주 긴 문서는 앞부분만 둔다

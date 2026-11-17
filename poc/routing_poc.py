@@ -18,7 +18,7 @@ import time
 
 import requests
 
-UA = "Trip01-PoC/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 OSRM = "https://router.project-osrm.org"
 FOSSGIS = "https://routing.openstreetmap.de"
 PAUSE = 1.1
