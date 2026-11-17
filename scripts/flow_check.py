@@ -9,7 +9,7 @@ import time
 
 from playwright.sync_api import sync_playwright
 
-CHROME = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+CHROME = "/opt/pw-browsers/chromium"  # 환경이 제공하는 크로미움의 고정 경로(판 번호가 바뀌어도 같다)
 
 
 def main():
@@ -126,6 +126,35 @@ def main():
           pg.click("button:has-text('장소 배치')"); pg.click("button:has-text('일정 생성')"); pg.wait_for_selector("text=이 날 재생성", timeout=60000); time.sleep(1)
           isl["itin_note"] = pg.locator("p.note").first.inner_text()[:120]; isl["itin_items"] = pg.locator(".card .title").count(); pg.screenshot(path=str(shots / "island_s5.png"))
           res["island"] = isl; ctx2.close()
+          # --- 전체 일정 대안(E2 4절 5·6항, D-051): 여행지 네 곳을 일부러 돌아가는 순서로 고른다 → 대안 창의 네 안 → 이동 최소안 적용 → 숙박 탭에서 순서 바꾸기 → 일정표의 추정 안내
+          ctx4 = b.new_context(viewport={"width": 1180, "height": 820}, device_scale_factor=1, locale="ko-KR"); pt = ctx4.new_page(); ta = {}
+          pt.on("console", lambda m: res["console_errors"].append("tripalts: " + m.text) if m.type == "error" and "404" not in m.text else None)
+          pt.on("pageerror", lambda e: res["console_errors"].append(f"tripalts pageerror: {e}"))
+          pt.goto(url, wait_until="networkidle", timeout=60000); pt.wait_for_selector(".steps", timeout=30000)
+          d4 = pt.locator("input[type=date]"); d4.nth(0).fill("2027-05-01"); d4.nth(1).fill("2027-05-10"); pt.click("text=다음 ▶"); pt.wait_for_selector(".destlist .card.dest", timeout=10000)
+          pt.locator(".tastes button.taste:has-text('종교')").click()
+          for q in ("madrid", "barcelona", "granada", "sevilla"):
+              pt.fill("input[placeholder*='여행지 검색']", q); time.sleep(0.4); pt.locator(".destlist .card.dest .pick").first.click()
+          pt.fill("input[placeholder*='여행지 검색']", ""); pt.click(".stepnav .btn:has-text('다음')"); pt.wait_for_selector(".airport", timeout=5000)
+          pt.click("text=장소 고르러 가기"); pt.wait_for_selector(".card .btn.explore", timeout=30000); time.sleep(1)
+          pt.locator(".card .btn.explore").first.click(); pt.wait_for_selector("h3.bundlehead", timeout=20000); time.sleep(1)
+          tp = pt.locator(".card button[aria-label='선택']"); [tp.nth(i).click() for i in range(min(3, tp.count()))]  # 첫 여행지에서 세 곳을 고른다(고른 장소가 일수에 반영된다)
+          ta["rec_note_before"] = pt.locator("p.note").first.inner_text()[:70]
+          pt.click("button:has-text('대안 ▸')"); pt.wait_for_selector(".altcard", timeout=20000); time.sleep(0.5)
+          ta["alts"] = [x.replace("\n", " | ")[:150] for x in pt.locator(".altcard .alttitle").all_inner_texts()]
+          ta["routes"] = [x.replace("\n", " ")[:90] for x in pt.locator(".altcard .altroute").all_inner_texts()]
+          ta["move_legs"] = pt.locator(".altcard[data-key='move'] .altlegs").inner_text()[:160]; ta["warn_lines"] = [x[:110] for x in pt.locator(".altcard .warnline").all_inner_texts()][:4]
+          ta["estimate_note"] = pt.locator(".tripalts .estnote").count(); pt.screenshot(path=str(shots / "tripalts.png"))
+          pt.locator(".altcard[data-key='move'] .applyalt").click(); time.sleep(0.5); ta["notice_apply"] = pt.locator(".toast").inner_text()[:60] if pt.locator(".toast").count() else None
+          ta["plan_after_apply"] = pt.evaluate("(() => { const p = JSON.parse(localStorage.getItem('trip01.plan.v1') || '{}'); return { cities: p.trip.cities, nights: Object.fromEntries(Object.entries(p.lodging || {}).map(([k, v]) => [k, v.nights])), balance: p.trip.foreignBalance }; })()")
+          pt.click(".sheet .close"); pt.click("nav.tabs button:has-text('일정')"); pt.click(".toolbar .seg button:has-text('숙박')"); pt.wait_for_selector(".citymove", timeout=10000)
+          ta["lodging_titles"] = [x.split("\n")[0][:40] for x in pt.locator(".card .title").all_inner_texts()][:4]
+          pt.locator(".citymove .movedown").first.click(); time.sleep(0.3); ta["order_after_move"] = pt.evaluate("JSON.parse(localStorage.getItem('trip01.plan.v1')).trip.cities")
+          pt.locator(".citymove .moveup").nth(1).click(); time.sleep(0.3); ta["order_restored"] = pt.evaluate("JSON.parse(localStorage.getItem('trip01.plan.v1')).trip.cities")
+          pt.click("button:has-text('장소 배치')"); pt.click("button:has-text('일정 생성')"); pt.wait_for_selector("text=이 날 재생성", timeout=90000); time.sleep(1)
+          ta["itin_note"] = pt.locator("p.note").first.inner_text()[:90]
+          ta["estimate_notes_in_itinerary"] = pt.evaluate("(() => { const p = JSON.parse(localStorage.getItem('trip01.plan.v1')); return (p.itinerary?.days || []).filter((d) => d.intercity).map((d) => [d.intercity.from, d.intercity.to, d.intercity.leg.best.mode, d.intercity.leg.best.confidence]); })()")
+          res["tripalts"] = ta; ctx4.close()
           # --- 장소 한국어 설명과 듣기(E5 4절 9항, D-033): 코르도바 → 전체 후보 → 생성 이름으로 검색 → 상세 → 듣기
           # 헤드리스 브라우저에는 음성이 없으므로 가짜 음성 합성기를 넣어 화면 연결만 확인한다(실제 소리는 기기에서 확인)
           ctx3 = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, locale="ko-KR"); e5 = {}

@@ -90,20 +90,134 @@ export function placeAlternatives(p, places) {
     .sort((a, b) => b.raw - a.raw || a.dist - b.dist || String(a.p.id).localeCompare(String(b.p.id))).slice(0, 2);
 }
 
-/** 숙박 일수(R-10, E2 4절 6항): ceil(추천 수 ÷ 하루 수용), 최소 1, 합이 기간을 넘으면 비례 축소 */
-export function cityNights(recommendedCounts, totalNights, dayCapacity = 4) {
-  const ids = Object.keys(recommendedCounts);
-  if (!ids.length || totalNights <= 0) return {};
-  let nights = Object.fromEntries(ids.map((id) => [id, Math.max(1, Math.ceil(recommendedCounts[id] / dayCapacity))]));
-  let sum = Object.values(nights).reduce((a, b) => a + b, 0);
-  if (sum > totalNights) {
-    nights = Object.fromEntries(ids.map((id) => [id, Math.max(1, Math.floor((nights[id] / sum) * totalNights))]));
-    sum = Object.values(nights).reduce((a, b) => a + b, 0);
+export const KNOWN_TH = 0.5;     // 알려진 곳: 인기 점수가 이 값 이상(D-051, 제안값)
+export const LONG_LEG_MIN = 240; // 이보다 긴 도시 간 구간에 경고와 "들를 만한 곳"(E2 4절 5항)
+export const STOPOVER = { detour: 1.15, minM: 30000, max: 3 }; // 들를 만한 곳: 에움 비율, 양쪽에서 떨어진 거리, 보이는 수(제안값)
+export const PERMUTE_MAX = 8;    // 여행지가 이 수까지면 모든 순서를 견준다
+
+/** 알려진 곳의 수(E2 4절 6항). places는 여행지 하나의 1등급 장소. tastes를 주면 그 범주에 드는 곳만 센다 */
+export function knownCount(places, tastes = null) {
+  const pop = popularity(places), sel = tastes ? new Set(tastes) : null;
+  let n = 0;
+  for (const p of places) if (pop(p) >= KNOWN_TH && (!sel || p.cat.some((c) => sel.has(c)))) n++;
+  return n;
+}
+
+/** amount를 무게에 비례한 정수로 나눈다(가장 큰 나머지 방식, 동률은 앞 순서). 무게 합이 0이면 고르게 */
+export function shareOut(ids, weights, amount) {
+  const n = ids.length; if (!n || amount <= 0) return Object.fromEntries(ids.map((id) => [id, 0]));
+  const w = ids.map((id) => Math.max(0, Number(weights[id]) || 0)), sum = w.reduce((a, b) => a + b, 0);
+  const raw = w.map((v) => (sum > 0 ? (v / sum) * amount : amount / n)), out = raw.map(Math.floor);
+  let left = amount - out.reduce((a, b) => a + b, 0);
+  raw.map((v, i) => [v - Math.floor(v), i]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).forEach(([, i]) => { if (left > 0) { out[i]++; left--; } });
+  return Object.fromEntries(ids.map((id, i) => [id, out[i]]));
+}
+
+/** 날을 나눈다: 여행지마다 1일을 먼저 주고 남은 날을 무게에 비례해 나눈다. 날이 여행지 수보다 적으면 앞에서부터 1일씩 */
+export function splitDays(ids, weights, total) {
+  const n = ids.length; if (!n) return {};
+  if (total <= n) return Object.fromEntries(ids.map((id, i) => [id, i < total ? 1 : 0]));
+  const extra = shareOut(ids, weights, total - n);
+  return Object.fromEntries(ids.map((id) => [id, 1 + extra[id]]));
+}
+
+/**
+ * 여행지별 기본 일수(E2 4절 6항, D-051, D-053). 알려진 곳 수로 먼저 나누고, 고른 장소가 그 일수에 들어가지 않는 여행지만 늘린다.
+ * 늘린 만큼은 여유가 있는 여행지에서 줄인다. 고른 장소는 일수를 늘리기만 하고 줄이지 않는다(고르는 도중에 추천 목록이 짧아지지 않게).
+ * order: 여행지 순서, picked: {여행지: 고른 장소 수}, known: {여행지: 알려진 곳 수}, fixed: {여행지: 사용자가 정한 일수}.
+ * 돌려주는 값: { days: {여행지: 일수}(합은 totalDays), need: {여행지: 고른 장소에 필요한 일수}, over: 고른 장소가 일정보다 많은가 }
+ */
+export function defaultDays({ order, totalDays, picked = {}, known = {}, fixed = {}, dayCapacity = 4 }) {
+  const days = {}, free = [];
+  let remain = totalDays;
+  for (const id of order) { if (fixed[id] != null) { days[id] = Math.max(0, Number(fixed[id]) || 0); remain -= days[id]; } else free.push(id); }
+  remain = Math.max(0, remain);
+  const need = Object.fromEntries(order.map((id) => [id, (picked[id] || 0) > 0 ? Math.ceil(picked[id] / dayCapacity) : 0]));
+  const base = splitDays(free, known, remain); // 알려진 곳 수에 비례(여행지마다 1일 보장)
+  const short = free.filter((id) => need[id] > base[id]);
+  const deficit = short.reduce((s, id) => s + need[id] - base[id], 0);
+  if (!deficit) Object.assign(days, base);
+  else {
+    const rest = free.filter((id) => !short.includes(id));
+    const slack = Object.fromEntries(rest.map((id) => [id, Math.max(0, base[id] - Math.max(need[id], 1))])); // 줄여도 되는 날. 1일은 남긴다
+    const room = rest.reduce((s, id) => s + slack[id], 0);
+    if (room >= deficit) {
+      const cut = shareOut(rest, slack, deficit);
+      for (const id of short) days[id] = need[id];
+      for (const id of rest) days[id] = base[id] - cut[id];
+    } else Object.assign(days, splitDays(free, Object.fromEntries(free.map((id) => [id, need[id] || 1])), remain)); // 여유를 다 모아도 모자라면 필요한 일수에 비례해 나눈다
   }
-  // 남는 밤은 추천 수가 많은 도시부터 하나씩
-  const order = [...ids].sort((a, b) => recommendedCounts[b] - recommendedCounts[a] || a.localeCompare(b));
-  for (let i = 0; sum < totalNights && order.length; i = (i + 1) % order.length) { nights[order[i]]++; sum++; }
-  return nights;
+  return { days, need, over: order.some((id) => need[id] > (days[id] || 0)) };
+}
+
+/** 일수를 숙박 일수로: 일정은 여행지마다 숙박 일수만큼 날짜를 쓰고 마지막 여행지가 남은 날을 쓰므로, 마지막만 하루 적다 */
+export function daysToNights(order, days) {
+  return Object.fromEntries(order.map((id, i) => [id, Math.max(0, (days[id] || 0) - (i === order.length - 1 ? 1 : 0))]));
+}
+
+/** 이동 시간 합이 가장 작은 여행지 순서. 첫 여행지는 그대로 둔다. legMin(a, b): 두 여행지 사이의 분. 같으면 원래 순서를 지킨다 */
+export function shortestOrder(order, legMin) {
+  const n = order.length; if (n <= 2) return [...order];
+  const cost = (o) => { let s = 0; for (let i = 1; i < o.length; i++) s += legMin(o[i - 1], o[i]); return s; };
+  let best = [...order], bc = cost(best);
+  const first = order[0], rest = order.slice(1);
+  if (n <= PERMUTE_MAX) {
+    const walk = (left, acc) => {
+      if (!left.length) { const o = [first, ...acc], c = cost(o); if (c < bc - 1e-9) { bc = c; best = o; } return; }
+      for (let i = 0; i < left.length; i++) walk([...left.slice(0, i), ...left.slice(i + 1)], [...acc, left[i]]);
+    };
+    walk(rest, []);
+    return best;
+  }
+  // 여행지가 많으면 가까운 곳부터 잇고(nearest neighbour) 두 구간 바꾸기(2-opt)로 다듬는다
+  const o = [first], left = [...rest];
+  while (left.length) { let bi = 0; for (let i = 1; i < left.length; i++) if (legMin(o[o.length - 1], left[i]) < legMin(o[o.length - 1], left[bi]) - 1e-9) bi = i; o.push(left.splice(bi, 1)[0]); }
+  let cur = o, cc = cost(cur);
+  for (let pass = 0, improved = true; improved && pass < 50; pass++) {
+    improved = false;
+    for (let i = 1; i < n - 1; i++) for (let j = i + 1; j < n; j++) {
+      const cand = [...cur.slice(0, i), ...cur.slice(i, j + 1).reverse(), ...cur.slice(j + 1)], c = cost(cand);
+      if (c < cc - 1e-9) { cur = cand; cc = c; improved = true; }
+    }
+  }
+  return cc < bc - 1e-9 ? cur : best;
+}
+
+/** 들를 만한 곳(E2 4절 5항): 두 여행지를 잇는 길 가까이 있는 다른 여행지. 섬이 끼면 없다. 참고 순위순 */
+export function stopovers(a, b, destinations, exclude = []) {
+  if (!a || !b || a.kind === "island" || b.kind === "island") return [];
+  const ex = new Set(exclude), d = hav(a.lat, a.lon, b.lat, b.lon);
+  return destinations.filter((c) => c.dest && c.kind !== "island" && !ex.has(c.id) && c.id !== a.id && c.id !== b.id)
+    .map((c) => ({ c, da: hav(a.lat, a.lon, c.lat, c.lon), db: hav(c.lat, c.lon, b.lat, b.lon) }))
+    .filter((x) => x.da > STOPOVER.minM && x.db > STOPOVER.minM && x.da + x.db <= d * STOPOVER.detour)
+    .sort((x, y) => (x.c.dest.rank ?? 9999) - (y.c.dest.rank ?? 9999) || x.c.id.localeCompare(y.c.id)).slice(0, STOPOVER.max).map((x) => x.c);
+}
+
+/**
+ * 전체 일정 대안(R-06, E2 4절 5항, D-051). 안 하나는 기준 하나와 그 기준에 맞춘 순서·일수·추천 기준의 조합이다.
+ * leg(a, b): 두 여행지 사이의 가장 빠른 이동 { mode, min, estimate }. cityOf(id): 여행지 레코드(들를 만한 곳에 쓴다).
+ * 돌려주는 값: [{ key, title, basis, order, days, nights, balance, legs, travelMin, estimateLegs, longLegs, overPicked, same }]. 여행지가 한 곳이면 빈 배열
+ */
+export function tripAlternatives({ order, totalDays, picked = {}, known = {}, tasteKnown = {}, fixed = {}, tastes = [], leg, dayCapacity = 4, destinations = [], cityOf = () => null }) {
+  if (order.length < 2) return [];
+  const memo = new Map();
+  const legC = (a, b) => { const k = a + ">" + b; if (!memo.has(k)) memo.set(k, leg(a, b) || { mode: null, min: 0, estimate: true }); return memo.get(k); };
+  const make = (key, title, basis, o, days, balance) => {
+    const legs = o.slice(1).map((id, i) => { const l = legC(o[i], id); return { from: o[i], to: id, mode: l.mode, min: l.min, estimate: !!l.estimate }; });
+    const longLegs = legs.filter((l) => l.min > LONG_LEG_MIN).map((l) => ({ ...l, stopovers: stopovers(cityOf(l.from), cityOf(l.to), destinations, o).map((c) => c.id) }));
+    const overPicked = Object.fromEntries(o.map((id) => [id, Math.max(0, (picked[id] || 0) - (days[id] || 0) * dayCapacity)]).filter(([, v]) => v > 0));
+    return { key, title, basis, order: o, days, nights: daysToNights(o, days), balance, legs, travelMin: legs.reduce((s, l) => s + l.min, 0), estimateLegs: legs.filter((l) => l.estimate).length, longLegs, overPicked };
+  };
+  const baseDays = defaultDays({ order, totalDays, picked, known, fixed, dayCapacity }).days;
+  const short = shortestOrder(order, (a, b) => legC(a, b).min);
+  const out = [
+    make("base", "기본안", "고른 순서와 기본 일수", order, baseDays, "balance"),
+    make("move", "이동 최소안", "도시 간 이동 시간을 줄인다", short, baseDays, "balance"),
+    make("landmark", "대표 명소안", "알려진 곳이 많은 여행지에 더 머문다", short, splitDays(short, known, totalDays), "landmark"),
+  ];
+  if (tastes.length) out.push(make("taste", "취향안", "고른 취향에 맞는 곳이 많은 여행지에 더 머문다", short, splitDays(short, tasteKnown, totalDays), "other"));
+  const sig = (a) => a.order.join(",") + "|" + a.order.map((id) => a.days[id]).join(",");
+  return out.map((a, i) => ({ ...a, same: i > 0 && sig(a) === sig(out[0]) }));
 }
 
 /** 숙박 구역(R-10): 선택·추천 장소의 중앙값 좌표에서 1.5km 안 구역 중 숙박 수 상위 3 */
