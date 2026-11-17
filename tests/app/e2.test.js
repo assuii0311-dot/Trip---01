@@ -114,22 +114,30 @@ test("shareOut/splitDays: 가장 큰 나머지 방식, 여행지마다 1일 보�
   assert.deepEqual(splitDays(ids, known, 4), { mad: 1, sev: 1, gra: 1, bcn: 1 }); assert.deepEqual(splitDays(ids, known, 2), { mad: 1, sev: 1, gra: 0, bcn: 0 });
   assert.deepEqual(splitDays([], known, 5), {});
 });
-test("defaultDays: 고른 장소를 먼저 반영하고 남는 날은 아직 고르지 않은 여행지에 (D-051)", () => {
+test("defaultDays: 알려진 곳 수로 나누고, 고른 장소는 일수를 늘리기만 한다 (D-051, D-053)", () => {
   const order = ["mad", "sev", "gra", "bcn"], known = { mad: 119, sev: 42, gra: 21, bcn: 99 };
+  const d = (picked, extra = {}) => defaultDays({ order, totalDays: 10, known, picked, ...extra });
   // 아무것도 고르지 않았으면 알려진 곳 수에 비례
-  assert.deepEqual(defaultDays({ order, totalDays: 10, known }).days, { mad: 4, sev: 2, gra: 1, bcn: 3 });
-  // 마드리드 12곳, 세비야 8곳, 그라나다 4곳을 고르고 바르셀로나는 아직: 3·2·1일을 먼저 잡고 남은 4일은 바르셀로나
-  const r = defaultDays({ order, totalDays: 10, known, picked: { mad: 12, sev: 8, gra: 4 } });
-  assert.deepEqual(r.days, { mad: 3, sev: 2, gra: 1, bcn: 4 }); assert.equal(r.over, false); assert.deepEqual(r.need, { mad: 3, sev: 2, gra: 1, bcn: 0 });
-  // 모두 골랐고 날이 남으면 고른 수에 비례해 더 나눈다
-  assert.deepEqual(defaultDays({ order, totalDays: 10, known, picked: { mad: 12, sev: 8, gra: 4, bcn: 4 } }).days, { mad: 4, sev: 3, gra: 2, bcn: 1 }); // 필요 3·2·1·1에 남은 3일을 12:8:4:4로
-  // 고른 장소가 일정보다 많으면 필요 일수에 비례해 줄이고 알린다
+  assert.deepEqual(d({}).days, { mad: 4, sev: 2, gra: 1, bcn: 3 });
+  // 고른 장소가 받은 일수에 들어가면 일수는 그대로다. 장소를 하나만 골라도 그 여행지의 일수가 줄지 않는다(예전 규칙은 마드리드가 1일이 됐다)
+  assert.deepEqual(d({ mad: 1 }).days, { mad: 4, sev: 2, gra: 1, bcn: 3 }); assert.deepEqual(d({ mad: 5 }).days, { mad: 4, sev: 2, gra: 1, bcn: 3 });
+  const r = d({ mad: 12, sev: 8, gra: 4 });
+  assert.deepEqual(r.days, { mad: 4, sev: 2, gra: 1, bcn: 3 }); assert.equal(r.over, false); assert.deepEqual(r.need, { mad: 3, sev: 2, gra: 1, bcn: 0 });
+  // 고른 장소가 받은 일수를 넘는 여행지만 늘리고, 늘린 만큼은 여유가 있는 여행지에서 여유에 비례해 줄인다
+  assert.deepEqual(d({ gra: 9 }).days, { mad: 3, sev: 2, gra: 3, bcn: 2 });  // 그라나다 1 → 3일. 여유는 마드리드 3, 세비야 1, 바르셀로나 2
+  assert.deepEqual(d({ mad: 20 }).days, { mad: 5, sev: 2, gra: 1, bcn: 2 }); // 마드리드 4 → 5일. 여유는 세비야 1, 바르셀로나 2
+  assert.deepEqual(d({ mad: 16, sev: 8 }).days, { mad: 4, sev: 2, gra: 1, bcn: 3 }); // 딱 맞으면 그대로
+  // 줄이는 쪽은 자기가 고른 장소에 필요한 일수 밑으로 내려가지 않는다
+  const k = d({ gra: 9, mad: 16 });
+  assert.equal(k.days.mad, 4); assert.equal(k.days.gra, 3); assert.equal(k.days.sev + k.days.bcn, 3); assert.equal(k.over, false);
+  // 여유를 다 모아도 모자라면 필요한 일수에 비례해 나누고 알린다
   const o = defaultDays({ order, totalDays: 6, known, picked: { mad: 20, sev: 12, gra: 4 } });
   assert.equal(Object.values(o.days).reduce((a, b) => a + b, 0), 6); assert.equal(o.over, true); assert.ok(o.days.mad >= o.days.sev && o.days.bcn === 1);
   // 숙박 탭에서 직접 정한 일수는 그대로 두고 나머지만 나눈다
-  const fx = defaultDays({ order, totalDays: 10, known, fixed: { bcn: 5 } });
+  const fx = d({}, { fixed: { bcn: 5 } });
   assert.equal(fx.days.bcn, 5); assert.deepEqual([fx.days.mad, fx.days.sev, fx.days.gra], [2, 2, 1]); // 남은 5일: 1일씩 주고 2일을 119:42:21로
   assert.deepEqual(defaultDays({ order: ["mad"], totalDays: 5, known }).days, { mad: 5 });
+  for (const p of [{}, { mad: 1 }, { gra: 9 }, { mad: 20 }, { gra: 9, mad: 16 }]) assert.equal(Object.values(d(p).days).reduce((a, b) => a + b, 0), 10); // 합은 언제나 여행 일수
 });
 test("daysToNights: 숙박 일수는 마지막 여행지만 하루 적다", () => {
   assert.deepEqual(daysToNights(["a", "b", "c"], { a: 3, b: 2, c: 5 }), { a: 3, b: 2, c: 4 }); assert.deepEqual(daysToNights(["a"], { a: 1 }), { a: 0 });

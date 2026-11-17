@@ -41,7 +41,7 @@ export function S4Arrange({ plan, cities, byId, prof, nights, dayPlan = null, on
   return html`<div>
     <div class="toolbar"><div class="seg" style="flex:1"><button class=${tab === "place" ? "on" : ""} onClick=${() => setTab("place")}>장소 배치 (${plan.selection.length})</button><button class=${tab === "lodging" ? "on" : ""} onClick=${() => setTab("lodging")}>숙박 ${check.ok ? "✓" : "⚠"}</button></div></div>
     ${tab === "lodging" ? html`<div class="section">
-      <p class="note">기간 ${dates.length}일, 숙박 ${check.total}박. 도시별 일수 합이 ${check.total}박이어야 합니다(현재 ${check.nights}박). 제안 일수는 고른 장소 수 ÷ 하루 ${prof.dayCapacity}곳을 먼저 잡고, 남는 날은 아직 고르지 않은 여행지에 알려진 곳 수에 비례해 나눈 값입니다(E2). 일정은 위에서부터 순서대로 날짜를 씁니다.</p>
+      <p class="note">기간 ${dates.length}일, 숙박 ${check.total}박. 도시별 일수 합이 ${check.total}박이어야 합니다(현재 ${check.nights}박). 제안 일수는 여행지의 알려진 곳 수에 비례해 나눈 값입니다. 고른 장소가 그 일수(하루 ${prof.dayCapacity}곳)에 들어가지 않는 여행지만 늘리고, 그만큼은 여유가 있는 여행지에서 줄입니다(E2). 일정은 위에서부터 순서대로 날짜를 씁니다.</p>
       ${dayPlan && dayPlan.over && html`<p class="note warnline overnote">⚠ 고른 장소가 일정보다 많습니다. 하루 ${prof.dayCapacity}곳을 넘는 장소는 일정 생성에서 초과분으로 남습니다.</p>`}
       ${plan.trip.cities.length === 0 && html`<${Empty}>입력에서 여행 도시를 먼저 고르세요.</${Empty}>`}
       ${plan.trip.cities.map((cid) => { const c = cities.find((x) => x.id === cid); if (!c) return null; const l = plan.lodging[cid] || {}; const focus = plan.selection.map(get).filter((p) => p && inDest(p, c)); const z = lodgingZones(c, focus);

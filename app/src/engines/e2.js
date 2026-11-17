@@ -122,7 +122,8 @@ export function splitDays(ids, weights, total) {
 }
 
 /**
- * 여행지별 기본 일수(E2 4절 6항, D-051). 고른 장소를 먼저 반영한다.
+ * 여행지별 기본 일수(E2 4절 6항, D-051, D-053). 알려진 곳 수로 먼저 나누고, 고른 장소가 그 일수에 들어가지 않는 여행지만 늘린다.
+ * 늘린 만큼은 여유가 있는 여행지에서 줄인다. 고른 장소는 일수를 늘리기만 하고 줄이지 않는다(고르는 도중에 추천 목록이 짧아지지 않게).
  * order: 여행지 순서, picked: {여행지: 고른 장소 수}, known: {여행지: 알려진 곳 수}, fixed: {여행지: 사용자가 정한 일수}.
  * 돌려주는 값: { days: {여행지: 일수}(합은 totalDays), need: {여행지: 고른 장소에 필요한 일수}, over: 고른 장소가 일정보다 많은가 }
  */
@@ -132,11 +133,20 @@ export function defaultDays({ order, totalDays, picked = {}, known = {}, fixed =
   for (const id of order) { if (fixed[id] != null) { days[id] = Math.max(0, Number(fixed[id]) || 0); remain -= days[id]; } else free.push(id); }
   remain = Math.max(0, remain);
   const need = Object.fromEntries(order.map((id) => [id, (picked[id] || 0) > 0 ? Math.ceil(picked[id] / dayCapacity) : 0]));
-  const pk = free.filter((id) => need[id] > 0), un = free.filter((id) => need[id] === 0);
-  const sumNeed = pk.reduce((s, id) => s + need[id], 0);
-  if (sumNeed + un.length > remain) Object.assign(days, splitDays(free, Object.fromEntries(free.map((id) => [id, need[id] || 1])), remain)); // 날이 모자라면 필요 일수에 비례해 줄인다
-  else if (un.length) { for (const id of pk) days[id] = need[id]; Object.assign(days, splitDays(un, known, remain - sumNeed)); } // 남는 날은 아직 고르지 않은 여행지에
-  else { const extra = shareOut(pk, picked, remain - sumNeed); for (const id of pk) days[id] = need[id] + extra[id]; }   // 모두 골랐으면 고른 수에 비례해 더
+  const base = splitDays(free, known, remain); // 알려진 곳 수에 비례(여행지마다 1일 보장)
+  const short = free.filter((id) => need[id] > base[id]);
+  const deficit = short.reduce((s, id) => s + need[id] - base[id], 0);
+  if (!deficit) Object.assign(days, base);
+  else {
+    const rest = free.filter((id) => !short.includes(id));
+    const slack = Object.fromEntries(rest.map((id) => [id, Math.max(0, base[id] - Math.max(need[id], 1))])); // 줄여도 되는 날. 1일은 남긴다
+    const room = rest.reduce((s, id) => s + slack[id], 0);
+    if (room >= deficit) {
+      const cut = shareOut(rest, slack, deficit);
+      for (const id of short) days[id] = need[id];
+      for (const id of rest) days[id] = base[id] - cut[id];
+    } else Object.assign(days, splitDays(free, Object.fromEntries(free.map((id) => [id, need[id] || 1])), remain)); // 여유를 다 모아도 모자라면 필요한 일수에 비례해 나눈다
+  }
   return { days, need, over: order.some((id) => need[id] > (days[id] || 0)) };
 }
 
