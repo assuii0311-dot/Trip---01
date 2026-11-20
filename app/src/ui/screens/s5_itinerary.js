@@ -4,7 +4,7 @@ import { html, Chip, Empty } from "../components/ui.js";
 import { ESTIMATE_NOTE } from "../components/trip_alts.js";
 import { placeName } from "../../data/places.js";
 import { toHHMM, toMin, dwellOf } from "../../engines/e4.js";
-import { modeKo } from "../../engines/e3.js";
+import { modeKo, perDayKo } from "../../engines/e3.js";
 import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
@@ -24,7 +24,7 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
     <div class="toolbar">${days.map((d, i) => html`<button class=${"chip " + (i === di ? "on" : "")} onClick=${() => setDi(i)}>${i + 1}일 ${d.date.slice(5)}${d.intercity ? " 🚆" : ""}</button>`)}</div>
     ${day && html`<div class="section" style="padding-top:4px">
       <p class="note">${cityName(day.cityId)} · 장소 ${day.summary.places}곳 · 이동 ${day.summary.travelMin}분(${Math.round(day.summary.travelShare * 100)}%${day.summary.warn ? " ⚠ 40% 초과" : ""}) · 도보 ${fmtDistance(day.summary.walkM)} · ${toHHMM(day.summary.start)}~${toHHMM(day.summary.end)}</p>
-      ${day.intercity && html`<div class="card" style="margin:0 0 8px"><div class="ico">🚆</div><div class="body"><div class="title">${cityName(day.intercity.from)} → ${cityName(day.intercity.to)}</div><div class="chips meta">${day.intercity.leg.options.map((o) => html`<${Chip} kind=${o === day.intercity.leg.best ? "ok" : "est"}>${modeKo(o.mode)} ${o.min >= 60 ? `${Math.floor(o.min / 60)}시간 ${o.min % 60}분` : `${o.min}분`}${o.perDay ? ` · 하루 ${o.perDay}회` : ""}${o.confidence === "estimate" ? " (추정)" : ""}</${Chip}>`)}</div>${day.intercity.leg.best.link && html`<a class="note" href=${day.intercity.leg.best.link} target="_blank" rel="noopener">구글맵 경로 ↗</a>`}${day.intercity.leg.options.some((o) => o.confidence === "estimate") && html`<div class="note warnline estnote">${ESTIMATE_NOTE}</div>`}</div></div>`}
+      ${day.intercity && html`<div class="card" style="margin:0 0 8px"><div class="ico">🚆</div><div class="body"><div class="title">${cityName(day.intercity.from)} → ${cityName(day.intercity.to)}</div><div class="chips meta">${day.intercity.leg.options.map((o) => html`<${Chip} kind=${o === day.intercity.leg.best ? "ok" : "est"}>${modeKo(o.mode)} ${o.min >= 60 ? `${Math.floor(o.min / 60)}시간 ${o.min % 60}분` : `${o.min}분`}${perDayKo(o.perDay) ? ` · ${perDayKo(o.perDay)}` : ""}${o.confidence === "estimate" ? " (추정)" : ""}</${Chip}>`)}</div>${day.intercity.leg.best.link && html`<a class="note" href=${day.intercity.leg.best.link} target="_blank" rel="noopener">구글맵 경로 ↗</a>`}${day.intercity.leg.options.some((o) => o.confidence === "estimate") && html`<div class="note warnline estnote">${ESTIMATE_NOTE}</div>`}</div></div>`}
       ${day.items.length === 0 && html`<p class="note">이 날에 배치된 장소가 없습니다.</p>`}
       ${day.items.map((it, k) => it.kind === "meal" ? html`<div class="row" style="padding:6px 0;color:var(--muted)">🍽 ${toHHMM(it.start)}–${toHHMM(it.end)} ${{ lunch: "점심", dinner: "저녁", snack: "간식" }[it.meal]} (슬롯)</div>` : (() => {
         const p = getPlace(it.id); if (!p) return null; const tr = it.travel;
