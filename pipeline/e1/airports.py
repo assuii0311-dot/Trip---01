@@ -10,7 +10,7 @@ import sys
 
 from .match import hav
 
-UA = "Trip01-E1/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 SPARQL = "https://query.wikidata.org/sparql"
 # P238 IATA, P239 ICAO, P31 분류, P931 소속 도시, P625 좌표, P3872 연 이용객(P585 시점)
 QUERY = """SELECT ?a ?iata ?icao ?len ?les ?lko ?cls ?city ?cityEn ?cityKo ?cityIsland ?coord ?pax ?paxT WHERE {

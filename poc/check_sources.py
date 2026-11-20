@@ -11,7 +11,7 @@ import sys
 import urllib.error
 import urllib.request
 
-UA = "Trip01-PoC/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 
 # (소스, URL, 관련 확인 항목, 비고)
 SOURCES = [

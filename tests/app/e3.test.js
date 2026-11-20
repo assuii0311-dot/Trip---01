@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { straightWalk, makeIntraIndex, walkTime, makeTransitIndex, transitEstimate, cityLeg, intercityLeg, PARAMS, makeIslandIndex, islandCar } from "../../app/src/engines/e3.js";
+import { straightWalk, makeIntraIndex, walkTime, makeTransitIndex, transitEstimate, cityLeg, intercityLeg, PARAMS, makeIslandIndex, islandCar, perDayKo } from "../../app/src/engines/e3.js";
 
 const A = { id: "a", lat: 40.4138, lon: -3.6921 }, B = { id: "b", lat: 40.4154, lon: -3.7074 }, C = { id: "c", lat: 40.4300, lon: -3.7100 };
 test("직선 추정: 우회 1.24, 4.5km/h", () => { const w = straightWalk(A, B); assert.ok(w.m > 1500 && w.m < 1800); assert.ok(w.min >= 20 && w.min <= 24); assert.equal(w.confidence, "estimate"); });
@@ -55,4 +55,11 @@ test("islandCar: 다른 지자체의 먼 구간은 행렬값, 가깝거나 같�
   const leg = cityLeg(a, b, { island: isl }); const taxi = leg.options.find((o) => o.mode === "taxi");
   assert.equal(taxi.min, 62 + PARAMS.taxiWaitMin); assert.equal(taxi.m, 78400); assert.equal(leg.best.mode, "taxi");
   const noMatrix = cityLeg(a, b, {}).options.find((o) => o.mode === "taxi"); assert.ok(noMatrix.min > 150);
+});
+test("perDayKo: 하루 운행 수 표기(D-055). 10 이상은 정수, 1 미만은 '하루 1회 미만', 값이 없으면 빈 문자열", () => {
+  assert.equal(perDayKo(261.5), "하루 약 262회"); assert.equal(perDayKo(27.8), "하루 약 28회"); assert.equal(perDayKo(10), "하루 약 10회");
+  assert.equal(perDayKo(9.96), "하루 약 10회"); assert.equal(perDayKo(3), "하루 약 3회"); assert.equal(perDayKo(4.9), "하루 약 4.9회"); assert.equal(perDayKo(1), "하루 약 1회");
+  assert.equal(perDayKo(0.7), "하루 1회 미만"); assert.equal(perDayKo(0), ""); assert.equal(perDayKo(null), ""); assert.equal(perDayKo(undefined), "");
+  const inter = { cities: [{ id: "m", lat: 40.4, lon: -3.7 }, { id: "b", lat: 41.4, lon: 2.2 }], car_min: [[0, 333], [333, 0]], car_km: [[0, 620], [620, 0]], train_min: [[null, 182], [182, null]], trains_per_day: [[0, 27.8], [27.8, 0]] };
+  assert.equal(perDayKo(intercityLeg(inter.cities[0], inter.cities[1], inter).options.find((o) => o.mode === "train").perDay), "하루 약 28회");
 });

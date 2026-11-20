@@ -13,7 +13,7 @@ import requests
 
 from . import config as C
 
-UA = "Trip01-pipeline/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 MUNI_CLASS = "Q2074737"
 
 

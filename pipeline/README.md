@@ -50,6 +50,19 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 
 대상 장소가 2곳 미만이 된 도시는 건너뛰되, 예전 파일이 남아 있으면 빈 쌍으로 다시 쓴다.
 
+## 실행 순서 (E3 도시 간 행렬: 차량과 기차, T-060)
+
+차량 행렬은 경로 타일로, 기차의 소요 시간과 하루 운행 수는 Renfe GTFS 2개(장거리, 광역)로 계산한다(E3 4절 5항, D-055). GTFS zip은 저장소 밖에 받는다(`poc/gtfs_inspect.py`의 주소).
+
+```
+# 전체(차량 행렬 + 기차): 스페인 추출본 타일이 필요하다
+<venv>/bin/python -I pipeline/run.py e3.intercity <스페인 타일> data/cities.json.gz data/airports.json.gz <광역 zip> <장거리 zip> --out data/travel
+# 기차만: 기존 파일의 도시 목록과 차량 행렬을 그대로 쓰고 기차 값만 다시 계산한다(타일이 없을 때). 기존 파일은 사본을 넘긴다
+<venv>/bin/python -I pipeline/run.py e3.intercity <광역 zip> <장거리 zip> --reuse <기존 intercity.json.gz의 사본> --out data/travel
+```
+
+광역 자료는 매일 다시 만들어지는 30일치라서 받은 날에 따라 하루 운행 수가 조금씩 달라진다. 같은 zip으로는 같은 바이트가 나온다. 기준(자료의 첫날, 평균 기간)은 출력의 `train_basis`에 적힌다.
+
 ## 실행 순서 (E3 섬 안 차량 행렬, T-048)
 
 섬 여행지마다 소속 지자체 중심 사이의 차량 시간을 계산한다. 타일이 덮지 않는 섬은 건너뛴다.

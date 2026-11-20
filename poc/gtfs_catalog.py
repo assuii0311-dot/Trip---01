@@ -15,7 +15,7 @@ import zipfile
 
 import requests
 
-UA = "Trip01-PoC/0.1 (https://github.com/assuii0311-dot/Trip---01)"
+UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 KEYS = ["crtm", "transportes de madrid", "emt madrid", "metro de madrid", "tmb", "transports metropolitans de barcelona", "àrea metropolitana de barcelona", "amb - barcelona",
         "tram barcelona", "emt valencia", "metrovalencia", "metro de valencia", "metro de sevilla", "metro de málaga", "malagueña", "metro bilbao", "andalusian", "andalucía",
         "metrotenerife", "generalitat valenciana (intercity", "public works agency"]

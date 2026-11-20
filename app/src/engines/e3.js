@@ -122,7 +122,7 @@ export function intercityLeg(fromCity, toCity, inter, { airports = [] } = {}) {
   else if (car != null) options.push({ mode: "car", min: car, km: inter.car_km[ia][ib], confidence: "computed" });
   else options.push({ mode: "car", min: Math.round(dist * PARAMS.carDetour / 1000 / 80 * 60), km: Math.round(dist * PARAMS.carDetour / 1000), confidence: "estimate", note: "행렬 밖 도시. 직선 추정" });
   const tr = ia >= 0 && ib >= 0 ? inter.train_min[ia][ib] : null;
-  if (tr != null) options.push({ mode: "train", min: tr, perDay: inter.trains_per_day[ia][ib], confidence: "computed", note: "Renfe 직통 최단 운행(역 접근 제외)" });
+  if (tr != null) options.push({ mode: "train", min: tr, perDay: inter.trains_per_day[ia][ib], confidence: "computed", note: "Renfe 직통(역 접근 제외). 하루 운행 수는 4주 평균" });
   if (dist > 250000 || car == null || sea) options.push({ mode: "flight", min: Math.round(dist / 1000 / PARAMS.flightKmh * 60 + PARAMS.flightProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "거리 기반 추정(D-021 ②)" });
   if (car == null || sea) options.push({ mode: "ferry", min: Math.round(dist / 1000 / PARAMS.ferryKmh * 60 + PARAMS.ferryProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "항로 존재 여부 미확인. 거리 기반 추정" });
   const best = [...options].sort((x, y) => x.min - y.min)[0];
@@ -130,3 +130,10 @@ export function intercityLeg(fromCity, toCity, inter, { airports = [] } = {}) {
 }
 
 export function modeKo(m) { return MODE_KO[m] || m; }
+
+/** 하루 운행 수의 화면 표기(E3 4절 5항, D-055). 값은 4주 평균이라 "약"을 붙인다. 10 이상은 정수, 1 미만은 "하루 1회 미만", 값이 없으면 빈 문자열 */
+export function perDayKo(n) {
+  if (!(n > 0)) return "";
+  if (n < 1) return "하루 1회 미만";
+  return `하루 약 ${n >= 10 ? Math.round(n) : Math.round(n * 10) / 10}회`;
+}
