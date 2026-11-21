@@ -183,5 +183,7 @@ a { color: var(--accent); }
 .warnline { color: var(--warn); }
 .chip.stopover { margin-left: 4px; }
 .estnote { margin-top: 6px; }
+.trainnote { margin-top: 4px; }
+a.note.timetable { display: inline-block; margin-top: 4px; }
 .citymove .minibtn { margin-left: 4px; }
 

@@ -122,12 +122,17 @@ export function intercityLeg(fromCity, toCity, inter, { airports = [] } = {}) {
   else if (car != null) options.push({ mode: "car", min: car, km: inter.car_km[ia][ib], confidence: "computed" });
   else options.push({ mode: "car", min: Math.round(dist * PARAMS.carDetour / 1000 / 80 * 60), km: Math.round(dist * PARAMS.carDetour / 1000), confidence: "estimate", note: "행렬 밖 도시. 직선 추정" });
   const tr = ia >= 0 && ib >= 0 ? inter.train_min[ia][ib] : null;
-  if (tr != null) options.push({ mode: "train", min: tr, perDay: inter.trains_per_day[ia][ib], confidence: "computed", note: "Renfe 직통(역 접근 제외). 하루 운행 수는 4주 평균" });
+  if (tr != null) options.push({ mode: "train", min: tr, perDay: inter.trains_per_day[ia][ib], confidence: "computed", note: "Renfe 직통 열차 가운데 빠른 편(역 접근 제외). 하루 운행 수는 4주 평균" });
   if (dist > 250000 || car == null || sea) options.push({ mode: "flight", min: Math.round(dist / 1000 / PARAMS.flightKmh * 60 + PARAMS.flightProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "거리 기반 추정(D-021 ②)" });
   if (car == null || sea) options.push({ mode: "ferry", min: Math.round(dist / 1000 / PARAMS.ferryKmh * 60 + PARAMS.ferryProcMin), confidence: "estimate", link: gmapsTransit(fromCity, toCity), note: "항로 존재 여부 미확인. 거리 기반 추정" });
   const best = [...options].sort((x, y) => x.min - y.min)[0];
-  return { best, alternatives: options.filter((o) => o !== best).sort((x, y) => x.min - y.min).slice(0, 2), options };
+  // link: 실제 시간표를 확인하는 구글맵 대중교통 경로(E3 4절 5항, D-058). 앱의 값은 계획용 어림값이라 수단과 관계없이 붙인다
+  return { best, alternatives: options.filter((o) => o !== best).sort((x, y) => x.min - y.min).slice(0, 2), options, link: gmapsTransit(fromCity, toCity) };
 }
+
+/** 기차 값의 뜻을 밝히는 안내(E3 4절 5항, D-058) */
+export const TRAIN_NOTE = "기차 시간은 직통 열차 가운데 빠른 편의 값이고 역까지의 이동은 들어 있지 않습니다. 하루 운행 수는 4주 평균입니다.";
+export const TIMETABLE_LINK_LABEL = "구글맵에서 실제 시간표 확인 ↗";
 
 export function modeKo(m) { return MODE_KO[m] || m; }
 
