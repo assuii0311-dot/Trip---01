@@ -1,8 +1,9 @@
 """E3 사전 계산 1: 도시 간 행렬. 인구 상위 60개 도시 + 공항 도시의 차량 행렬(로컬 경로 엔진)과 Renfe GTFS의 기차 소요·하루 운행 수.
 
 출력 travel/intercity.json.gz: {cities:[{id, n, lat, lon}], car_min[][], car_km[][], train_min[][], trains_per_day[][], train_basis, unreachable 쌍은 null}
-기차 규칙(E3 4절 5항, D-055): 역은 15km 안 가장 가까운 대상 도시에 붙인다. 소요는 "기차 소요 + 역 접근"이 가장 작은 역 조합의 기차 소요,
-하루 운행 수는 운행(trip)을 쌍마다 한 번만 세어 자료의 첫날부터 28일 평균. 순수 함수(service_dates, window_of, assign_stops, trip_pairs, train_stats, intercity_file)는 파일과 네트워크를 모른다.
+기차 규칙(E3 4절 5항, D-055, D-058): 역은 15km 안 가장 가까운 대상 도시에 붙인다. 운행마다 "기차 소요 + 역 접근"이 가장 작은 역 조합을 대표로 삼고,
+소요는 그 합이 작은 순으로 운행 횟수의 하위 5%에 닿는 운행의 기차 소요, 하루 운행 수는 운행(trip)을 쌍마다 한 번만 세어 자료의 첫날부터 28일 평균.
+순수 함수(service_dates, window_of, assign_stops, trip_pairs, pick_run, train_stats, intercity_file)는 파일과 네트워크를 모른다.
 실행(전체): python -I pipeline/run.py e3.intercity <타일 디렉터리> <cities.json.gz> <airports.json.gz> <Renfe GTFS zip...> --out <travel 디렉터리>
 실행(기차만): python -I pipeline/run.py e3.intercity <Renfe GTFS zip...> --reuse <기존 intercity.json.gz> --out <travel 디렉터리>
   --reuse: 기존 파일의 도시 목록과 차량 행렬을 그대로 쓰고 기차 값만 다시 계산한다(경로 타일이 없을 때).
@@ -61,6 +62,7 @@ STOP_RADIUS_M = 15000     # 역을 대상 도시에 붙이는 반경
 ACCESS_MIN_PER_KM = 3.0   # 추정: 역에서 도시 중심까지 시속 20km. 역 조합을 고르는 데만 쓴다
 MAX_KMH = 350             # 두 역 사이의 직선 속도가 이보다 빠른 기록은 자료 오류로 본다
 WINDOW_DAYS = 28          # 하루 운행 수를 평균하는 기간(자료의 첫 운행 날부터)
+FAST_SHARE = 0.05         # 소요는 운행 횟수 기준 하위 5%에 닿는 운행의 값(D-058). 잘못 적힌 열차 하나가 값을 정하지 않게 한다
 DOW = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 
@@ -128,9 +130,9 @@ def sec(t):
 
 
 def trip_pairs(seq):
-    """운행 하나 → {(출발 도시, 도착 도시): (기차 소요 + 역 접근, 기차 소요)}. 쌍마다 합이 가장 작은 역 조합 하나만 남긴다.
+    """운행 하나 → {(출발 도시, 도착 도시): (기차 소요 + 역 접근, 기차 소요, 출발 역, 도착 역)}. 쌍마다 합이 가장 작은 역 조합 하나만 남긴다.
 
-    seq: [(정차 순서, 도착 시각, 출발 시각, 도시 번호, 위도, 경도, 접근 분)]. 소요는 뒤 역의 도착 − 앞 역의 출발(분).
+    seq: [(정차 순서, 도착 시각, 출발 시각, 도시 번호, 위도, 경도, 접근 분[, 역 ID])]. 소요는 뒤 역의 도착 − 앞 역의 출발(분). 역 ID가 없으면 None.
     소요가 0 이하이거나 두 역 사이의 직선 속도가 MAX_KMH를 넘는 조합은 버린다(자료 오류).
     """
     seq = sorted(seq)
@@ -147,20 +149,38 @@ def trip_pairs(seq):
             if dur <= 0 or hav(seq[a][4], seq[a][5], seq[b][4], seq[b][5]) / 1000 / (dur / 60) > MAX_KMH:
                 continue
             cand = (dur + seq[a][6] + seq[b][6], dur)
-            if (ca, cb) not in out or cand < out[(ca, cb)]:
-                out[(ca, cb)] = cand
+            if (ca, cb) not in out or cand < out[(ca, cb)][:2]:
+                out[(ca, cb)] = cand + (seq[a][7] if len(seq[a]) > 7 else None, seq[b][7] if len(seq[b]) > 7 else None)
     return out
 
 
-def train_stats(feeds, pts, days=WINDOW_DAYS):
+def pick_run(cands, share=FAST_SHARE):
+    """[(합, 소요, 운행 횟수, ...)] → 그 쌍을 대표하는 운행. 합이 작은 순으로 세워 운행 횟수를 앞에서부터 더한 값이 전체의 share에 처음 닿는 운행이다.
+
+    운행 횟수의 합이 0이면(평균 기간 안에 운행이 없음) 합이 가장 작은 운행을 돌려준다.
+    """
+    order = sorted(cands, key=lambda c: (c[0], c[1]))
+    total = sum(c[2] for c in order)
+    if total <= 0:
+        return order[0]
+    need, run = total * share, 0
+    for c in order:
+        run += c[2]
+        if run >= need:
+            return c
+    return order[-1]
+
+
+def train_stats(feeds, pts, days=WINDOW_DAYS, detail=None):
     """자료 목록 → (소요 행렬, 하루 운행 수 행렬, 기준 [{from, days}]).
 
     feeds: [{stops, calendar, calendar_dates, trips, stop_times}] 각 값은 GTFS 표의 줄(딕셔너리)을 내는 반복 가능 객체.
-    소요: 모든 운행에서 "기차 소요 + 역 접근"이 가장 작은 역 조합의 기차 소요(분, 반올림).
+    소요: 운행마다 "기차 소요 + 역 접근"이 가장 작은 역 조합을 대표로 삼고, pick_run이 고른 운행(운행 횟수 기준 하위 FAST_SHARE)의 기차 소요(분, 반올림).
     하루 운행 수: 운행 하나를 쌍마다 한 번만 세고, 자료마다 첫 운행 날부터 days일 안의 운행 횟수를 모두 더해 days로 나눈다(소수 1자리).
+    detail에 딕셔너리를 넘기면 쌍마다 고른 운행의 {(a, b): (자료 번호, 출발 역 ID, 도착 역 ID)}를 채운다(점검용).
     """
-    n = len(pts); best = {}; total = collections.Counter(); basis = []
-    for feed in feeds:
+    n = len(pts); cands = collections.defaultdict(collections.Counter); total = collections.Counter(); basis = []
+    for fi, feed in enumerate(feeds):
         stop_city = assign_stops(feed["stops"], pts)
         dates = service_dates(feed.get("calendar") or (), feed.get("calendar_dates") or ())
         window, start = window_of(dates, days)
@@ -170,17 +190,18 @@ def train_stats(feeds, pts, days=WINDOW_DAYS):
         for st in feed["stop_times"]:
             c = stop_city.get(st["stop_id"])
             if c:
-                by_trip[st["trip_id"]].append((int(st["stop_sequence"]), st.get("arrival_time") or st.get("departure_time"), st.get("departure_time") or st.get("arrival_time"), c[0], c[1], c[2], c[3]))
+                by_trip[st["trip_id"]].append((int(st["stop_sequence"]), st.get("arrival_time") or st.get("departure_time"), st.get("departure_time") or st.get("arrival_time"), c[0], c[1], c[2], c[3], st["stop_id"]))
         for tid, seq in by_trip.items():
-            pairs = trip_pairs(seq)
             active = len(dates.get(service.get(tid), set()) & window)
-            for pair, cand in pairs.items():
-                if pair not in best or cand < best[pair]:
-                    best[pair] = cand
+            for pair, (tot, dur, sa, sb) in trip_pairs(seq).items():
+                cands[pair][(tot, dur, fi, sa, sb)] += active  # 같은 역 조합·같은 소요의 운행은 횟수만 더한다
                 total[pair] += active
     tr_min = [[None] * n for _ in range(n)]; tr_cnt = [[0] * n for _ in range(n)]
-    for (a, b), cand in best.items():
-        tr_min[a][b] = round(cand[1]); tr_cnt[a][b] = round(total[(a, b)] / days, 1)
+    for (a, b), runs in cands.items():
+        tot, dur, _, fi, sa, sb = pick_run([(k[0], k[1], w, k[2], k[3], k[4]) for k, w in runs.items()])
+        tr_min[a][b] = round(dur); tr_cnt[a][b] = round(total[(a, b)] / days, 1)
+        if detail is not None:
+            detail[(a, b)] = (fi, sa, sb)
     return tr_min, tr_cnt, basis
 
 
@@ -198,7 +219,7 @@ def intercity_file(cities, car_min, car_km, tr_min, tr_cnt, basis, generated, co
     """내보낼 객체. cities는 [{id, n, lat, lon}]. generated는 차량 행렬을 만든 날, train_basis는 기차 값의 기준(자료의 첫날과 평균 기간)."""
     return {"generated": generated, "correction": correction or {"car": 1.23}, "cities": cities, "car_min": car_min, "car_km": car_km,
             "train_min": tr_min, "trains_per_day": tr_cnt,
-            "train_basis": {"feeds": basis, "access_min_per_km": ACCESS_MIN_PER_KM, "max_kmh": MAX_KMH, "stop_radius_m": STOP_RADIUS_M}}
+            "train_basis": {"feeds": basis, "access_min_per_km": ACCESS_MIN_PER_KM, "max_kmh": MAX_KMH, "stop_radius_m": STOP_RADIUS_M, "fast_share": FAST_SHARE}}
 
 
 def write_gz(path, obj):

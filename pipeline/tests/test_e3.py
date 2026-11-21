@@ -78,7 +78,9 @@ def test_trip_pairs_one_entry_per_pair_and_central_stations():
     seq = [(int(r["stop_sequence"]), r["arrival_time"], r["departure_time"], *cs[r["stop_id"]]) for r in STOP_TIMES if r["trip_id"] == "t1"]
     pairs = intercity.trip_pairs(seq)
     assert list(pairs) == [(0, 1)]                 # 역 조합이 네 개여도 쌍은 하나
-    assert pairs[(0, 1)] == (55.0, 55.0)           # 가장 짧은 외곽역 조합(36분)이 아니라 중심역끼리(55분)
+    assert pairs[(0, 1)] == (55.0, 55.0, None, None)  # 가장 짧은 외곽역 조합(36분)이 아니라 중심역끼리(55분). 역 ID를 넘기지 않으면 None
+    with_ids = intercity.trip_pairs([x + (r["stop_id"],) for x, r in zip(seq, [r for r in STOP_TIMES if r["trip_id"] == "t1"])])
+    assert with_ids[(0, 1)] == (55.0, 55.0, "A1", "B1")
     bad = [(int(r["stop_sequence"]), r["arrival_time"], r["departure_time"], *cs[r["stop_id"]]) for r in STOP_TIMES if r["trip_id"] == "bad"]
     assert intercity.trip_pairs(bad) == {}         # 시속 350km를 넘는 기록은 버린다
     assert intercity.trip_pairs([(1, "09:00:00", "09:00:00", 0, 40.0, -3.0, 0.0), (2, "08:00:00", "08:00:00", 1, 40.0, -2.0, 0.0)]) == {}  # 소요 0 이하
@@ -94,6 +96,29 @@ def test_train_stats_counts_each_trip_once_per_day():
     tr_min, tr_cnt, basis = intercity.train_stats([FEED, feed2], PTS)
     assert tr_min == [[None, 20], [70, None]] and tr_cnt == [[0, 2.7], [1.0, 0]]  # 자료가 여럿이면 더한 뒤 나눈다: (48 + 28) ÷ 28
     assert basis[1] == {"from": "2026-02-01", "days": 28}
+
+
+def test_pick_run_lower_share_ignores_one_wrong_train():
+    # (합, 소요, 운행 횟수). 10분짜리는 28일에 3회뿐인 잘못된 기록이고, 정상 운행은 34분 이상이다
+    runs = [(31.0, 10.0, 3), (41.0, 34.0, 60), (46.0, 39.0, 500), (60.0, 55.0, 200)]
+    assert intercity.pick_run(runs)[1] == 34.0                      # 전체 763회의 5%(38.15회)에 처음 닿는 운행
+    assert intercity.pick_run([(31.0, 10.0, 3), (41.0, 34.0, 20)])[1] == 10.0   # 운행이 적으면(23회의 5% = 1.15회) 가장 빠른 운행
+    assert intercity.pick_run([(50.0, 45.0, 0), (41.0, 34.0, 0)])[1] == 34.0    # 평균 기간 안에 운행이 없으면 합이 가장 작은 운행
+    assert intercity.pick_run([(41.0, 34.0, 0), (50.0, 45.0, 10)])[1] == 45.0   # 운행이 없는 것은 건너뛴다
+
+
+def test_train_stats_uses_lower_share_and_reports_detail():
+    # 정상 열차 t는 28일 매일 40회, 잘못 적힌 열차 w는 28일 가운데 하루만 다닌다(중심역끼리 5분: 시속 350km는 넘지 않게 A1 → A2 방향이 아니라 가까운 두 도시로 만든다)
+    pts = [{"id": "A", "n": "가", "lat": 40.0, "lon": -3.0}, {"id": "B", "n": "나", "lat": 40.0, "lon": -2.8}]  # 약 17km
+    stops = [{"stop_id": "A1", "stop_lat": "40.0", "stop_lon": "-3.0"}, {"stop_id": "B1", "stop_lat": "40.0", "stop_lon": "-2.8"}]
+    cal = [dict(ALL, service_id="D", start_date="20260105", end_date="20260201"), dict(ALL, service_id="ONE", start_date="20260106", end_date="20260106")]
+    trips = [{"trip_id": f"t{i}", "service_id": "D"} for i in range(40)] + [{"trip_id": "w", "service_id": "ONE"}]
+    times = [r for i in range(40) for r in (st(f"t{i}", 1, "A1", "08:00:00"), st(f"t{i}", 2, "B1", "08:20:00"))] + [st("w", 1, "A1", "21:23:00"), st("w", 2, "B1", "21:28:00")]
+    detail = {}
+    tr_min, tr_cnt, _ = intercity.train_stats([{"stops": stops, "calendar": cal, "trips": trips, "stop_times": times}], pts, detail=detail)
+    assert tr_min[0][1] == 20            # 5분짜리 한 번(1,121회 가운데 1회)은 값을 정하지 못한다
+    assert tr_cnt[0][1] == 40.0          # (40 × 28 + 1) ÷ 28 = 40.04
+    assert detail[(0, 1)] == (0, "A1", "B1")
 
 
 def write_gtfs(path, feed):
@@ -117,4 +142,4 @@ def test_reuse_keeps_cities_and_car_matrix_and_is_deterministic(tmp_path, monkey
     obj = json.load(gzip.open(tmp_path / "a" / "intercity.json.gz", "rt", encoding="utf-8"))
     assert obj["cities"] == PTS and obj["car_min"] == old["car_min"] and obj["car_km"] == old["car_km"] and obj["generated"] == "2026-10-25"
     assert obj["train_min"] == [[None, 20], [None, None]] and obj["trains_per_day"] == [[0, 1.7], [0, 0]]
-    assert obj["train_basis"]["feeds"] == [{"from": "2026-01-05", "days": 28}] and obj["train_basis"]["access_min_per_km"] == 3.0
+    assert obj["train_basis"]["feeds"] == [{"from": "2026-01-05", "days": 28}] and obj["train_basis"]["access_min_per_km"] == 3.0 and obj["train_basis"]["fast_share"] == 0.05

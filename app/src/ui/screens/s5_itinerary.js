@@ -4,7 +4,7 @@ import { html, Chip, Empty } from "../components/ui.js";
 import { ESTIMATE_NOTE } from "../components/trip_alts.js";
 import { placeName } from "../../data/places.js";
 import { toHHMM, toMin, dwellOf } from "../../engines/e4.js";
-import { modeKo, perDayKo } from "../../engines/e3.js";
+import { modeKo, perDayKo, gmapsTransit, TRAIN_NOTE, TIMETABLE_LINK_LABEL } from "../../engines/e3.js";
 import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
@@ -16,6 +16,8 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
   const days = result?.days || [];
   const day = days[di];
   const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.en || c.n.es : id; };
+  // 실제 시간표 확인 링크(D-058). 예전에 만든 일정에는 leg.link가 없으므로 도시 좌표로 만든다
+  const legLink = (ic) => { if (ic.leg.link) return ic.leg.link; const a = cities.find((x) => x.id === ic.from), b = cities.find((x) => x.id === ic.to); return a && b ? gmapsTransit(a, b) : ic.leg.best.link || null; };
   if (!result) return html`<div class="section"><${Empty}>선택한 장소 ${plan.selection.length}곳으로 일정을 만듭니다. 숙박 일수가 기간과 맞아야 합니다.</${Empty}>${canEdit ? html`<div class="row" style="justify-content:center"><button class="btn" disabled=${busy || plan.selection.length === 0} onClick=${onGenerate}>${busy ? "생성 중…" : "일정 생성 ▶"}</button></div>` : html`<p class="note" style="text-align:center">메인 수립자가 일정을 생성해 저장하면 여기에 보입니다.</p>`}</div>`;
   const nDrift = drift.missing.length + drift.removed.length;
   return html`<div>
@@ -24,7 +26,7 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
     <div class="toolbar">${days.map((d, i) => html`<button class=${"chip " + (i === di ? "on" : "")} onClick=${() => setDi(i)}>${i + 1}일 ${d.date.slice(5)}${d.intercity ? " 🚆" : ""}</button>`)}</div>
     ${day && html`<div class="section" style="padding-top:4px">
       <p class="note">${cityName(day.cityId)} · 장소 ${day.summary.places}곳 · 이동 ${day.summary.travelMin}분(${Math.round(day.summary.travelShare * 100)}%${day.summary.warn ? " ⚠ 40% 초과" : ""}) · 도보 ${fmtDistance(day.summary.walkM)} · ${toHHMM(day.summary.start)}~${toHHMM(day.summary.end)}</p>
-      ${day.intercity && html`<div class="card" style="margin:0 0 8px"><div class="ico">🚆</div><div class="body"><div class="title">${cityName(day.intercity.from)} → ${cityName(day.intercity.to)}</div><div class="chips meta">${day.intercity.leg.options.map((o) => html`<${Chip} kind=${o === day.intercity.leg.best ? "ok" : "est"}>${modeKo(o.mode)} ${o.min >= 60 ? `${Math.floor(o.min / 60)}시간 ${o.min % 60}분` : `${o.min}분`}${perDayKo(o.perDay) ? ` · ${perDayKo(o.perDay)}` : ""}${o.confidence === "estimate" ? " (추정)" : ""}</${Chip}>`)}</div>${day.intercity.leg.best.link && html`<a class="note" href=${day.intercity.leg.best.link} target="_blank" rel="noopener">구글맵 경로 ↗</a>`}${day.intercity.leg.options.some((o) => o.confidence === "estimate") && html`<div class="note warnline estnote">${ESTIMATE_NOTE}</div>`}</div></div>`}
+      ${day.intercity && html`<div class="card" style="margin:0 0 8px"><div class="ico">🚆</div><div class="body"><div class="title">${cityName(day.intercity.from)} → ${cityName(day.intercity.to)}</div><div class="chips meta">${day.intercity.leg.options.map((o) => html`<${Chip} kind=${o === day.intercity.leg.best ? "ok" : "est"}>${modeKo(o.mode)} ${o.min >= 60 ? `${Math.floor(o.min / 60)}시간 ${o.min % 60}분` : `${o.min}분`}${perDayKo(o.perDay) ? ` · ${perDayKo(o.perDay)}` : ""}${o.confidence === "estimate" ? " (추정)" : ""}</${Chip}>`)}</div>${legLink(day.intercity) && html`<a class="note timetable" href=${legLink(day.intercity)} target="_blank" rel="noopener">${TIMETABLE_LINK_LABEL}</a>`}${day.intercity.leg.options.some((o) => o.mode === "train") && html`<div class="note trainnote">${TRAIN_NOTE}</div>`}${day.intercity.leg.options.some((o) => o.confidence === "estimate") && html`<div class="note warnline estnote">${ESTIMATE_NOTE}</div>`}</div></div>`}
       ${day.items.length === 0 && html`<p class="note">이 날에 배치된 장소가 없습니다.</p>`}
       ${day.items.map((it, k) => it.kind === "meal" ? html`<div class="row" style="padding:6px 0;color:var(--muted)">🍽 ${toHHMM(it.start)}–${toHHMM(it.end)} ${{ lunch: "점심", dinner: "저녁", snack: "간식" }[it.meal]} (슬롯)</div>` : (() => {
         const p = getPlace(it.id); if (!p) return null; const tr = it.travel;

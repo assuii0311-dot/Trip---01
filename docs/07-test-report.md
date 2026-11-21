@@ -148,3 +148,46 @@
 | #7 | 2026-11-15 | 화면 흐름 묶음 12(입력 3단계, 추천, 한 줄 설명), 장소 설명 239곳 |
 | #8 | 2026-11-16 | 묶음 13(기기 확인 8가지), 일정 생성 속도, 파일 한도, 매칭 규칙 재생성, 섬 행렬, 장소 설명 918곳 |
 | #9 | 2026-11-16 | 추천을 인기와 취향으로(D-049), 본토 도보 쌍 재계산(D-050), 여행지 대표 음식(D-046) |
+
+## 9. 도시 간 기차 값의 표본 대조 (2026-11-21, T-073, D-058)
+
+- 방법: 여행지끼리의 기차 쌍 381개에서 소요 구간별(60분 미만, 60~180분, 180분 초과)로 10쌍씩 난수(씨앗 20261121)로 뽑고 지정 3쌍을 더해 33쌍. 쌍마다 우리 계산이 고른 두 역의 좌표로 구글맵 길찾기(대중교통)를 한 번 열어, 화면에 나온 경로 가운데 가장 짧은 전체 소요와 우리 값을 견줬다. 조회는 2026-11-21 토요일 오전(스페인 시각)의 "지금 출발" 기준이다.
+- 판정: 차이가 10분과 우리 값의 15% 가운데 큰 쪽 안이면 일치. 구글의 값은 저장하지 않았다(D-018).
+- 결과(하위 5% 규칙): 일치 24, 구글이 김 6, 구글이 짧음 3. 가장 빠른 운행 규칙(D-055)으로는 일치 22, 구글이 김 8, 구글이 짧음 3.
+- 한계: 구글은 조회한 시각 뒤의 경로 몇 개만 보여 주므로 그날의 가장 빠른 열차가 화면에 없을 수 있다. 우리 값은 역에서 역까지의 직통 열차 시간이고 구글의 값은 걷는 구간과 갈아타기를 포함한다. 한 번의 조회라 요일과 시간대에 따라 판정이 달라질 수 있다.
+
+| 구간 | 견준 역 | 우리 값 | 하루 운행 | 판정(하위 5%) | 판정(가장 빠른 운행) |
+|---|---|---|---|---|---|
+| 사바델 → 테라사 | Sabadell Centre → Terrassa Estació del Nord | 10분 | 116.0회 | 일치 | 일치 |
+| 말라가 → 코르도바 | Málaga María Zambrano → Córdoba-Julio Anguita | 52분 | 16.8회 | 일치 | 일치 |
+| 코르도바 → 세비야 | Córdoba-Julio Anguita → Sevilla-Santa Justa | 52분 | 45.0회 | 일치 | 일치 |
+| 비토리아 → 팜플로나 | Vitoria-Gasteiz → Pamplona/Iruña | 57분 | 9.8회 | 구글이 김 | 구글이 김 |
+| 팜플로나 → 비토리아 | Pamplona/Iruña → Vitoria-Gasteiz | 53분 | 10.6회 | 일치 | 일치 |
+| 바르셀로나 → 사바델 | Barcelona Arc de Triomf → Sabadell Centre | 33분 | 54.6회 | 일치 | 일치 |
+| 히혼 → 오비에도 | Gijón-Sanz Crespo → Oviedo | 25분 | 66.9회 | 일치 | 일치 |
+| 바르셀로나 → 바달로나 | Barcelona Arc de Triomf → Sant Adrià de Besòs | 12분 | 123.1회 | 일치 | 일치 |
+| 마드리드 → 바야돌리드 | Madrid-Chamartín-Clara Campoamor → Valladolid-Campo Grande | 54분 | 43.6회 | 일치 | 일치 |
+| 세고비아 → 바야돌리드 | Segovia-Guiomar → Valladolid-Campo Grande | 32분 | 24.6회 | 일치 | 일치 |
+| 사라고사 → 비토리아 | Zaragoza Delicias → Vitoria-Gasteiz | 169분 | 9.6회 | 일치 | 일치 |
+| 바야돌리드 → 히혼 | Valladolid-Campo Grande → Gijón-Sanz Crespo | 162분 | 5.8회 | 일치 | 일치 |
+| 코르도바 → 카디스 | Córdoba-Julio Anguita → Puerto de Santa María | 140분 | 16.2회 | 일치 | 일치 |
+| 사라고사 → 팜플로나 | Zaragoza Delicias → Pamplona/Iruña | 107분 | 13.5회 | 일치 | 일치 |
+| 산세바스티안 → 비토리아 | San Sebastián-Donostia → Vitoria-Gasteiz | 105분 | 7.8회 | 일치 | 일치 |
+| 바야돌리드 → 레온 | Valladolid-Campo Grande → León | 62분 | 15.8회 | 일치 | 일치 |
+| 산세바스티안 → 팜플로나 | San Sebastián-Donostia → Pamplona/Iruña | 125분 | 1.8회 | 구글이 짧음 | 구글이 짧음 |
+| 라리네아데라콘셉시온 → 론다 | San Roque-La Línea → Ronda | 63분 | 6.0회 | 구글이 김 | 구글이 김 |
+| 바르셀로나 → 카스테욘데라플라나 | Barcelona-Sants → Castelló de la Plana | 115분 | 10.5회 | 일치 | 일치 |
+| 말라가 → 그라나다 | Málaga María Zambrano → Granada | 82분 | 3.0회 | 구글이 김 | 구글이 김 |
+| 비고 → 비토리아 | Vigo Urzaiz → Vitoria-Gasteiz | 529분 | 1.9회 | 구글이 김 | 구글이 김 |
+| 마드리드 → 론다 | Madrid-Puerta de Atocha-Almudena Grandes → Ronda | 238분 | 1.9회 | 일치 | 일치 |
+| 엘체 → 부르고스 | Elche/Elx AV → Burgos-Rosa Manzano | 249분 | 0.9회 | 구글이 김 | 구글이 김 |
+| 마드리드 → 라리네아데라콘셉시온 | Madrid-Puerta de Atocha-Almudena Grandes → San Roque-La Línea | 314분 | 1.0회 | 구글이 김 | 구글이 김 |
+| 코르도바 → 바르셀로나 | Córdoba-Julio Anguita → Barcelona-Sants | 321분 | 5.0회 | 일치 | 일치 |
+| 발렌시아 → 무르시아 | València-Estació del Nord → Murcia del Carmen | 228분 | 5.0회 | 구글이 짧음 | 구글이 짧음 |
+| 바르셀로나 → 말라가 | Barcelona-Sants → Málaga María Zambrano | 401분 | 1.0회 | 일치 | 일치 |
+| 세비야 → 사라고사 | Sevilla-Santa Justa → Zaragoza Delicias | 249분 | 2.0회 | 일치 | 일치 |
+| 타라고나 → 알리칸테 | Camp de Tarragona → Alicante/Alacant-Terminal | 282분 | 4.9회 | 구글이 짧음 | 구글이 짧음 |
+| 사라고사 → 산세바스티안 | Zaragoza Delicias → San Sebastián-Donostia | 265분 | 1.9회 | 일치 | 일치 |
+| 알칼라데에나레스 → 마드리드 | Alcalá de Henares → Madrid-Atocha Cercanías | 39분 | 108.4회 | 일치 | 구글이 김 |
+| 사라고사 → 타라고나 | Zaragoza Delicias → Camp de Tarragona | 62분 | 26.0회 | 일치 | 구글이 김 |
+| 바르셀로나 → 그라나다 | Barcelona-Sants → Granada | 452분 | 1.0회 | 일치 | 일치 |
