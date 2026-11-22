@@ -38,12 +38,18 @@ def parse_rows(bindings):
 
 
 def query(session, qids):
+    import requests
+    last = None
     for attempt in range(8):
-        r = session.get(SPARQL, params={"query": QUERY % " ".join("wd:" + q for q in qids)}, timeout=90)
+        try:
+            r = session.get(SPARQL, params={"query": QUERY % " ".join("wd:" + q for q in qids)}, timeout=90)
+        except requests.RequestException as e:  # 연결이 끊기면 쉬었다가 다시 한다
+            last = type(e).__name__; time.sleep(20); continue
         if r.status_code == 200:
             return parse_rows(r.json()["results"]["bindings"])
+        last = r.status_code
         time.sleep(min(int(r.headers.get("Retry-After") or 15), 120))
-    raise RuntimeError(f"재시도 초과({r.status_code})")
+    raise RuntimeError(f"재시도 초과({last})")
 
 
 def main():

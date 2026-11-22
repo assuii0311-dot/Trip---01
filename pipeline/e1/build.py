@@ -86,17 +86,21 @@ def main():
 
     groups, mstats = build_groups(wd, osm_places, list_en + list_es, rules=rules)
     log(f"매칭 그룹 {len(groups):,}건 {mstats}")
-    places, dropped = [], collections.Counter()
+    merged, dropped = [], collections.Counter()
     for g in groups.values():
         p = place_from_group(g, views)
         if not p:
             dropped["no_place"] += 1; continue
+        merged.append(p)
+    # 보정 표(4절 17항): 도시 귀속 전에 적용한다(좌표를 바로잡은 장소가 맞는 도시에 들어가게)
+    fix_doc = json.loads(pathlib.Path(a.fixes).read_text(encoding="utf-8")) if a.fixes and pathlib.Path(a.fixes).exists() else {}
+    merged, fix_report = fixes_mod.apply(merged, fix_doc.get("fixes") or [])
+    places = []
+    for p in merged:
         city, how = assign_city(boundaries, nearest, p["lat"], p["lon"], qid_by_ine, qid_by_name, known)
         p["city"] = city
         dropped[f"city_{how}"] += 1
         places.append(p)
-    fix_doc = json.loads(pathlib.Path(a.fixes).read_text(encoding="utf-8")) if a.fixes and pathlib.Path(a.fixes).exists() else {}
-    places, fix_report = fixes_mod.apply(places, fix_doc.get("fixes") or [])
     log(f"장소 {len(places):,}건 (제외·귀속 통계 {dict(dropped)}, 보정 표 {fix_report})")
 
     # 도시 레코드
