@@ -4,11 +4,14 @@
 - 내용 파일(pipeline/e5/content/destinations_ko.jsonl): 한 줄에 {id, page, summary_ko, name_ko, src_md5, generated}.
   요약은 영문 Wikivoyage 가이드 문서의 머리글과 Understand 절에 있는 사실만으로 쓴다(E5 4절 3항).
 - 검증: 길이(200자), 문장 끝, 금지어(평가어와 영업시간·가격·예약), 출처 해시. 출처 문서가 바뀌면(src_md5 불일치) 내보내지 않고 "낡음"으로 보고한다(E5 4절 6항).
-- 대표 음식(E5 4절 12항, D-046): 내용 파일(pipeline/e5/content/destinations_food_ko.jsonl)의 한 줄은 {id, page, food_ko, terms, src_md5, generated}.
+- 대표 음식(E5 4절 12항, D-046, D-061, D-062): 내용 파일(pipeline/e5/content/destinations_food_ko.jsonl)의 한 줄은
+  {id, page, food_ko, terms, src_md5, generated}에 선택 필드 src(출처 종류)와 gloss(뜻풀이 근거)가 붙는다.
   food_ko는 출처 문서의 먹거리 절(pages.jsonl의 eat)에 나오는 음식 이름 1~4개를 쉼표로 이은 한 줄(60자 이내)이고,
   terms는 그 음식들이 출처에 적힌 표기다. terms가 모두 먹거리 절에 있어야 내보낸다. 먹거리 절이 바뀌면(src_md5 불일치) 그 줄만 뺀다.
-- 순수 함수(validate, source_md5, build와 대표 음식의 validate_food, food_md5)는 네트워크와 파일을 모른다. 테스트는 pipeline/tests/test_e5.py.
-실행: python -I pipeline/run.py e5.destinations <내용 JSONL> <cities.json.gz> <wv_en/pages.jsonl> --out <data/e5/destinations.json.gz> [--food <대표 음식 JSONL>] [--stamp] [--stamp-food]
+  src가 "eswiki"나 "esvoy"면 출처는 E1 food_sections가 받은 스페인어 위키백과의 요리 절이나 스페인어 위키보이지의 먹거리 절이다(--food-sections).
+  gloss는 출처에 설명이 없어 위키백과의 음식 문서로 뜻풀이를 붙인 음식의 근거다({음식 이름: "언어:문서 제목"}).
+- 순수 함수(validate, source_md5, build와 대표 음식의 validate_food, food_md5, food_page)는 네트워크와 파일을 모른다. 테스트는 pipeline/tests/test_e5.py.
+실행: python -I pipeline/run.py e5.destinations <내용 JSONL> <cities.json.gz> <wv_en/pages.jsonl> --out <data/e5/destinations.json.gz> [--food <대표 음식 JSONL>] [--food-sections <food_sections.jsonl>] [--stamp] [--stamp-food]
   --stamp: 현재 출처 문서의 해시를 내용 파일에 적는다(새로 생성했거나 출처와 다시 대조한 뒤에만 쓴다).
   --stamp-food: 대표 음식 내용 파일에 먹거리 절의 해시를 적는다(같은 조건).
 """
@@ -26,6 +29,13 @@ BANNED = ("아름다", "멋진", "멋있", "환상적", "매력", "훌륭", "최
           "영업", "입장료", "예약", "유로", "€", "시간표", "요금")
 FOOD_MAX = 60
 FOOD_ITEMS = (1, 4)
+# 대표 음식의 출처 종류(E5 4절 12항, D-062): 언어와 문서 주소 머리. 내용 파일에 src가 없으면 영문 가이드(wv_en)다
+FOOD_SOURCES = {
+    "wv_en": ("en", "https://en.wikivoyage.org/wiki/"),
+    "eswiki": ("es", "https://es.wikipedia.org/wiki/"),
+    "esvoy": ("es", "https://es.wikivoyage.org/wiki/"),
+}
+GLOSS_LANGS = ("es", "en", "ko")  # 뜻풀이 근거로 쓰는 위키백과 언어판(D-061)
 
 
 def source_md5(page):
@@ -53,6 +63,15 @@ def validate(rec):
 def food_md5(page):
     """출처 문서의 먹거리 절로 만든 해시"""
     return hashlib.md5((page.get("eat") or "").encode("utf-8")).hexdigest()
+
+
+def food_page(rec, pages, sections=None):
+    """대표 음식 한 건의 출처 글({"eat": 글}). 영문 가이드는 pages에서, 다른 출처는 sections[(id, src)]에서 찾는다. 없으면 None."""
+    src = rec.get("src") or "wv_en"
+    if src == "wv_en":
+        return pages.get(rec.get("page"))
+    s = (sections or {}).get((rec["id"], src))
+    return {"eat": s.get("text") or ""} if s and s.get("title") == rec.get("page") else None
 
 
 def food_items(text):
@@ -87,14 +106,25 @@ def validate_food(rec, page=None):
     terms = rec.get("terms") or []
     if not terms:
         out.append("출처 표기(terms) 없음")
+    if (rec.get("src") or "wv_en") not in FOOD_SOURCES:
+        out.append(f"알 수 없는 출처 종류 '{rec.get('src')}'")
+    # 뜻풀이 근거(D-061): 출처에 설명이 없어 위키백과로 뜻풀이를 붙인 음식은 {음식 이름: "언어:문서 제목"}으로 적는다
+    for k, v in (rec.get("gloss") or {}).items():
+        if k not in s:
+            out.append(f"뜻풀이 근거의 음식 '{k}'이 한 줄에 없음")
+        lang, _, title = str(v).partition(":")
+        if lang not in GLOSS_LANGS or not title.strip():
+            out.append(f"뜻풀이 근거 형식 '{v}'(언어:문서 제목이 아님)")
     if page is not None:
         eat = (page.get("eat") or "").casefold()
         out += [f"출처에 없는 표기 '{w}'" for w in terms if w.casefold() not in eat]
     return out
 
 
-def build(content, cities, pages, generated=None, food=None):
+def build(content, cities, pages, generated=None, food=None, sections=None):
     """내보낼 객체와 보고서를 만든다.
+
+    sections: {(여행지 ID, 출처 종류): {title, text}}. 영문 가이드가 아닌 출처의 음식 관련 절(E1 food_sections의 출력, D-062).
 
     content: 내용 파일의 레코드 목록. cities: cities.json.gz의 레코드. pages: {문서 제목: {lead, understand}}.
     여행지(dest가 있는 레코드)이고 검증을 통과하며 출처 해시가 맞는 것만 내보낸다. 한국어 이름이 이미 있는 여행지의 name_ko는 쓰지 않는다.
@@ -122,24 +152,32 @@ def build(content, cities, pages, generated=None, food=None):
     for rec in sorted(food or [], key=lambda r: r["id"]):
         if rec["id"] not in items:
             report["food_orphan"].append(rec["id"]); continue
-        page = pages.get(rec.get("page"))
+        if "food" in items[rec["id"]]:
+            report["food_invalid"][rec["id"]] = ["한 여행지에 대표 음식이 두 줄"]; continue
+        page = food_page(rec, pages, sections)
         problems = validate_food(rec, page) if page else ["출처 문서 없음"]
         if problems:
             report["food_invalid"][rec["id"]] = problems; continue
         if food_md5(page) != rec.get("src_md5"):
             report["food_stale"].append(rec["id"]); continue
         items[rec["id"]]["food"] = rec["food_ko"]
+        src = rec.get("src") or "wv_en"
+        if src != "wv_en":  # 소개의 출처(영문 가이드)와 다른 문서에서 뽑은 음식은 그 문서를 출처 목록에 더한다
+            lang, base = FOOD_SOURCES[src]
+            items[rec["id"]]["sources"].append({"title": rec["page"], "lang": lang, "url": base + rec["page"].replace(" ", "_"), "license": LICENSE, "for": "food"})
     report["food"] = sum(1 for v in items.values() if v.get("food"))
     report["missing"] = sorted(i for i in dest_ids if i not in items)
     report["count"] = len(items); report["names"] = sum(1 for v in items.values() if v["name_ko"]); report["destinations"] = len(dest_ids)
     out = {"format": "trip01-e5-destinations", "version": 1, "generated": generated, "license": LICENSE,
-           "attribution": "출처: Wikivoyage(CC BY-SA 4.0) 영문 가이드를 바탕으로 만든 한국어 요약(생성본)", "items": items}
+           "attribution": "출처: Wikivoyage(CC BY-SA 4.0) 영문 가이드를 바탕으로 만든 한국어 요약(생성본)" + (
+               ". 대표 음식의 일부는 스페인어 위키백과의 요리 절과 스페인어 위키보이지의 먹거리 절(CC BY-SA 4.0)에서 뽑았다" if any(len(v["sources"]) > 1 for v in items.values()) else ""),
+           "items": items}
     return out, report
 
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("content"); ap.add_argument("cities"); ap.add_argument("pages"); ap.add_argument("--out", required=True); ap.add_argument("--stamp", action="store_true")
-    ap.add_argument("--food"); ap.add_argument("--stamp-food", action="store_true")
+    ap.add_argument("--food"); ap.add_argument("--stamp-food", action="store_true"); ap.add_argument("--food-sections")
     a = ap.parse_args()
     content = [json.loads(l) for l in open(a.content, encoding="utf-8") if l.strip()]
     cities = json.load(gzip.open(a.cities, "rt", encoding="utf-8"))
@@ -154,14 +192,19 @@ def main():
             for rec in content:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     food = [json.loads(l) for l in open(a.food, encoding="utf-8") if l.strip()] if a.food else []
+    sections = {}
+    if a.food_sections:
+        for l in open(a.food_sections, encoding="utf-8"):
+            r = json.loads(l); sections[(r["id"], r["src"])] = r
     if a.stamp_food:
         for rec in food:
-            if rec.get("page") in pages:
-                rec["src_md5"] = food_md5(pages[rec["page"]])
+            page = food_page(rec, pages, sections)
+            if page:
+                rec["src_md5"] = food_md5(page)
         with open(a.food, "w", encoding="utf-8") as f:
             for rec in food:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    out, report = build(content, cities, pages, generated=max((r.get("generated") or "" for r in content), default=None), food=food)
+    out, report = build(content, cities, pages, generated=max((r.get("generated") or "" for r in content), default=None), food=food, sections=sections)
     p = pathlib.Path(a.out); p.parent.mkdir(parents=True, exist_ok=True)
     with open(p, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as f:  # 시각과 파일 이름을 머리에 넣지 않아 같은 입력에 같은 바이트가 나온다
         f.write(json.dumps(out, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))

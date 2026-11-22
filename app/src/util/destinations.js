@@ -82,7 +82,7 @@ export const isPopular = (c) => Number.isFinite(c?.dest?.rank) && c.dest.rank <=
 
 /**
  * 여행지별 장소 조회수 표. 조회수(en+es)가 있는 1등급 장소만 담는다. 섬은 소속 지자체의 장소를 모은다.
- * 돌려주는 값: Map<여행지 ID, { total, rows: [[범주 배열, 조회수], ...] }>
+ * 돌려주는 값: Map<여행지 ID, { total, rows: [[범주 배열, 조회수, 장소], ...] }>
  */
 export function destViews(cities, tier1) {
   const destOf = new Map();
@@ -92,7 +92,7 @@ export function destViews(cities, tier1) {
     const d = destOf.get(p.city); if (!d) continue;
     const v = (p.pop?.pv?.en ?? 0) + (p.pop?.pv?.es ?? 0); if (!v) continue;
     let e = out.get(d); if (!e) out.set(d, (e = { total: 0, rows: [] }));
-    e.total += v; e.rows.push([p.cat, v]);
+    e.total += v; e.rows.push([p.cat, v, p]);
   }
   return out;
 }
@@ -117,6 +117,25 @@ export function tasteRanking(list, views, tastes = [], top = TASTE_TOP_N) {
   rows.map((r) => ({ ...r, score: (rm(r.mass) + rs(r.share)) / 2 }))
     .sort((a, b) => b.score - a.score || rank(a.c) - rank(b.c) || a.c.id.localeCompare(b.c.id))
     .forEach((r, i) => out.set(r.c.id, { score: Math.round(r.score * 1000) / 1000, mass: r.mass, share: r.share, order: i + 1, top: i < top && r.mass > 0 }));
+  return out;
+}
+
+/**
+ * 취향 추천의 이유(E2 4절 4-1항, D-059): 고른 취향 범주 가운데 그 여행지에서 조회수 합이 큰 범주부터 maxCats개,
+ * 범주마다 조회수가 큰 장소 maxPlaces곳. 한 장소가 두 범주에 들면 앞 범주에만 넣는다. 동점은 고른 순서와 받은 순서.
+ * view는 destViews의 한 여행지 값. 돌려주는 값: [{ cat, places: [장소, ...] }]. 맞는 장소가 없으면 빈 배열.
+ */
+export function tasteReasons(view, tastes = [], { maxCats = 2, maxPlaces = 2 } = {}) {
+  if (!view || !tastes.length) return [];
+  const per = tastes.map((cat, i) => { const rows = view.rows.filter(([cats]) => cats.includes(cat)); return { cat, i, rows, mass: rows.reduce((s, r) => s + r[1], 0) }; })
+    .filter((x) => x.mass > 0).sort((a, b) => b.mass - a.mass || a.i - b.i);
+  const seen = new Set(), out = [];
+  for (const x of per) {
+    if (out.length >= maxCats) break;
+    const places = x.rows.filter((r) => r[2] && !seen.has(r[2])).sort((a, b) => b[1] - a[1]).slice(0, maxPlaces).map((r) => r[2]);
+    places.forEach((p) => seen.add(p));
+    if (places.length) out.push({ cat: x.cat, places });
+  }
   return out;
 }
 

@@ -441,3 +441,34 @@ def test_wikidata_supplement_record_prefers_preferred_population():
     r = record_from_entity("Q5823", ent)
     assert r == {"qid": "Q5823", "cls": "Q2074737", "coord": "Point(-5.3 35.886667)", "pop": "83595", "sitelinks": "2", "p131": "Q29", "label_es": "Ceuta", "label_en": None, "label_ko": "세우타", "n_heritage": 0, "wv_en": True}
 
+
+
+# --- 음식 관련 절 수집(E5 4절 12항, D-062). 고정 입력은 2026-11-22에 받은 스페인어 위키백과·위키보이지 문서의 모양을 축약한 것.
+def test_food_sections_find_and_clean_the_section():
+    from pipeline.e1 import food_sections as fs
+    wiki = ("Intro.\n== Historia ==\nTexto.\n== Cultura ==\nMuseos.\n=== Gastronomía<ref>x</ref> ===\nEl plato típico es el '''salmorejo''' {{cita|x}} y el [[rabo de toro]].\n"
+            "{| class=\"wikitable\"\n| fila\n|}\n==== Dulces ====\nEl [[pastel cordobés|pastel]].\n<gallery>\nArchivo:Foto.jpg|pie\n</gallery>\n=== Fiestas ===\nLa feria.\n== Deporte ==\nFútbol.")
+    title, body = fs.find_section(wiki, ("gastronomia", "cocina"))
+    assert title == "Gastronomía" and "Dulces" in body and "Fiestas" not in body and "Deporte" not in body  # 하위 절은 품고, 같은 수준의 다음 절 앞에서 끝난다
+    text = fs.section_plain(body)
+    assert text == "El plato típico es el salmorejo y el rabo de toro.\nDulces.\nEl pastel."  # 틀·참조·표·사진 모음은 빠진다
+    assert fs.find_section(wiki, ("comer",), first=True) is None
+    voy = "== Comercio ==\nTiendas.\n== Comer y beber ==\nTapas en el centro.\n== Dormir ==\nHoteles."
+    assert fs.find_section(voy, ("comer",), first=True) == ("Comer y beber", "\nTapas en el centro.\n")  # 낱말로 견주므로 "Comercio"는 잡지 않는다
+    assert fs.find_section("== Dónde comer ==\nBares.", ("comer",), first=True) is None  # 가이드의 먹거리 절은 첫 낱말이 Comer다
+    assert fs.find_section("== Economía ==\n=== Cocina tradicional ===\nMigas.", ("gastronomia", "cocina"))[0] == "Cocina tradicional"
+    assert fs.find_section("== Cultura y gastronomía ==\nMigas.", ("gastronomia", "cocina"))[0] == "Cultura y gastronomía"
+    assert fs.find_section("== Fiestas y certámenes gastronómicos ==\nFeria.", ("gastronomia", "cocina")) is None  # 축제 목록은 요리 절이 아니다
+    assert fs.find_section("== Gastronomía{{Cita web|url=x}} ==\nPescado.", ("gastronomia", "cocina"))[0] == "Gastronomía"  # 제목에 붙은 틀은 뺀다
+    assert fs.section_plain("x" * 9000, 8000) == "x" * 8000
+
+
+def test_food_sections_targets_and_api_response():
+    from pipeline.e1 import food_sections as fs
+    cities = [{"id": "Q2", "dest": {"rank": 1}, "n": {"es": "Córdoba"}, "wiki": {"es": "Córdoba (España)"}}, {"id": "Q1", "dest": {"rank": 2}, "n": {"es": None}, "wiki": {"es": "Elche"}},
+              {"id": "Q3", "dest": {"rank": 3}, "n": {"es": "Sevilla"}, "wiki": {"es": "Sevilla"}}, {"id": "Q4", "n": {"es": "Pueblo"}, "wiki": {"es": "Pueblo"}}, {"id": "Q5", "dest": {"rank": 9}, "n": {}, "wiki": {}}]
+    assert fs.targets(cities, ["Q3"]) == [("Q1", {"eswiki": "Elche", "esvoy": "Elche"}), ("Q2", {"eswiki": "Córdoba (España)", "esvoy": "Córdoba"}), ("Q5", {})]  # 여행지만, 이미 있는 곳은 빼고 ID 순
+    data = {"query": {"normalized": [{"from": "elche", "to": "Elche"}], "redirects": [{"from": "Elche", "to": "Elche/Elx"}],
+                      "pages": {"1": {"title": "Elche/Elx", "revisions": [{"revid": 77, "slots": {"main": {"*": "== Comer ==\nArroz."}}}]}, "-1": {"title": "Nada", "missing": ""}}}}
+    assert fs.parse_revisions(data) == {"elche": ("Elche/Elx", 77, "== Comer ==\nArroz.")}  # 요청한 제목으로 되돌린다. 없는 문서는 빠진다
+    assert fs.parse_revisions({}) == {}

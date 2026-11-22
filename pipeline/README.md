@@ -82,10 +82,18 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 
 ```
 # 새로 생성했거나 출처와 다시 대조한 뒤에는 --stamp로 출처 해시를 적는다. 검증 실패나 낡은 항목이 있으면 종료 코드 1
-<venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz --food pipeline/e5/content/destinations_food_ko.jsonl [--stamp] [--stamp-food]
+<venv>/bin/python -I pipeline/run.py e5.destinations pipeline/e5/content/destinations_ko.jsonl data/cities.json.gz <루트>/e1/wv_en/pages.jsonl --out data/e5/destinations.json.gz --food pipeline/e5/content/destinations_food_ko.jsonl --food-sections <루트>/e1/food_sections.jsonl [--stamp] [--stamp-food]
 ```
 
 `--food`는 여행지 대표 음식 한 줄(E5 4절 12항, D-046)을 함께 내보낸다. 출처는 pages.jsonl의 `eat`(먹거리 절)이므로 `e1.wikivoyage`를 먼저 돌려 둔다. 내용 파일의 `terms`(출처에 적힌 음식 표기)가 먹거리 절에 없으면 그 줄은 내보내지 않는다. `--stamp-food`는 먹거리 절의 해시를 다시 적는다(새로 생성했거나 출처와 다시 대조한 뒤에만).
+
+영문 가이드에 음식 이름이 없는 여행지는 스페인어 위키백과의 요리 절과 스페인어 위키보이지의 먹거리 절을 출처로 쓴다(D-062). 그 절은 아래 명령으로 먼저 받는다(문서 원문을 5개씩 묶어 받는다. 약 4분, 식별 UA, 429를 받으면 Retry-After만큼 쉰다). 받은 글은 저장소에 넣지 않는다.
+
+```
+<venv>/bin/python -I pipeline/run.py e1.food_sections data/cities.json.gz <루트>/e1/food_sections.jsonl --skip pipeline/e5/content/destinations_food_ko.jsonl
+```
+
+`--skip`은 영문 가이드 출처의 줄이 이미 있는 여행지를 대상에서 뺀다. 가이드 중간 파일(`pages.jsonl`)은 2026-10-01자 enwikivoyage 덤프로 만든 것이어야 저장소의 내용 파일과 출처 해시가 맞는다(2026-11-01자 덤프로는 소개 4건과 대표 음식 1건이 "낡음"으로 걸린다. 2026-11-22 확인).
 
 ## 실행 순서 (E5 장소 한국어 설명)
 

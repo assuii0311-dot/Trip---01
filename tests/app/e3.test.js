@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { straightWalk, makeIntraIndex, walkTime, makeTransitIndex, transitEstimate, cityLeg, intercityLeg, PARAMS, makeIslandIndex, islandCar, perDayKo, TRAIN_NOTE, TIMETABLE_LINK_LABEL } from "../../app/src/engines/e3.js";
+import { straightWalk, makeIntraIndex, walkTime, makeTransitIndex, transitEstimate, cityLeg, intercityLeg, PARAMS, makeIslandIndex, islandCar, perDayKo, TRAIN_NOTE, TIMETABLE_LINK_LABEL, gmapsCityQuery, gmapsTransitCities } from "../../app/src/engines/e3.js";
 
 const A = { id: "a", lat: 40.4138, lon: -3.6921 }, B = { id: "b", lat: 40.4154, lon: -3.7074 }, C = { id: "c", lat: 40.4300, lon: -3.7100 };
 test("직선 추정: 우회 1.24, 4.5km/h", () => { const w = straightWalk(A, B); assert.ok(w.m > 1500 && w.m < 1800); assert.ok(w.min >= 20 && w.min <= 24); assert.equal(w.confidence, "estimate"); });
@@ -68,5 +68,15 @@ test("intercityLeg: 수단과 관계없이 실제 시간표 확인 링크가 붙
   const train = intercityLeg(inter.cities[0], inter.cities[1], inter); assert.ok(train.options.some((o) => o.mode === "train" && !o.link)); // 기차 선택지 자체에는 링크가 없다
   assert.equal(train.link, "https://www.google.com/maps/dir/?api=1&origin=40.400000,-3.700000&destination=41.400000,2.200000&travelmode=transit");
   const car = intercityLeg(inter.cities[0], inter.cities[2], inter); assert.equal(car.best.mode, "car"); assert.ok(car.link.includes("travelmode=transit") && car.link.includes("destination=40.500000,-3.400000"));
+  // 이름 링크(D-060): 스페인어 이름 → 현지 이름 → 위키백과 제목 순으로 쓰고 "España"를 붙인다. 이름이 없으면 좌표
+  const named = (id, n, wiki) => ({ id, lat: 37.4, lon: -6, n, wiki });
+  assert.equal(gmapsCityQuery(named("s", { es: "Sevilla", local: "Sevilla" })), "Sevilla%2C%20Espa%C3%B1a");
+  assert.equal(gmapsCityQuery(named("i", { es: "Ibiza", local: "Eivissa" })), "Ibiza%2C%20Espa%C3%B1a");
+  assert.equal(gmapsCityQuery(named("x", { es: null, local: "Xàbia" })), encodeURIComponent("Xàbia, España"));
+  assert.equal(gmapsCityQuery(named("e", { es: null, local: null, en: null, ko: "엘체" }, { es: "Elche" })), "Elche%2C%20Espa%C3%B1a");
+  assert.equal(gmapsCityQuery(named("z", { ko: "이름 없음" })), "37.400000,-6.000000");
+  assert.equal(gmapsTransitCities(named("s", { es: "Sevilla" }), named("c", { es: "Córdoba" })), "https://www.google.com/maps/dir/?api=1&origin=Sevilla%2C%20Espa%C3%B1a&destination=C%C3%B3rdoba%2C%20Espa%C3%B1a&travelmode=transit");
+  const inter2 = { ...inter, cities: [{ ...inter.cities[0], n: { es: "Madrid" } }, { ...inter.cities[1], n: { es: "Barcelona" } }, inter.cities[2]] };
+  assert.equal(intercityLeg(inter2.cities[0], inter2.cities[1], inter2).link, "https://www.google.com/maps/dir/?api=1&origin=Madrid%2C%20Espa%C3%B1a&destination=Barcelona%2C%20Espa%C3%B1a&travelmode=transit");
   assert.ok(TRAIN_NOTE.includes("역까지의 이동") && TIMETABLE_LINK_LABEL.includes("실제 시간표"));
 });
