@@ -140,7 +140,8 @@ def check_part(records, chunk, skipped=(), terms=None):
             out.append((i, "한글 이름 없음"))
         if not c["name_ko_needed"] and r.get("name_ko"):
             out.append((i, "한국어 이름이 이미 있는 장소인데 name_ko를 적음(null이어야 함)"))
-        name = c["names"].get("ko") or (r.get("name_ko") or "")
+        base = c["names"].get("ko")
+        name = (T.fixed_name(base, terms) if terms and base else base) or (r.get("name_ko") or "")  # 기준 이름도 표기 사전을 따른다(D-064)
         if name and not (r.get("summary_ko") or "").startswith(name):
             out.append((i, f"요약이 장소 이름({name})으로 시작하지 않음"))
         text = (r.get("summary_ko") or "") + (r.get("detail_ko") or "")
@@ -149,7 +150,7 @@ def check_part(records, chunk, skipped=(), terms=None):
         if "  " in text or "\t" in text:
             out.append((i, "공백이 겹치거나 탭이 있음"))
         if terms:
-            fixed = T.normalize_record(r, terms, None, c["names"].get("ko"))
+            fixed = T.normalize_record(r, terms, None)
             for f in T.FIELDS:
                 if (r.get(f) or None) != (fixed.get(f) or None):
                     out.append((i, f"표기 사전과 다른 표기({f}). 고친 꼴: {fixed[f][:60]}"))
@@ -186,9 +187,10 @@ def place_ctx(place, communities=None):
 
 def build(content, places, bundles, generated=None, terms=None, communities=None):
     """(샤드별 객체 {샤드: {장소 ID: 항목}}, 색인, 보고서). bundles: {장소 ID: 출처 묶음}
-    terms(표기 사전, E5 4절 13항)를 주면 사전과 다른 표기가 남은 장소를 보고서의 terms에 적는다(내보내기는 한다)."""
+    terms(표기 사전, E5 4절 13항)를 주면 사전과 다른 표기가 남은 장소를 보고서의 terms에 적는다(내보내기는 한다).
+    기준 데이터의 한국어 이름이 사전과 다르면 고친 이름을 색인의 name_fixes에 적는다(D-064). 앱이 그 이름을 쓴다."""
     by_id = {p["id"]: p for p in places}
-    shards, names, report = {}, {}, {"invalid": {}, "stale": [], "unknown": [], "no_source": [], "name_ignored": [], "terms": {}}
+    shards, names, fixes, report = {}, {}, {}, {"invalid": {}, "stale": [], "unknown": [], "no_source": [], "name_ignored": [], "terms": {}}
     for rec in sorted(content, key=lambda r: r["id"]):
         p = by_id.get(rec["id"])
         if not p:
@@ -197,9 +199,13 @@ def build(content, places, bundles, generated=None, terms=None, communities=None
         if problems:
             report["invalid"][rec["id"]] = problems; continue
         if terms:
-            bad = T.violations(rec, terms, place_ctx(p, communities), (p.get("n") or {}).get("ko"))
+            ctx = place_ctx(p, communities)
+            bad = T.violations(rec, terms, ctx)
             if bad:
                 report["terms"][rec["id"]] = bad
+            base = (p.get("n") or {}).get("ko")
+            if base and T.fixed_name(base, terms, ctx) != base:
+                fixes[rec["id"]] = T.fixed_name(base, terms, ctx)
         bundle = bundles.get(rec["id"]) or []
         if not bundle:
             report["no_source"].append(rec["id"]); continue
@@ -219,7 +225,9 @@ def build(content, places, bundles, generated=None, terms=None, communities=None
             names[rec["id"]] = name
     count = sum(len(v) for v in shards.values())
     index = {"format": "trip01-e5-index", "version": 1, "generated": generated, "license": LICENSE, "places": count, "place_shards": sorted(shards), "names": dict(sorted(names.items()))}
-    report["count"] = count; report["names"] = len(names)
+    if fixes:
+        index["name_fixes"] = dict(sorted(fixes.items()))
+    report["count"] = count; report["names"] = len(names); report["name_fixes"] = len(fixes)
     return shards, index, report
 
 
@@ -316,7 +324,7 @@ def main():
             out, changed = [], 0
             for r in rows:
                 p = by_id.get(r["id"]) or {}
-                fixed = T.normalize_record(r, terms, place_ctx(p, communities), (p.get("n") or {}).get("ko"))
+                fixed = T.normalize_record(r, terms, place_ctx(p, communities))
                 changed += fixed != r; out.append(fixed)
             if changed and not a.dry:
                 with open(path, "w", encoding="utf-8") as f:
@@ -358,7 +366,7 @@ def main():
         write_gz(out / "places" / f"{sh}.json.gz", items)
     (out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     write_gz(out / "lines.json.gz", {"format": "trip01-e5-lines", "version": 1, "generated": index["generated"], "license": LICENSE, "lines": one_liners(shards)})
-    print(f"장소 설명 {report['count']}건(샤드 {len(shards)}개, 이름 생성 {report['names']}건) → {out}")
+    print(f"장소 설명 {report['count']}건(샤드 {len(shards)}개, 이름 생성 {report['names']}건, 이름 보정 {report['name_fixes']}건) → {out}")
     for k in ("invalid", "stale", "unknown", "no_source", "name_ignored", "terms"):
         if report[k]:
             print(f"  {k}: {report[k]}")

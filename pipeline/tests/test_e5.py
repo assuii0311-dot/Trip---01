@@ -306,11 +306,14 @@ def test_terms_conditions_by_city_and_community():
     assert tm.applies({}, None) and not tm.applies({"city": {"Q1"}}, None)
 
 
-def test_terms_record_keeps_the_base_name_at_the_start_of_the_summary():
+def test_terms_record_changes_names_summary_and_detail_together():
     rec = {"id": "Q1", "name_ko": None, "summary_ko": "몬주이크는 바르셀로나의 언덕이다. 몬주이크성이 있다.", "detail_ko": "구시가에서 보인다."}
-    fixed = tm.normalize_record(rec, TERMS, None, "몬주이크")
-    assert fixed["summary_ko"] == "몬주이크는 바르셀로나의 언덕이다. 몬주익성이 있다." and fixed["detail_ko"] == "구시가지에서 보인다." and fixed["name_ko"] is None
-    assert tm.violations(rec, TERMS, None, "몬주이크") == ["summary_ko", "detail_ko"] and tm.violations(fixed, TERMS, None, "몬주이크") == []
+    fixed = tm.normalize_record(rec, TERMS)
+    # 기준 데이터에 이름이 있는 장소도 요약 맨 앞의 이름까지 바뀐다(D-064). 받침이 달라지므로 조사도 맞춘다
+    assert fixed["summary_ko"] == "몬주익은 바르셀로나의 언덕이다. 몬주익성이 있다." and fixed["detail_ko"] == "구시가지에서 보인다." and fixed["name_ko"] is None
+    assert tm.violations(rec, TERMS) == ["summary_ko", "detail_ko"] and tm.violations(fixed, TERMS) == []
+    assert tm.fixed_name("몬주이크", TERMS) == "몬주익" and tm.fixed_name("프라도 미술관", TERMS) == "프라도 미술관" and tm.fixed_name(None, TERMS) is None
+    assert tm.fixed_name("몬주이크 공동묘지", TERMS) == "몬주이크 공동묘지"  # 보존 구절로 둔 이름은 그대로
     gen = tm.normalize_record({"id": "Q2", "name_ko": "지로나 몬주이크성", "summary_ko": "지로나 몬주이크성은 요새다.", "detail_ko": None}, TERMS)
     assert gen["name_ko"] == "지로나 몬주익성" and gen["summary_ko"].startswith(gen["name_ko"]) and gen["detail_ko"] is None  # 생성한 이름과 요약 첫머리는 함께 바뀐다
 
@@ -322,6 +325,12 @@ def test_terms_in_part_check_and_build_report():
     msgs = [m for _, m in pl.check_part([rec], chunk, (), TERMS)]
     assert len(msgs) == 2 and all(m.startswith("표기 사전과 다른 표기") for m in msgs) and "몬주익 탑" in msgs[0]
     assert pl.check_part([tm.normalize_record(rec, TERMS)], chunk, (), TERMS) == []
+    # 기준 데이터에 이름이 있는 장소: 요약은 사전에 맞춘 이름으로 시작해야 한다(D-064)
+    base = [{"id": "Q9", "names": {"ko": "몬주이크"}, "name_ko_needed": False, "src_md5": "m"}]
+    ok = {"id": "Q9", "name_ko": None, "summary_ko": "몬주익은 바르셀로나의 언덕이다.", "detail_ko": None, "src_md5": "m", "generated": "2026-11-22"}
+    assert pl.check_part([ok], base, (), TERMS) == []
+    assert any("표기 사전과 다른 표기" in m for _, m in pl.check_part([{**ok, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}], base, (), TERMS))
+    assert pl.check_part([{**ok, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}], base) == []  # 사전을 주지 않으면 기준 이름 그대로 본다
     assert pl.place_ctx({"city": "Q11822"}, {"Q11822": "Q5705"}) == {"city": "Q11822", "community": "Q5705"} and pl.place_ctx({}, None) == {"city": None, "community": None}
 
 
@@ -330,7 +339,22 @@ def test_place_build_reports_terms_violations_but_still_exports():
     content = [{**REC, "detail_ko": "에이샴플라의 모더니즘 건물이다.\n몬주이크가 보인다.", "src_md5": pl.source_md5(b["Q461371"])}]
     shards, index, rep = pl.build(content, [PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})
     assert rep["terms"] == {"Q461371": ["detail_ko"]} and rep["count"] == 1  # 보고하되 내보내기는 한다
-    fixed = [tm.normalize_record(content[0], TERMS, pl.place_ctx(PLACE, {"Q1492": "Q5705"}), "카사 바트요")]
+    fixed = [tm.normalize_record(content[0], TERMS, pl.place_ctx(PLACE, {"Q1492": "Q5705"}))]
     assert fixed[0]["detail_ko"] == "에이샴플라의 모데르니스메 건물이다.\n몬주익이 보인다."
     assert pl.build(fixed, [PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})[2]["terms"] == {}
     assert pl.build(content, [PLACE, MONUMENT], b)[2]["terms"] == {}  # 사전을 주지 않으면 검사하지 않는다
+
+
+
+def test_place_build_exports_name_fixes_for_base_names_that_differ_from_the_terms():
+    hill = {**PLACE, "id": "Q1122701", "n": {"local": "Montjuïc", "ko": "몬주이크"}}
+    b = {"Q1122701": pl.source_bundle(hill, {("Q1122701", "en", "Barcelona/Eixample", 3): "A hill."}, {}), **bundles()}
+    rec = {"id": "Q1122701", "summary_ko": "몬주익은 바르셀로나의 언덕이다.", "detail_ko": "", "name_ko": None, "src_md5": pl.source_md5(b["Q1122701"]), "generated": "2026-11-22"}
+    cat = {**REC, "src_md5": pl.source_md5(b["Q461371"])}
+    shards, index, rep = pl.build([rec, cat], [hill, PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})
+    assert index["name_fixes"] == {"Q1122701": "몬주익"} and rep["name_fixes"] == 1 and rep["terms"] == {}  # 이름이 달라지는 곳만 적는다(카사 바트요는 없음)
+    assert shards[pl.shard_of("Q1122701")]["Q1122701"]["name_ko"] is None and "Q1122701" not in index["names"]
+    old = {**rec, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}
+    assert pl.build([old], [hill], b, terms=TERMS)[2]["terms"] == {"Q1122701": ["summary_ko"]}  # 요약이 옛 이름으로 시작하면 알린다
+    shards, index, rep = pl.build([old, cat], [hill, PLACE, MONUMENT], b)
+    assert "name_fixes" not in index and rep["name_fixes"] == 0  # 사전을 주지 않으면 예전과 같은 색인

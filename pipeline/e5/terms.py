@@ -112,22 +112,22 @@ def normalize(text, terms, ctx=None, protect=()):
     return text
 
 
-def normalize_record(rec, terms, ctx=None, base_name=None):
-    """한 장소의 생성 이름과 요약, 상세에 사전을 적용한 새 레코드. base_name은 기준 데이터에 있는 그 장소의 한국어 이름이다.
-    요약은 그 이름으로 시작해야 하므로(형식 검사) 요약 맨 앞의 이름은 바꾸지 않는다."""
+def fixed_name(name, terms, ctx=None):
+    """기준 데이터에 있는 한국어 이름을 사전에 맞춘 꼴(D-064). 달라지지 않으면 그대로 돌려준다."""
+    return normalize(name, terms, ctx) if name else name
+
+
+def normalize_record(rec, terms, ctx=None):
+    """한 장소의 생성 이름과 요약, 상세에 사전을 적용한 새 레코드.
+    기준 데이터에 한국어 이름이 있는 장소도 요약 맨 앞의 이름까지 함께 바뀐다(그 이름의 고친 꼴은 fixed_name)."""
     out = dict(rec)
     for f in FIELDS:
-        v = rec.get(f)
-        if not v:
-            continue
-        if f == "summary_ko" and base_name and v.startswith(base_name):
-            out[f] = base_name + normalize(v[len(base_name):], terms, ctx)
-        else:
-            out[f] = normalize(v, terms, ctx)
+        if rec.get(f):
+            out[f] = normalize(rec[f], terms, ctx)
     return out
 
 
-def violations(rec, terms, ctx=None, base_name=None):
+def violations(rec, terms, ctx=None):
     """사전과 다른 표기가 남은 필드 목록. 비어 있으면 통과."""
-    fixed = normalize_record(rec, terms, ctx, base_name)
+    fixed = normalize_record(rec, terms, ctx)
     return [f for f in FIELDS if (rec.get(f) or None) != (fixed.get(f) or None)]

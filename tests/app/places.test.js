@@ -34,6 +34,18 @@ test("applyPlaceKo: 한국어 이름이 없는 장소에만 생성 이름을 붙
   assert.ok(hasPlaceKoShard(index, "a3")); assert.ok(!hasPlaceKoShard(index, "ff")); assert.ok(!hasPlaceKoShard(null, "00")); assert.ok(!hasPlaceKoShard({}, "00"));
 });
 
+test("applyPlaceKo: 색인의 이름 보정은 기준 데이터의 한국어 이름을 바꾼다 (D-064)", () => {
+  // 고정 입력: 2026-11-22 내보내기의 name_fixes 모양(표기 사전과 다른 기준 이름 4곳)을 축약
+  const L = [{ id: "Q1122701", n: { local: "Montjuïc", ko: "몬주이크" } }, { id: "Q160112", n: { local: "Museo del Prado", ko: "프라도 미술관" } }, { id: "osm:n1", n: { local: "Café Pepe" } }];
+  const index = { names: { "osm:n1": "카페 페페" }, name_fixes: { Q1122701: "몬주익", "osm:n1": "카페" }, place_shards: [] };
+  const out = applyPlaceKo(L, index);
+  assert.equal(placeName(out[0]), "몬주익"); assert.equal(out[0].n.ko_src, "fixed"); assert.equal(out[0].n.local, "Montjuïc"); assert.equal(L[0].n.ko, "몬주이크"); // 입력은 바꾸지 않는다
+  assert.equal(out[1], L[1]); // 보정이 없는 장소는 그대로
+  assert.equal(placeName(out[2]), "카페 페페"); assert.equal(out[2].n.ko_src, "generated"); // 한국어 이름이 없던 장소는 보정 대상이 아니다(생성 이름을 쓴다)
+  assert.equal(applyPlaceKo(L, { names: {}, name_fixes: { Q1122701: "몬주이크" } })[0], L[0]); // 같은 이름이면 바꾸지 않는다
+  assert.deepEqual(applyPlaceKo(L, { names: {} }), L); // 보정이 없는 예전 색인
+});
+
 import { placeLine } from "../../app/src/data/places.js";
 test("한 줄 설명: 한국어 생성 설명의 첫 문장이 먼저, 없으면 Wikidata 설명 (D-039)", () => {
   const lines = { lines: { Q160112: "프라도 미술관은 마드리드에 있는 미술관이다." } };
