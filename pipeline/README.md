@@ -114,6 +114,10 @@ python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.
 <venv>/bin/python -I pipeline/run.py e5.places chunks <루트>/e5/gen/scope.json data/places_tier1.json.gz data/cities.json.gz data/sources <루트>/e5/wiki_extracts.jsonl <루트>/e5/gen/chunks
 <venv>/bin/python -I pipeline/run.py e5.places check pipeline/e5/content/parts/chunk_001.jsonl <루트>/e5/gen/chunks/chunk_001.json
 <venv>/bin/python -I pipeline/run.py e5.places merge pipeline/e5/content/places_ko.jsonl pipeline/e5/content/parts
+# 표기 사전 적용(D-063). 병합 뒤에 한 번 돌린다. 같은 파일에 다시 돌리면 0곳이다. --dry는 바뀔 곳만 센다
+<venv>/bin/python -I pipeline/run.py e5.places normalize pipeline/e5/content/terms_ko.json data/places_tier1.json.gz data/cities.json.gz pipeline/e5/content/places_ko.jsonl
+# 내보내기에 --terms와 --cities를 주면 사전과 다른 표기가 남은 장소를 보고한다(종료 코드 1)
+<venv>/bin/python -I pipeline/run.py e5.places build pipeline/e5/content/places_ko.jsonl data/places_tier1.json.gz data/sources <루트>/e5/wiki_extracts.jsonl --out data/e5 --terms pipeline/e5/content/terms_ko.json --cities data/cities.json.gz
 # 검수표(생성본과 출처 원문을 나란히)
 python3 -I scripts/places_review.py pipeline/e5/content/places_ko.jsonl <루트>/e5/sample_sources.json <루트>/e5/sample.json data/cities.json.gz <출력.md>
 ```

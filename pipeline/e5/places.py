@@ -23,6 +23,7 @@ import re
 import sys
 
 from .destinations import BANNED
+from . import terms as T
 
 SUMMARY_MAX = 200
 DETAIL_MAX = 1200
@@ -119,8 +120,9 @@ def make_chunks(ids, places, cities, bundles, size=40):
     return out
 
 
-def check_part(records, chunk, skipped=()):
-    """한 묶음의 생성 결과 검사. 문제 목록 [(장소 ID, 문구)]를 돌려준다. 비어 있으면 통과."""
+def check_part(records, chunk, skipped=(), terms=None):
+    """한 묶음의 생성 결과 검사. 문제 목록 [(장소 ID, 문구)]를 돌려준다. 비어 있으면 통과.
+    terms(표기 사전)를 주면 조건 없는 항목과 다른 표기도 문제로 본다(도시·자치주 조건이 붙은 항목은 병합 뒤 normalize가 맞춘다)."""
     want = {c["id"]: c for c in chunk}
     out, seen = [], set()
     for r in records:
@@ -138,7 +140,8 @@ def check_part(records, chunk, skipped=()):
             out.append((i, "한글 이름 없음"))
         if not c["name_ko_needed"] and r.get("name_ko"):
             out.append((i, "한국어 이름이 이미 있는 장소인데 name_ko를 적음(null이어야 함)"))
-        name = c["names"].get("ko") or (r.get("name_ko") or "")
+        base = c["names"].get("ko")
+        name = (T.fixed_name(base, terms) if terms and base else base) or (r.get("name_ko") or "")  # 기준 이름도 표기 사전을 따른다(D-064)
         if name and not (r.get("summary_ko") or "").startswith(name):
             out.append((i, f"요약이 장소 이름({name})으로 시작하지 않음"))
         text = (r.get("summary_ko") or "") + (r.get("detail_ko") or "")
@@ -146,6 +149,11 @@ def check_part(records, chunk, skipped=()):
             out.append((i, "괄호 짝이 맞지 않음"))
         if "  " in text or "\t" in text:
             out.append((i, "공백이 겹치거나 탭이 있음"))
+        if terms:
+            fixed = T.normalize_record(r, terms, None)
+            for f in T.FIELDS:
+                if (r.get(f) or None) != (fixed.get(f) or None):
+                    out.append((i, f"표기 사전과 다른 표기({f}). 고친 꼴: {fixed[f][:60]}"))
     out += [(i, "결과가 없음(만들거나 skipped에 사유를 적어야 함)") for i in want if i not in seen and i not in set(skipped)]
     return out
 
@@ -172,10 +180,17 @@ def attribution(bundle):
     return "출처: " + ", ".join(names) + ". 이 설명은 위 출처를 바탕으로 만든 생성본입니다."
 
 
-def build(content, places, bundles, generated=None):
-    """(샤드별 객체 {샤드: {장소 ID: 항목}}, 색인, 보고서). bundles: {장소 ID: 출처 묶음}"""
+def place_ctx(place, communities=None):
+    """표기 사전의 조건에 쓰는 장소의 도시와 자치주. communities: {지자체 ID: 자치주 ID}"""
+    return {"city": place.get("city"), "community": (communities or {}).get(place.get("city"))}
+
+
+def build(content, places, bundles, generated=None, terms=None, communities=None):
+    """(샤드별 객체 {샤드: {장소 ID: 항목}}, 색인, 보고서). bundles: {장소 ID: 출처 묶음}
+    terms(표기 사전, E5 4절 13항)를 주면 사전과 다른 표기가 남은 장소를 보고서의 terms에 적는다(내보내기는 한다).
+    기준 데이터의 한국어 이름이 사전과 다르면 고친 이름을 색인의 name_fixes에 적는다(D-064). 앱이 그 이름을 쓴다."""
     by_id = {p["id"]: p for p in places}
-    shards, names, report = {}, {}, {"invalid": {}, "stale": [], "unknown": [], "no_source": [], "name_ignored": []}
+    shards, names, fixes, report = {}, {}, {}, {"invalid": {}, "stale": [], "unknown": [], "no_source": [], "name_ignored": [], "terms": {}}
     for rec in sorted(content, key=lambda r: r["id"]):
         p = by_id.get(rec["id"])
         if not p:
@@ -183,6 +198,14 @@ def build(content, places, bundles, generated=None):
         problems = validate(rec)
         if problems:
             report["invalid"][rec["id"]] = problems; continue
+        if terms:
+            ctx = place_ctx(p, communities)
+            bad = T.violations(rec, terms, ctx)
+            if bad:
+                report["terms"][rec["id"]] = bad
+            base = (p.get("n") or {}).get("ko")
+            if base and T.fixed_name(base, terms, ctx) != base:
+                fixes[rec["id"]] = T.fixed_name(base, terms, ctx)
         bundle = bundles.get(rec["id"]) or []
         if not bundle:
             report["no_source"].append(rec["id"]); continue
@@ -202,7 +225,9 @@ def build(content, places, bundles, generated=None):
             names[rec["id"]] = name
     count = sum(len(v) for v in shards.values())
     index = {"format": "trip01-e5-index", "version": 1, "generated": generated, "license": LICENSE, "places": count, "place_shards": sorted(shards), "names": dict(sorted(names.items()))}
-    report["count"] = count; report["names"] = len(names)
+    if fixes:
+        index["name_fixes"] = dict(sorted(fixes.items()))
+    report["count"] = count; report["names"] = len(names); report["name_fixes"] = len(fixes)
     return shards, index, report
 
 
@@ -253,6 +278,8 @@ def main():
     ap = argparse.ArgumentParser(); sub = ap.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("dump"); [d.add_argument(x) for x in ("ids", "places", "sources", "extracts", "out")]
     b = sub.add_parser("build"); [b.add_argument(x) for x in ("content", "places", "sources", "extracts")]; b.add_argument("--out", required=True); b.add_argument("--stamp", action="store_true")
+    b.add_argument("--terms"); b.add_argument("--cities")
+    n = sub.add_parser("normalize"); [n.add_argument(x) for x in ("terms", "places", "cities")]; n.add_argument("files", nargs="+"); n.add_argument("--dry", action="store_true")
     c = sub.add_parser("chunks"); [c.add_argument(x) for x in ("ids", "places", "cities", "sources", "extracts", "out")]; c.add_argument("--size", type=int, default=40)
     c.add_argument("--ready-only", action="store_true"); c.add_argument("--limit", type=int, default=0)
     k = sub.add_parser("check"); [k.add_argument(x) for x in ("part", "chunk")]
@@ -280,11 +307,32 @@ def main():
         chunk = json.load(open(a.chunk, encoding="utf-8"))
         sk = pathlib.Path(a.part.replace(".jsonl", ".skipped.json"))
         skipped = [x["id"] for x in json.load(open(sk, encoding="utf-8"))] if sk.exists() else []
-        problems = check_part(rows, chunk, skipped)
+        tp = pathlib.Path(__file__).parent / "content" / "terms_ko.json"  # 표기 사전(E5 4절 13항)이 있으면 함께 본다
+        problems = check_part(rows, chunk, skipped, T.compile_terms(json.load(open(tp, encoding="utf-8"))) if tp.exists() else None)
         for i, msg in problems:
             print(f"  {i}: {msg}")
         print(f"검사: 장소 {len(rows)}곳(묶음 {len(chunk)}곳, 건너뜀 {len(skipped)}곳), 문제 {len(problems)}건")
         sys.exit(1 if problems else 0)
+    if a.cmd == "normalize":
+        # 표기 사전(E5 4절 13항, D-063)을 내용 파일이나 부분 파일에 적용한다. 같은 파일에 두 번 돌려도 결과가 같다
+        terms = T.compile_terms(json.load(open(a.terms, encoding="utf-8")))
+        by_id = {p["id"]: p for p in json.load(gzip.open(a.places, "rt", encoding="utf-8"))}
+        communities = {c["id"]: (c.get("region") or {}).get("community") for c in json.load(gzip.open(a.cities, "rt", encoding="utf-8"))}
+        total = 0
+        for path in a.files:
+            rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
+            out, changed = [], 0
+            for r in rows:
+                p = by_id.get(r["id"]) or {}
+                fixed = T.normalize_record(r, terms, place_ctx(p, communities))
+                changed += fixed != r; out.append(fixed)
+            if changed and not a.dry:
+                with open(path, "w", encoding="utf-8") as f:
+                    for r in out:
+                        f.write(json.dumps(r, ensure_ascii=False) + "\n")
+            total += changed
+            print(f"  {path}: 장소 {len(rows)}곳 중 {changed}곳{'이 바뀔 예정' if a.dry else '을 고쳤다'}")
+        print(f"표기 사전 적용: 파일 {len(a.files)}개, {total}곳"); return
     if a.cmd == "merge":
         cp = pathlib.Path(a.content)
         content = [json.loads(l) for l in open(cp, encoding="utf-8") if l.strip()] if cp.exists() else []
@@ -310,17 +358,19 @@ def main():
         with open(a.content, "w", encoding="utf-8") as f:
             for rec in content:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    shards, index, report = build(content, places, bundles, generated=max((r.get("generated") or "" for r in content), default=None))
+    terms = T.compile_terms(json.load(open(a.terms, encoding="utf-8"))) if a.terms else None
+    communities = {c["id"]: (c.get("region") or {}).get("community") for c in json.load(gzip.open(a.cities, "rt", encoding="utf-8"))} if a.cities else None
+    shards, index, report = build(content, places, bundles, generated=max((r.get("generated") or "" for r in content), default=None), terms=terms, communities=communities)
     out = pathlib.Path(a.out)
     for sh, items in shards.items():
         write_gz(out / "places" / f"{sh}.json.gz", items)
     (out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     write_gz(out / "lines.json.gz", {"format": "trip01-e5-lines", "version": 1, "generated": index["generated"], "license": LICENSE, "lines": one_liners(shards)})
-    print(f"장소 설명 {report['count']}건(샤드 {len(shards)}개, 이름 생성 {report['names']}건) → {out}")
-    for k in ("invalid", "stale", "unknown", "no_source", "name_ignored"):
+    print(f"장소 설명 {report['count']}건(샤드 {len(shards)}개, 이름 생성 {report['names']}건, 이름 보정 {report['name_fixes']}건) → {out}")
+    for k in ("invalid", "stale", "unknown", "no_source", "name_ignored", "terms"):
         if report[k]:
             print(f"  {k}: {report[k]}")
-    if report["invalid"] or report["stale"] or report["unknown"] or report["no_source"]:
+    if report["invalid"] or report["stale"] or report["unknown"] or report["no_source"] or report["terms"]:
         sys.exit(1)
 
 

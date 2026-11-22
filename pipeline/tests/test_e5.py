@@ -266,3 +266,95 @@ def test_build_attaches_food_from_other_sources_with_their_attribution():
     assert "food" not in out["items"]["Q8810"] and rep["food_stale"] == ["Q8810"] and rep["count"] == 1
     out, rep = e5.build([good], CITIES, pages, food=[FOOD, FOOD_ES], sections=SECTIONS)  # 한 여행지에 두 줄이면 먼저 나온 줄만 쓴다
     assert out["items"]["Q8810"]["food"] == FOOD["food_ko"] and rep["food_invalid"]["Q8810"] == ["한 여행지에 대표 음식이 두 줄"]
+
+
+# --- 표기 사전(E5 4절 13항, D-063). 고정 입력은 2026-11-22 조사에서 나온 사례를 축약한 것.
+from pipeline.e5 import terms as tm  # noqa: E402
+TERMS = tm.compile_terms({"keep": ["호안 미로", "몬주이크 공동묘지"], "terms": [
+    {"to": "몬주익", "from": ["몬주이크"]}, {"to": "산츠몬주익", "from": ["산츠-몬주익"]}, {"to": "조안 ", "re": "(?<![가-힣])호안 "},
+    {"to": "구시가지", "re": "구시가(?!지)"}, {"to": "주 의회", "re": "(?<![가-힣])(?:주의회|도의회)"},
+    {"to": "로제스", "re": "(?<![가-힣])로사스", "city": ["Q11822"]},
+    {"to": "모데르니스메", "from": ["모데르니스모", "모더니즘"], "community": ["Q5705"]}, {"to": "모데르니스모", "from": ["모데르니스메", "모더니즘"], "not_community": ["Q5705"]}]})
+
+
+def test_terms_normalize_replaces_variants_and_is_idempotent():
+    s = "산츠-몬주이크(Sants-Montjuïc) 지구의 구시가와 구시가지. 바르셀로나 도의회와 자치주의회. 호안 미로와 호안 로이그, 산트 호안 거리."
+    out = tm.normalize(s, TERMS)
+    assert out == "산츠몬주익(Sants-Montjuïc) 지구의 구시가지와 구시가지. 바르셀로나 주 의회와 자치주의회. 호안 미로와 조안 로이그, 산트 조안 거리."
+    assert tm.normalize(out, TERMS) == out  # 두 번 적용해도 같다
+    assert tm.normalize("몬주이크 공동묘지는 몬주이크 산에 있다.", TERMS) == "몬주이크 공동묘지는 몬주익 산에 있다."  # 보존 구절은 그대로
+    assert tm.normalize("몬주이크성", TERMS, protect=["몬주이크성"]) == "몬주이크성" and tm.normalize("", TERMS) == "" and tm.normalize(None, TERMS) is None
+
+
+def test_terms_fix_the_particle_when_the_final_consonant_changes():
+    f = lambda s, ctx=None: tm.normalize(s, TERMS, ctx)
+    assert f("몬주이크가 보인다. 몬주이크는 언덕이다. 몬주이크를 지나 몬주이크와 만나고 몬주이크로 간다.") == "몬주익이 보인다. 몬주익은 언덕이다. 몬주익을 지나 몬주익과 만나고 몬주익으로 간다."
+    assert f("언덕 이름은 몬주이크다. 몬주이크라는 이름, 몬주이크였다.") == "언덕 이름은 몬주익이다. 몬주익이라는 이름, 몬주익이었다."
+    assert f("몬주이크의 성, 몬주이크에 있는 몬주이크성, 몬주이크 가까이, 몬주이크(Montjuïc)") == "몬주익의 성, 몬주익에 있는 몬주익성, 몬주익 가까이, 몬주익(Montjuïc)"  # 받침과 무관한 조사와 이어지는 낱말은 그대로
+    assert f("몬주이크가도, 몬주이크나무") == "몬주익가도, 몬주익나무"  # 조사처럼 보여도 낱말이 이어지면 건드리지 않는다
+    cat = {"city": "Q1492", "community": "Q5705"}
+    assert f("모더니즘은 양식이다. 모더니즘이 퍼졌고 모더니즘을 대표하며 모더니즘과 모더니즘으로, 이것이 모더니즘이다.", cat) == "모데르니스메는 양식이다. 모데르니스메가 퍼졌고 모데르니스메를 대표하며 모데르니스메와 모데르니스메로, 이것이 모데르니스메다."
+    assert tm.josa_for("칼", "으로") == "로" and tm.josa_for("익", "로") == "으로" and tm.josa_for("Gaudí", "는") == "는" and tm.final_of("가") == 0 and tm.final_of("a") is None
+    assert tm.changes_final(["몬주이크"], "몬주익") and not tm.changes_final(["에이샴플레"], "에이샴플라")
+
+
+def test_terms_conditions_by_city_and_community():
+    assert tm.normalize("로사스에 있는 모더니즘 건물", TERMS) == "로사스에 있는 모더니즘 건물"  # 도시·자치주를 모르면 조건이 붙은 항목은 적용하지 않는다
+    assert tm.normalize("로사스에 있는 모더니즘 건물", TERMS, {"city": "Q11822", "community": "Q5705"}) == "로제스에 있는 모데르니스메 건물"
+    assert tm.normalize("글로사스와 로사스, 모데르니스메", TERMS, {"city": "Q2807", "community": "Q5756"}) == "글로사스와 로사스, 모데르니스모"  # 다른 도시의 로사스는 그대로, 카탈루냐 밖은 모데르니스모
+    assert tm.normalize("모데르니스메", TERMS, {"city": "Q1", "community": None}) == "모데르니스메"  # 자치주를 모르는 장소는 건드리지 않는다
+    assert tm.applies({}, None) and not tm.applies({"city": {"Q1"}}, None)
+
+
+def test_terms_record_changes_names_summary_and_detail_together():
+    rec = {"id": "Q1", "name_ko": None, "summary_ko": "몬주이크는 바르셀로나의 언덕이다. 몬주이크성이 있다.", "detail_ko": "구시가에서 보인다."}
+    fixed = tm.normalize_record(rec, TERMS)
+    # 기준 데이터에 이름이 있는 장소도 요약 맨 앞의 이름까지 바뀐다(D-064). 받침이 달라지므로 조사도 맞춘다
+    assert fixed["summary_ko"] == "몬주익은 바르셀로나의 언덕이다. 몬주익성이 있다." and fixed["detail_ko"] == "구시가지에서 보인다." and fixed["name_ko"] is None
+    assert tm.violations(rec, TERMS) == ["summary_ko", "detail_ko"] and tm.violations(fixed, TERMS) == []
+    assert tm.fixed_name("몬주이크", TERMS) == "몬주익" and tm.fixed_name("프라도 미술관", TERMS) == "프라도 미술관" and tm.fixed_name(None, TERMS) is None
+    assert tm.fixed_name("몬주이크 공동묘지", TERMS) == "몬주이크 공동묘지"  # 보존 구절로 둔 이름은 그대로
+    gen = tm.normalize_record({"id": "Q2", "name_ko": "지로나 몬주이크성", "summary_ko": "지로나 몬주이크성은 요새다.", "detail_ko": None}, TERMS)
+    assert gen["name_ko"] == "지로나 몬주익성" and gen["summary_ko"].startswith(gen["name_ko"]) and gen["detail_ko"] is None  # 생성한 이름과 요약 첫머리는 함께 바뀐다
+
+
+def test_terms_in_part_check_and_build_report():
+    chunk = [{"id": "Q1", "names": {}, "name_ko_needed": True, "src_md5": "m"}]
+    rec = {"id": "Q1", "name_ko": "몬주이크 탑", "summary_ko": "몬주이크 탑은 바르셀로나에 있는 탑이다.", "detail_ko": None, "src_md5": "m", "generated": "2026-11-22"}
+    assert pl.check_part([rec], chunk) == []  # 사전을 주지 않으면 예전과 같다
+    msgs = [m for _, m in pl.check_part([rec], chunk, (), TERMS)]
+    assert len(msgs) == 2 and all(m.startswith("표기 사전과 다른 표기") for m in msgs) and "몬주익 탑" in msgs[0]
+    assert pl.check_part([tm.normalize_record(rec, TERMS)], chunk, (), TERMS) == []
+    # 기준 데이터에 이름이 있는 장소: 요약은 사전에 맞춘 이름으로 시작해야 한다(D-064)
+    base = [{"id": "Q9", "names": {"ko": "몬주이크"}, "name_ko_needed": False, "src_md5": "m"}]
+    ok = {"id": "Q9", "name_ko": None, "summary_ko": "몬주익은 바르셀로나의 언덕이다.", "detail_ko": None, "src_md5": "m", "generated": "2026-11-22"}
+    assert pl.check_part([ok], base, (), TERMS) == []
+    assert any("표기 사전과 다른 표기" in m for _, m in pl.check_part([{**ok, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}], base, (), TERMS))
+    assert pl.check_part([{**ok, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}], base) == []  # 사전을 주지 않으면 기준 이름 그대로 본다
+    assert pl.place_ctx({"city": "Q11822"}, {"Q11822": "Q5705"}) == {"city": "Q11822", "community": "Q5705"} and pl.place_ctx({}, None) == {"city": None, "community": None}
+
+
+def test_place_build_reports_terms_violations_but_still_exports():
+    b = bundles()
+    content = [{**REC, "detail_ko": "에이샴플라의 모더니즘 건물이다.\n몬주이크가 보인다.", "src_md5": pl.source_md5(b["Q461371"])}]
+    shards, index, rep = pl.build(content, [PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})
+    assert rep["terms"] == {"Q461371": ["detail_ko"]} and rep["count"] == 1  # 보고하되 내보내기는 한다
+    fixed = [tm.normalize_record(content[0], TERMS, pl.place_ctx(PLACE, {"Q1492": "Q5705"}))]
+    assert fixed[0]["detail_ko"] == "에이샴플라의 모데르니스메 건물이다.\n몬주익이 보인다."
+    assert pl.build(fixed, [PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})[2]["terms"] == {}
+    assert pl.build(content, [PLACE, MONUMENT], b)[2]["terms"] == {}  # 사전을 주지 않으면 검사하지 않는다
+
+
+
+def test_place_build_exports_name_fixes_for_base_names_that_differ_from_the_terms():
+    hill = {**PLACE, "id": "Q1122701", "n": {"local": "Montjuïc", "ko": "몬주이크"}}
+    b = {"Q1122701": pl.source_bundle(hill, {("Q1122701", "en", "Barcelona/Eixample", 3): "A hill."}, {}), **bundles()}
+    rec = {"id": "Q1122701", "summary_ko": "몬주익은 바르셀로나의 언덕이다.", "detail_ko": "", "name_ko": None, "src_md5": pl.source_md5(b["Q1122701"]), "generated": "2026-11-22"}
+    cat = {**REC, "src_md5": pl.source_md5(b["Q461371"])}
+    shards, index, rep = pl.build([rec, cat], [hill, PLACE, MONUMENT], b, terms=TERMS, communities={"Q1492": "Q5705"})
+    assert index["name_fixes"] == {"Q1122701": "몬주익"} and rep["name_fixes"] == 1 and rep["terms"] == {}  # 이름이 달라지는 곳만 적는다(카사 바트요는 없음)
+    assert shards[pl.shard_of("Q1122701")]["Q1122701"]["name_ko"] is None and "Q1122701" not in index["names"]
+    old = {**rec, "summary_ko": "몬주이크는 바르셀로나의 언덕이다."}
+    assert pl.build([old], [hill], b, terms=TERMS)[2]["terms"] == {"Q1122701": ["summary_ko"]}  # 요약이 옛 이름으로 시작하면 알린다
+    shards, index, rep = pl.build([old, cat], [hill, PLACE, MONUMENT], b)
+    assert "name_fixes" not in index and rep["name_fixes"] == 0  # 사전을 주지 않으면 예전과 같은 색인

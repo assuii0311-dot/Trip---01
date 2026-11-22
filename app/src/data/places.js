@@ -52,13 +52,15 @@ export function sortByProminence(places) {
 /**
  * E5 색인의 생성 이름을 장소에 붙인다(E5 4절 4항·9항, D-033). 새 배열을 돌려주고 입력은 바꾸지 않는다.
  * 한국어 이름이 이미 있는 장소는 그대로 둔다. 붙인 이름은 n.ko_src를 "generated"로 표시한다.
+ * 색인의 name_fixes(E5 4절 13항, D-064)는 기준 데이터의 한국어 이름을 표기 사전에 맞춘 것이다. 있으면 그 이름으로 바꾸고 n.ko_src를 "fixed"로 표시한다.
  */
 export function applyPlaceKo(places, index, lines = null) {
-  const names = (index && index.names) || {}, ln = (lines && lines.lines) || {};
+  const names = (index && index.names) || {}, fixes = (index && index.name_fixes) || {}, ln = (lines && lines.lines) || {};
   return places.map((p) => {
+    const fixed = p.n?.ko && fixes[p.id] && fixes[p.id] !== p.n.ko ? fixes[p.id] : null;
     const name = names[p.id] && !p.n?.ko ? names[p.id] : null, line = ln[p.id] || null;
-    if (!name && !line) return p;
-    return { ...p, ...(name ? { n: { ...p.n, ko: name, ko_src: "generated" } } : {}), ...(line ? { line } : {}) };
+    if (!name && !fixed && !line) return p;
+    return { ...p, ...(name ? { n: { ...p.n, ko: name, ko_src: "generated" } } : fixed ? { n: { ...p.n, ko: fixed, ko_src: "fixed" } } : {}), ...(line ? { line } : {}) };
   });
 }
 
