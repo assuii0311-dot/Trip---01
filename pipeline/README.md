@@ -8,6 +8,9 @@
 
 ```
 # 0) 원시 데이터: <루트>/wikidata/*.jsonl, P1435.jsonl, sitelinks.jsonl (poc/wikidata_*.py), <루트>/osm/out/pois.jsonl (poc/osm_extract.py)
+#    순서: wikidata_collect.py collect → wikidata_heritage.py → osm_extract.py → wikivoyage_parse.py(영문, <루트>/wikivoyage_en/out) → wikidata_sitelinks.py
+#    wikidata_collect.py는 받지 못한 클래스가 있으면 끝에 알리고 종료 코드 1로 끝난다. 그 클래스만 collect-one으로 다시 받는다
+#    받은 뒤 counts 모드의 클래스별 건수와 받은 파일의 고유 QID 수를 견주어 빠진 것이 없는지 본다(2026-11-22: 34개 클래스 일치)
 #    OSM은 스페인 추출본과 카나리아 추출본 두 개다(D-031). 카나리아는 poc/osm_extract.py <canarias.osm.pbf> <루트>/osm_canarias/out 으로 따로 뽑는다
 #    수집 질의에서 빠진 지자체(config.MUNICIPALITY_SUPPLEMENT, 세우타)는 하나씩 받아 지자체 파일에 보탠다. 그 뒤 3)과 5)를 돌려야 이름과 조회수가 채워진다
 <venv>/bin/python -I pipeline/run.py e1.wikidata_supplement <루트>/wikidata
@@ -20,6 +23,8 @@
 #    추출본에서 경계선이 잘려 다각형으로 조립되지 않은 스페인 지자체(세우타)는 경계선 점들의 볼록 껍질로 보탠다(근사, 레코드에 approx. 약 5분 더 걸린다)
 # 3) 라벨·설명·위키 제목 (SPARQL, 100개 묶음 초당 1회, 약 25분. 중단 후 재개 가능)
 <venv>/bin/python -I pipeline/e1/wikidata_labels.py <루트>/wikidata <루트>/e1/labels.jsonl
+# 3-1) 공통 라벨(mul): 스페인어나 영어 라벨이 없는 항목의 공통 라벨을 받는다(200개 묶음, 약 10분. 중단 후 재개 가능). 6)의 --mul로 넘기면 이름의 빈칸을 채운다(D-066)
+<venv>/bin/python -I pipeline/run.py e1.wikidata_mul <루트>/wikidata <루트>/e1/labels.jsonl <루트>/e1/labels_mul.jsonl
 # 4) 공항(D-029)과 섬(D-030). 섬 폴리곤은 스페인 추출본과 카나리아 추출본에서 따로 뽑는다(openstreetmap.fr 스페인 추출본에 카나리아 제도가 없다)
 <venv>/bin/python -I pipeline/run.py e1.airports <루트>/e1/airports_wd.jsonl
 <venv>/bin/python -I pipeline/e1/osm_islands.py <spain.osm.pbf> <루트>/e1/islands_osm.jsonl            # 약 2분 30초
@@ -28,9 +33,12 @@
 # 5) 페이지뷰 월평균 (월간 덤프 하나당 약 20분). 섬 문서 제목(islands_wd.jsonl)도 함께 넣는다
 <venv>/bin/python -I pipeline/run.py e1.pageviews <루트>/e1/views.jsonl <루트>/wikidata/sitelinks.jsonl <루트>/e1/labels.jsonl <루트>/e1/islands_wd.jsonl -- <덤프1.bz2> <덤프2.bz2> ...
 # 6) 통합과 파일 생성 (전체 약 5분). --bbox S,W,N,E 로 범위를 줄여 시험할 수 있다
-<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --views <루트>/e1/views.jsonl \
+<venv>/bin/python -I pipeline/run.py e1.build <루트> data --labels <루트>/e1/labels.jsonl --mul <루트>/e1/labels_mul.jsonl --views <루트>/e1/views.jsonl \
   --boundaries <루트>/e1/boundaries.jsonl <루트>/e1/boundaries_canarias.jsonl --osm-extra <루트>/osm_canarias/out/pois.jsonl \
   --airports <루트>/e1/airports_wd.jsonl --islands <루트>/e1/islands_osm.jsonl <루트>/e1/islands_osm_canarias.jsonl --islands-wd <루트>/e1/islands_wd.jsonl
+#    보정 표(pipeline/e1/fixes.json, E1 4절 17항)는 기본으로 적용된다(--fixes로 다른 파일을 줄 수 있다). 적용한 수와 표에만 있는 ID는 crossval_report.json의 fixes에 적힌다
+#    묶기 규칙 M1 ~ M8(E1 4절 4항)은 기본으로 모두 켠다. --rules M1,M3 처럼 일부만 켜거나 --rules none으로 끌 수 있다(시험과 진단용)
+#    압축 파일은 머리말의 시각을 고정해 쓴다. 같은 입력이면 파일의 바이트까지 같다
 # 7) 여행지 목록 검수표(D-030). 검수 결과는 pipeline/e1/config.py의 DEST_OVERRIDES에 반영하고 6)을 다시 돌린다
 python3 -I scripts/destinations_report.py data/cities.json.gz data/regions.json.gz data/airports.json.gz <출력.md> [data/e5/destinations.json.gz]
 ```

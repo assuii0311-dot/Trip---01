@@ -28,12 +28,39 @@ MAGIC_RE = re.compile(r"__[A-Z]+__")
 EXTLINK_RE = re.compile(r"\[https?://[^\s\]]+\s*([^\]]*)\]")  # [주소 글자] → 글자. 머리글(lead)에만 적용한다
 
 
+BROKEN_EXT_RE = re.compile(r"\[\[(https?://[^\s\]]+)\s+([^\]]*)\](?!\])")  # "[[주소 글자]"처럼 대괄호가 어긋난 바깥 링크 → "[주소 글자]"
+
+
+def drop_broken_templates(t):
+    """정규식으로 지워지지 않은 틀을 지운다(T-067). 원문의 중괄호가 어긋난 경우다("{{pagebanner|{}}}", 중간에 "}" 하나가 든 목록 틀).
+    여는 표시에서 다음 닫는 표시까지 지우고, 닫는 표시가 없으면 그 문단 끝까지 지운다. 남은 닫는 표시도 지운다."""
+    while True:
+        a = t.find("{{")
+        if a < 0:
+            break
+        b = t.find("}}", a + 2)
+        if b >= 0:
+            b += 2
+            while b < len(t) and t[b] == "}":
+                b += 1
+        else:
+            m = re.search(r"\n\s*\n", t[a:])
+            b = a + m.start() if m else len(t)
+        t = t[:a] + t[b:]
+    return t.replace("}}", "")
+
+
 def plain(wikitext, limit=4000):
     """위키텍스트를 읽을 수 있는 평문으로. 템플릿·참조·태그 제거, 링크는 표시 글자만."""
     t = REF_RE.sub("", wikitext)
     t = FILE_RE.sub("", t)
-    for _ in range(3):
-        t = TEMPLATE_RE.sub("", t)
+    for _ in range(10):  # 겹친 틀은 안쪽부터 지워진다. 더 지울 것이 없을 때까지
+        t2 = TEMPLATE_RE.sub("", t)
+        if t2 == t:
+            break
+        t = t2
+    t = drop_broken_templates(t)
+    t = BROKEN_EXT_RE.sub(r"[\1 \2]", t)
     t = LINK_RE.sub(r"\1", t)
     t = TAG_RE.sub("", t)
     t = BOLD_RE.sub("", t)

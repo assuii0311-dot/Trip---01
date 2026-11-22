@@ -5,8 +5,10 @@ import pathlib
 
 from shapely import wkb
 from shapely.geometry import Point
+from shapely.ops import nearest_points
 from shapely.strtree import STRtree
 
+from . import config as C
 from .match import Grid, hav
 
 
@@ -50,6 +52,21 @@ class Boundaries:
         rows = self.lookup_all(level, lat, lon)
         return rows[0] if rows else None
 
+    def lookup_near(self, level, lat, lon, max_m=C.ADMIN_NEAR_M):
+        """max_m 안에서 가장 가까운 경계(같으면 osm_id 순). 점을 포함하는 경계가 없을 때 쓴다: 해안 도시의 중심 좌표가 경계에서 바다 쪽으로 벗어난 경우(말라가, 마타로)."""
+        tree = self.trees.get(level)
+        if tree is None:
+            return None
+        p = Point(lon, lat)
+        best = None
+        for i in tree.query(p.buffer(max_m / 60000.0)):  # 후보는 넉넉히 잡고(위도 1도는 약 111km) 거리는 미터로 다시 잰다
+            r = self.by_level[level][int(i)]
+            q = nearest_points(r["geom"], p)[0]
+            d = hav(lat, lon, q.y, q.x)
+            if d <= max_m and (best is None or (d, r["osm_id"]) < (best[0], best[1]["osm_id"])):
+                best = (d, r)
+        return best[1] if best else None
+
 
 class Nearest:
     """최근접 지자체(좌표 보유 Wikidata 지자체). 격자 색인으로 50km 안에서 찾는다."""
@@ -91,7 +108,8 @@ def assign_city(boundaries, nearest, lat, lon, qid_by_ine, qid_by_boundary_name,
 
 
 def assign_admin(boundaries, lat, lon):
-    """(자치주 경계, 주 경계)"""
+    """(자치주 경계, 주 경계). 점을 포함하는 경계가 없으면 가까운 경계(lookup_near)."""
     if not boundaries:
         return None, None
-    return boundaries.lookup("4", lat, lon), boundaries.lookup("6", lat, lon)
+    return (boundaries.lookup("4", lat, lon) or boundaries.lookup_near("4", lat, lon),
+            boundaries.lookup("6", lat, lon) or boundaries.lookup_near("6", lat, lon))

@@ -15,11 +15,12 @@ import urllib.parse
 UA = "place-data-pipeline/0.1 (batch; 1 req/s)"
 SPARQL = "https://query.wikidata.org/sparql"
 BATCH = 100
-QUERY = """SELECT ?i ?len ?les ?lko ?enwiki ?eswiki ?kowiki ?envoy WHERE {
+QUERY = """SELECT ?i ?len ?les ?lko ?lmul ?enwiki ?eswiki ?kowiki ?envoy WHERE {
   VALUES ?i { %s }
   OPTIONAL { ?i rdfs:label ?len FILTER(LANG(?len)="en") }
   OPTIONAL { ?i rdfs:label ?les FILTER(LANG(?les)="es") }
   OPTIONAL { ?i rdfs:label ?lko FILTER(LANG(?lko)="ko") }
+  OPTIONAL { ?i rdfs:label ?lmul FILTER(LANG(?lmul)="mul") }
   OPTIONAL { ?enwiki schema:about ?i ; schema:isPartOf <https://en.wikipedia.org/> }
   OPTIONAL { ?eswiki schema:about ?i ; schema:isPartOf <https://es.wikipedia.org/> }
   OPTIONAL { ?kowiki schema:about ?i ; schema:isPartOf <https://ko.wikipedia.org/> }
@@ -47,7 +48,7 @@ def title_of(url):
 
 def parse_rows(bindings):
     g = lambda b, k: b.get(k, {}).get("value")
-    by = {}
+    by, mul = {}, {}
     for b in bindings:
         q = g(b, "i").rsplit("/", 1)[-1]
         it = by.setdefault(q, {"qid": q, "label_en": None, "label_es": None, "label_ko": None, "enwiki": None, "eswiki": None, "kowiki": None, "enwikivoyage": None})
@@ -55,6 +56,10 @@ def parse_rows(bindings):
             it[dst] = it[dst] or g(b, src)
         for src, dst in (("enwiki", "enwiki"), ("eswiki", "eswiki"), ("kowiki", "kowiki"), ("envoy", "enwikivoyage")):
             it[dst] = it[dst] or title_of(g(b, src))
+        mul[q] = mul.get(q) or g(b, "lmul")
+    for q, it in by.items():  # 스페인어·영어 라벨이 없으면 공통 라벨(mul)로 채운다(D-066. 메노르카 등)
+        for dst in ("label_en", "label_es"):
+            it[dst] = it[dst] or mul.get(q)
     return [by[q] for q in sorted(by)]
 
 

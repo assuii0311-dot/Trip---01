@@ -378,10 +378,14 @@ def test_qid_tagged_osm_of_other_kind_is_detached_or_keeps_wikidata_name():
           "Q2": wd_item("Q2", 36.01, -5.60, "Castillo de Tarifa", "Castle of Tarifa", classes=("Q23413",), sitelinks=5)}
     osm = [osm_poi("n1", 43.0001, -5.0001, "Bar La Estación", key="amenity", value="bar", wikidata="Q1"),
            osm_poi("w2", 36.0101, -5.6001, "Ayuntamiento de Tarifa", key="historic", value="castle", wikidata="Q2")]
-    groups, stats = build_groups(wd, osm, [])
+    groups, stats = build_groups(wd, osm, [], rules=())  # 2026-11-16의 규칙만(M 규칙 없이)
     assert stats["osm_qid_detached"] == 1 and stats["osm_qid_wdname"] == 1
     assert groups["Q1"]["osm"] == [] and place_from_group(groups["Q1"], {}) is None
     bar = place_from_group(groups["osm:n1"], {}); assert bar["cat"] == ["cafe"] and bar["n"]["local"] == "Bar La Estación"
+    # 지금 규칙(M3): 관광 범주가 없는 역 항목은 묶음을 만들지 않는다. 술집은 그대로 독립 장소다
+    now, stats_now = build_groups(wd, osm, [])
+    assert "Q1" not in now and stats_now["osm_qid_wdname"] == 1 and place_from_group(now["osm:n1"], {})["cat"] == ["cafe"]
+    groups = now
     castle = place_from_group(groups["Q2"], {})
     assert castle["n"]["local"] == "Castillo de Tarifa" and castle["cs"] == "wikidata" and castle["cat"] == ["heritage"]
     # 범주만 다르고(문화재로만 분류된 수도원) 이름의 종류가 같으면 그대로 묶는다
@@ -472,3 +476,171 @@ def test_food_sections_targets_and_api_response():
                       "pages": {"1": {"title": "Elche/Elx", "revisions": [{"revid": 77, "slots": {"main": {"*": "== Comer ==\nArroz."}}}]}, "-1": {"title": "Nada", "missing": ""}}}}
     assert fs.parse_revisions(data) == {"elche": ("Elche/Elx", 77, "== Comer ==\nArroz.")}  # 요청한 제목으로 되돌린다. 없는 문서는 빠진다
     assert fs.parse_revisions({}) == {}
+
+
+# ── 2026-11-22 규칙 M1 ~ M8(E1 4절 4항, D-066). 고정 입력은 기준선에서 확인한 실제 사례를 줄인 것이다 ──
+def test_m1_m2_tagged_elements_first_and_as_representative():
+    # 산루카르의 Las Covachas(Q106602817): 태그 없는 시청이 먼저 읽혀도, 태그로 묶인 요소가 있는 항목에는 붙지 않는다
+    wd = {"Q1": wd_item("Q1", 36.7780, -6.3530, "Las Covachas de Sanlúcar de Barrameda", classes=(), heritage=["Q23712"])}
+    osm = [osm_poi("n1", 36.7789, -6.3534, "Ayuntamiento de Sanlúcar de Barrameda", key="amenity", value="townhall"),
+           osm_poi("w2", 36.7781, -6.3531, "Las Covachas", key="tourism", value="attraction", wikidata="Q1")]
+    old, _ = build_groups(wd, osm, [], rules=())
+    assert [o["id"] for o in old["Q1"]["osm"]] == ["n1", "w2"] and place_from_group(old["Q1"], {})["n"]["local"].startswith("Ayuntamiento")
+    groups, _ = build_groups(wd, osm, [])
+    assert [o["id"] for o in groups["Q1"]["osm"]] == ["w2"] and "osm:n1" in groups
+    assert place_from_group(groups["Q1"], {})["n"]["local"] == "Las Covachas"
+    # M2만 켜도 대표 요소는 태그로 묶인 것이다(좌표·이름으로 붙은 요소는 대표가 되지 못한다)
+    m2, _ = build_groups(wd, osm, [], rules={"M2"})
+    assert len(m2["Q1"]["osm"]) == 2 and place_from_group(m2["Q1"], {})["n"]["local"] == "Las Covachas"
+
+
+def test_m3_station_without_tourist_category_does_not_absorb_neighbours():
+    # 빌바오 우리바리역(Q3497383)에 101m 떨어진 공원이 붙어 "공원" 장소가 역의 글을 달고 있었다
+    wd = {"Q1": wd_item("Q1", 43.2700, -2.9200, "Estación de Uribarri", "Uribarri station", classes=("Q55488",)),
+          "Q2": wd_item("Q2", 42.7000, -0.5200, "Estación de Canfranc", classes=("Q55488",), heritage=["Q23712"])}
+    osm = [osm_poi("w1", 43.2706, -2.9206, "Campa Escuelas Uribarri", key="leisure", value="park"),
+           osm_poi("w2", 42.7001, -0.5201, "Estación Internacional de Canfranc", key="historic", value="building")]
+    old, _ = build_groups(wd, osm, [], rules=())
+    assert [o["id"] for o in old["Q1"]["osm"]] == ["w1"] and place_from_group(old["Q1"], {})["cat"] == ["park"]
+    groups, _ = build_groups(wd, osm, [])
+    assert "Q1" not in groups and place_from_group(groups["osm:w1"], {})["n"]["local"] == "Campa Escuelas Uribarri"
+    assert [o["id"] for o in groups["Q2"]["osm"]] == ["w2"]  # 문화유산으로 지정된 역은 그대로 장소다
+
+
+def test_m4_accessories_need_near_identical_names():
+    # 말라가의 다리(Q1824133)에 건설 기념 명판이, 발렌시아의 광장(Q1031982)에 분수가 붙어 이름과 좌표를 차지했다
+    wd = {"Q1": wd_item("Q1", 36.7200, -4.4270, "puente de los Alemanes", "Puente de Santo Domingo", classes=("Q12280",)),
+          "Q2": wd_item("Q2", 39.4700, -0.3760, "Plaza del Ayuntamiento", "Plaça de l'Ajuntament", classes=("Q174782",)),
+          "Q3": wd_item("Q3", 41.3758, 2.1778, "Monumento a Colón", "Columbus Monument", classes=("Q4989906",)),
+          "Q4": wd_item("Q4", 37.8850, -4.7720, "Iglesia de San Pedro Apóstol", classes=("Q16970",), heritage=["Q23712"])}
+    osm = [osm_poi("n1", 36.7201, -4.4270, "Placa a la Construcción del Puente de los Alemanes", key="historic", value="memorial"),
+           osm_poi("w2", 39.4701, -0.3761, "Font de la Plaça de l'Ajuntament", key="amenity", value="fountain"),
+           osm_poi("n3", 41.3758, 2.1779, "Monument a Colom", key="historic", value="memorial"),
+           osm_poi("n4", 37.8851, -4.7721, "Homenaje a Juan de Mesa y Velasco", key="tourism", value="artwork", wikidata="Q4")]
+    old, _ = build_groups(wd, osm, [], rules=())
+    assert [o["id"] for o in old["Q1"]["osm"]] == ["n1"] and [o["id"] for o in old["Q2"]["osm"]] == ["w2"]
+    assert place_from_group(old["Q4"], {})["n"]["local"] == "Homenaje a Juan de Mesa y Velasco"
+    groups, stats = build_groups(wd, osm, [])
+    assert groups["Q1"]["osm"] == [] and groups["Q2"]["osm"] == [] and "osm:n1" in groups and "osm:w2" in groups
+    assert [o["id"] for o in groups["Q3"]["osm"]] == ["n3"]  # 상대 이름에도 기념물 낱말이 있으면 보통 규칙대로 묶인다
+    # 성당의 식별자가 붙은 조형물: 이름이 맞지 않고 범주도 겹치지 않아 떼어 낸다. 성당은 Wikidata 좌표로 남는다
+    assert groups["Q4"]["osm"] == [] and "osm:n4" in groups and stats["osm_qid_detached"] == 1
+    assert place_from_group(groups["Q4"], {})["n"]["local"] == "Iglesia de San Pedro Apóstol"
+
+
+def test_m5_finer_kind_words_and_m6_numbers():
+    from pipeline.e1.match import NameWeights, name_numbers, names_agree, number_conflict, type_conflict
+    w = NameWeights(["Porta de San Francisco", "Convento de San Francisco", "Iglesia de Santa María", "Plaza Mayor", "Fuente de la Plaza Mayor", "Hotel Avenida"] * 3)
+    # 문과 수도원, 문과 성당, 거리와 샘, 광장과 분수는 서로 다른 종류다. 예전 낱말로는 가르지 못했다
+    for a, b in [("Porta de San Francisco", "Convento de San Francisco del Valle de Dios"), ("Porta de Santa Maria", "iglesia de Santa María (Peñíscola)"),
+                 ("Calle Puertaferrisa", "Font de la Portaferrissa"), ("Fuente La Candelaria", "Plaza de la Candelaria")]:
+        assert type_conflict([a], [b], fine=True) and not names_agree([a], [b], w), (a, b)
+    assert not type_conflict(["Porta de San Francisco"], ["Convento de San Francisco del Valle de Dios"]) and not type_conflict(["Fuente La Candelaria"], ["Plaza de la Candelaria"])
+    assert names_agree(["Fuente La Candelaria"], ["Plaza de la Candelaria"], w, rules=())
+    # 두 종류 낱말이 함께 든 이름은 겹치는 종류가 있으면 충돌이 아니다. 상호에 든 거리 낱말은 이름의 일부로 센다
+    assert not type_conflict(["Fuente de la Plaza Mayor"], ["Plaza Mayor"], fine=True)
+    assert names_agree(["Avenida"], ["Hotel Avenida"], w, strict=True)
+    # 번호: 양쪽에 번호가 있고 다르면 다른 대상. 한쪽에만 있으면 가르지 않는다. 아라비아 숫자와 로마 숫자는 같은 값이면 같다
+    assert name_numbers("Cap de Barbaria III") == {3} and name_numbers("Alfonso 12") == name_numbers("Alfonso XII") and name_numbers("Mare de Déu i Sant Joan") == frozenset()
+    assert number_conflict(["Cap de Barbaria III"], ["Cap de Barbaria II"]) and not number_conflict(["La Lluera I"], ["Cuevas de la Lluera"])
+    assert not names_agree(["Cap de Barbaria III"], ["Cap de Barbaria II"], w) and names_agree(["Cap de Barbaria III"], ["Cap de Barbaria II"], w, rules=())
+
+
+def test_m7_commerce_candidate_needs_strict_names_even_for_a_sight_listing():
+    # 바르셀로나 대학교를 소개한 볼거리 목록이 "Bar de la Universitat"에 붙어 카페가 대학교의 글을 달고 있었다
+    osm = [osm_poi("n1", 41.3866, 2.1640, "Bar de la Universitat", key="amenity", value="cafe"),
+           osm_poi("n2", 41.3900, 2.1700, "Casa Batlló", key="tourism", value="attraction")]
+    wv = [wv_listing(8, "Universitat", 41.3867, 2.1641), wv_listing(9, "Casa Batlló", 41.3901, 2.1701)]
+    old, _ = build_groups({}, osm, wv, rules=())
+    assert len(old["osm:n1"]["wv"]) == 1
+    groups, stats = build_groups({}, osm, wv)
+    assert groups["osm:n1"]["wv"] == [] and "wv:en:Madrid:8" in groups and len(groups["osm:n2"]["wv"]) == 1 and stats["wv_by_geo"] == 1
+
+
+def test_m8_far_tagged_element_is_not_attached():
+    # Torre del Almirante(Q7829758)에 1.5km 떨어진 Torre de los Adalides가, 쿠엥카의 Casa del Corregidor(Q2893081)에 마르베야의 같은 이름 건물이 태그로 붙어 있었다
+    wd = {"Q1": wd_item("Q1", 36.1300, -5.4500, "Torre del Almirante", classes=(), heritage=["Q23712"]),
+          "Q2": wd_item("Q2", 40.0780, -2.1300, "Casa del Corregidor", classes=("Q4989906",), heritage=["Q23712"]),
+          "Q3": wd_item("Q3", 41.2500, 1.9000, "Costes del Garraf", classes=("Q179049",))}
+    osm = [osm_poi("n1", 36.1430, -5.4500, "Torre de los Adalides", key="historic", value="archaeological_site", wikidata="Q1"),
+           osm_poi("w2", 36.5100, -4.8850, "Casa del Corregidor", key="historic", value="building", wikidata="Q2"),
+           osm_poi("w3", 41.2700, 1.9200, "Espai Protegit Costes del Garraf", key="leisure", value="nature_reserve", wikidata="Q3")]
+    old, _ = build_groups(wd, osm, [], rules=())
+    assert place_from_group(old["Q2"], {})["cs"] == "osm" and "mismatch" in old["Q1"]["flags"]
+    groups, stats = build_groups(wd, osm, [])
+    assert stats["osm_qid_far"] == 2 and groups["Q1"]["osm"] == [] and groups["Q2"]["osm"] == [] and "osm:n1" in groups and "osm:w2" in groups
+    p = place_from_group(groups["Q2"], {}); assert p["cs"] == "wikidata" and abs(p["lat"] - 40.078) < 1e-6
+    assert [o["id"] for o in groups["Q3"]["osm"]] == ["w3"] and "mismatch" in groups["Q3"]["flags"]  # 넓은 대상은 몇 km 떨어져도 이름이 맞으면 묶는다
+
+
+
+# ── 2026-11-22 수집·생성 보완(E1 4절, D-066) ──
+def test_mul_label_fills_missing_spanish_and_english_labels(tmp_path):
+    from pipeline.e1 import wikidata_mul as wm
+    wd = tmp_path / "wikidata"; wd.mkdir()
+    rows = [{"qid": "Q10400", "cls": "Q2074737", "coord": "Point(-2.46 36.84)", "label_es": None, "label_en": None, "label_ko": "알메리아"},  # 실제 수집 결과의 모양(2026-11-22)
+            {"qid": "Q8851", "cls": "Q2074737", "coord": "Point(-4.42 36.72)", "label_es": "Málaga", "label_en": "Málaga", "label_ko": "말라가"}]
+    (wd / "Q2074737.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    (wd / "P1435.jsonl").write_text(""); (wd / "sitelinks.jsonl").write_text("")
+    assert wm.targets(sources.load_wikidata(wd)) == ["Q10400"]
+    mul = tmp_path / "mul.jsonl"
+    mul.write_text(json.dumps({"qid": "Q10400", "label_mul": "Almería"}, ensure_ascii=False) + "\n" + json.dumps({"qid": "Q8851", "label_mul": "다른 값"}, ensure_ascii=False) + "\n" + json.dumps({"qid": "Q1", "label_mul": None}) + "\n", encoding="utf-8")
+    items = sources.load_wikidata(wd, None, mul)
+    assert items["Q10400"]["labels"] == {"ko": "알메리아", "es": "Almería", "en": "Almería"}
+    assert items["Q8851"]["labels"]["es"] == "Málaga"  # 이미 있는 라벨은 건드리지 않는다
+    assert wm.parse_rows([{"x": {"value": "http://www.wikidata.org/entity/Q10400"}, "l": {"value": "Almería"}}]) == {"Q10400": "Almería"}
+    # 섬 라벨도 같은 채움(메노르카는 스페인어 라벨이 공통 라벨로 합쳐져 있다)
+    isl_rows = isl.parse_rows([{"i": {"value": "http://www.wikidata.org/entity/Q52636"}, "len": {"value": "Minorca"}, "lmul": {"value": "Menorca"}}])
+    assert isl_rows[0]["label_es"] == "Menorca" and isl_rows[0]["label_en"] == "Minorca" and "lmul" not in isl_rows[0]
+
+
+def test_admin_lookup_falls_back_to_nearby_boundary(tmp_path):
+    from shapely.geometry import Polygon
+    from pipeline.e1.geo import assign_admin
+    f = tmp_path / "b.jsonl"
+    rows = [{"osm_id": "r1", "admin_level": "4", "name": "Andalucía", "wikidata": "Q5783", "wkb": Polygon([(-5, 36.72), (-4, 36.72), (-4, 37.5), (-5, 37.5)]).wkb_hex},
+            {"osm_id": "r2", "admin_level": "6", "name": "Málaga", "wikidata": "Q95028", "wkb": Polygon([(-5, 36.72), (-4, 36.72), (-4, 37.0), (-5, 37.0)]).wkb_hex}]
+    f.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    b = Boundaries(f)
+    assert b.lookup("4", 36.7191, -4.4) is None  # 경계에서 바다 쪽으로 약 100m 밖(말라가의 중심 좌표가 이런 경우다)
+    com, prov = assign_admin(b, 36.7191, -4.4)
+    assert com["wikidata"] == "Q5783" and prov["wikidata"] == "Q95028"
+    assert assign_admin(b, 36.60, -4.4) == (None, None)  # 13km 밖은 붙이지 않는다
+    assert assign_admin(b, 36.80, -4.4)[1]["wikidata"] == "Q95028"  # 안에 든 점은 그대로
+
+
+def test_dump_gz_is_byte_identical_for_the_same_content(tmp_path):
+    from pipeline.e1.build import dump_gz
+    dump_gz(tmp_path / "a.json.gz", {"k": [1, 2, 3]}); dump_gz(tmp_path / "sub" / "b.json.gz", {"k": [1, 2, 3]})
+    a, b = (tmp_path / "a.json.gz").read_bytes(), (tmp_path / "sub" / "b.json.gz").read_bytes()
+    assert a == b and a[4:8] == b"\x00\x00\x00\x00"  # 머리말의 시각 4바이트가 0이다
+
+
+def test_plain_drops_templates_with_unbalanced_braces():
+    from pipeline.e1.wikivoyage import plain
+    assert plain("{{pagebanner|{}}}\nPicos de Europa National Park is in the north.") == "Picos de Europa National Park is in the north."
+    broken = "Good seafood along the beachfront.\n{{eat\n| name=Restaurant Oscar | alt= | url=http://example.org\n| lat=38.64 | long=0.07} | directions=\n| content=Paella.\n}}\nThere are bars near the harbour."
+    assert plain(broken) == "Good seafood along the beachfront.\nThere are bars near the harbour."
+    assert plain("{{eat| name=Sin cierre | content=Nunca se cierra\n\nSiguiente párrafo.") == "Siguiente párrafo."
+    assert plain("Worth a look.\n[[https://example.org/home.html Airport website] has details.") == "Worth a look.\n[https://example.org/home.html Airport website] has details."
+    assert plain("{{a|{{b|{{c|{{d|x}}}}}}}}Texto [[Madrid|capital]].") == "Texto capital."
+
+
+def test_fixes_drop_detach_name_and_report_unknown():
+    from pipeline.e1 import fixes
+    places = [{"id": "Q1", "n": {"local": "Estadio", "ko": "틀린 이름", "ko_src": "wikidata"}, "desc": [{"src": "wikipedia", "lang": "es", "title": "A"}, {"src": "wikidata", "lang": "es", "text": "x"}], "links": {"eswiki": "A", "web": "http://x"}},
+              {"id": "Q2", "n": {"local": "Playa"}, "desc": [{"src": "wikipedia", "lang": "es", "title": "B"}, {"src": "wikipedia", "lang": "en", "title": "B"}], "links": {"eswiki": "B", "enwiki": "B"}},
+              {"id": "Q3", "n": {"local": "Sin cambios"}, "desc": [], "links": {}}]
+    table = [{"id": "Q1", "action": "name", "set": {"ko": None}, "why": "Wikidata의 한국어 라벨이 다른 대상의 이름", "date": "2026-11-22"},
+             {"id": "Q1", "action": "detach", "src": "wikipedia", "why": "글이 다른 대상을 설명", "date": "2026-11-22"},
+             {"id": "Q2", "action": "detach", "src": "wikipedia", "lang": "es", "why": "스페인어 글만 다른 해변", "date": "2026-11-22"},
+             {"id": "Q9", "action": "drop", "why": "철거", "date": "2026-11-22"},
+             {"id": "Q3", "action": "drop"}]  # 근거가 없는 줄은 적용하지 않는다
+    out, rep = fixes.apply(places, table)
+    by = {p["id"]: p for p in out}
+    assert "ko" not in by["Q1"]["n"] and by["Q1"]["n"]["ko_src"] is None and [d["src"] for d in by["Q1"]["desc"]] == ["wikidata"] and by["Q1"]["links"] == {"web": "http://x"}
+    assert [d["lang"] for d in by["Q2"]["desc"]] == ["en"] and by["Q2"]["links"] == {"enwiki": "B"}
+    assert "Q3" in by and rep == {"drop": 0, "detach": 2, "name": 1, "unknown": ["Q9"], "invalid": [{"id": "Q3", "problems": ["근거(why)나 날짜(date) 없음"]}]}
+    assert places[0]["n"]["ko"] == "틀린 이름"  # 입력은 바꾸지 않는다
+    out2, rep2 = fixes.apply(places, [{"id": "Q1", "action": "drop", "why": "1998년 철거", "date": "2026-11-22"}])
+    assert [p["id"] for p in out2] == ["Q2", "Q3"] and rep2["drop"] == 1
