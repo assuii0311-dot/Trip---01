@@ -117,6 +117,7 @@
 - Transitous: 오픈소스이고 비상업이며 자원을 적게 쓰는 프로젝트에 한해 무료. 경로 같은 자원 집약 엔드포인트 사용 전 연락 요구. 출처 링크와 OSM 표기 필수. 원천 데이터 전체 다운로드 제공.
 - 라이선스: Wikidata CC0, Wikivoyage CC BY-SA 4.0, OSM ODbL, Renfe와 바르셀로나 CC BY 4.0, Overture 장소 CDLA Permissive 2.0, Foursquare 공개 장소 Apache 2.0.
 - 덤프 갱신: Wikivoyage 2026-10-01, OSM 스페인 추출본 2026-10-19.
+- 대표 음식의 추가 출처(2026-11-22, D-062): 스페인어 위키백과 도시 문서의 요리 절과 스페인어 위키보이지 문서의 먹거리 절. 둘 다 CC BY-SA 4.0이고 API(action=query, prop=revisions)로 문서 원문을 받는다. 2026-11-22 수집에서 여행지 51곳 가운데 32곳의 절 44개를 받았다.
 
 ## 7. E 단계에서 확인된 사실 (2026-10-21)
 

@@ -222,3 +222,47 @@ def test_chunks_check_and_merge_for_bulk_generation():
     assert [m for _, m in pl.check_part([{**mon, "name_ko": "하우메 1세 기념비", "summary_ko": "하우메 1세 기념비는 (함대의 출항을 기리는 기념물이다."}], chunks[1])] == ["괄호 짝이 맞지 않음"]
     merged, added = pl.merge_parts([good], [("chunk_002.jsonl", [{**mon, "name_ko": "하우메 1세 기념비"}]), ("chunk_001.jsonl", [{**good, "summary_ko": "바뀐 요약이다."}])])
     assert added == 1 and [r["id"] for r in merged] == ["Q461371", "Q109983399"] and merged[0]["summary_ko"] == good["summary_ko"]  # 이미 있는 장소는 그대로
+
+
+# --- 대표 음식의 다른 출처와 뜻풀이 근거(E5 4절 12항, D-061, D-062). 고정 입력은 2026-11-22 수집본(스페인어 위키백과 요리 절)의 모양을 축약한 것.
+SEC_TEXT = "La gastronomía local tiene como plato más conocido el remojón granadino. También son típicas las habas con jamón y los piononos de Santa Fe."
+SECTIONS = {("Q8810", "eswiki"): {"id": "Q8810", "src": "eswiki", "title": "Granada", "section": "Gastronomía", "revid": 1, "text": SEC_TEXT}}
+FOOD_ES = {"id": "Q8810", "page": "Granada", "src": "eswiki", "food_ko": "레모혼 그라나디노(대구·오렌지 샐러드), 피오노노(크림 과자)", "terms": ["remojón granadino", "piononos"],
+           "gloss": {"레모혼 그라나디노": "es:Remojón", "피오노노": "es:Pionono"}, "src_md5": e5.food_md5({"eat": SEC_TEXT}), "generated": "2026-11-22"}
+
+
+def test_food_page_picks_the_text_by_source_kind():
+    pages = {"Granada": EAT_PAGE}
+    assert e5.food_page(FOOD, pages) is EAT_PAGE and e5.food_page({**FOOD, "src": "wv_en"}, pages, SECTIONS) is EAT_PAGE  # src가 없으면 영문 가이드
+    assert e5.food_page(FOOD_ES, pages, SECTIONS) == {"eat": SEC_TEXT}
+    assert e5.food_page(FOOD_ES, pages) is None and e5.food_page({**FOOD_ES, "src": "esvoy"}, pages, SECTIONS) is None  # 받아 둔 절이 없으면 출처 없음
+    assert e5.food_page({**FOOD_ES, "page": "Granada (España)"}, pages, SECTIONS) is None  # 문서 제목이 다르면 같은 출처로 보지 않는다
+
+
+def test_validate_food_source_kind_and_gloss_basis():
+    page = {"eat": SEC_TEXT}
+    assert e5.validate_food(FOOD_ES, page) == []
+    assert "알 수 없는 출처 종류 'blog'" in e5.validate_food({**FOOD_ES, "src": "blog"}, page)
+    assert "뜻풀이 근거의 음식 '하몽'이 한 줄에 없음" in e5.validate_food({**FOOD_ES, "gloss": {"하몽": "es:Jamón"}}, page)
+    assert any("뜻풀이 근거 형식" in p for p in e5.validate_food({**FOOD_ES, "gloss": {"피오노노": "Pionono"}}, page))
+    assert any("뜻풀이 근거 형식" in p for p in e5.validate_food({**FOOD_ES, "gloss": {"피오노노": "fr:Pionono"}}, page))
+    assert "출처에 없는 표기 'paella'" in e5.validate_food({**FOOD_ES, "terms": ["paella"]}, page)  # 다른 출처에도 같은 대조를 한다
+
+
+def test_build_attaches_food_from_other_sources_with_their_attribution():
+    pages = {"Granada": EAT_PAGE, "Fuengirola": PAGE}
+    good = {**GOOD, "src_md5": e5.source_md5(EAT_PAGE)}
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD_ES], sections=SECTIONS)
+    it = out["items"]["Q8810"]
+    assert it["food"] == FOOD_ES["food_ko"] and rep["food"] == 1 and rep["food_invalid"] == {}
+    assert it["sources"][1] == {"title": "Granada", "lang": "es", "url": "https://es.wikipedia.org/wiki/Granada", "license": "CC BY-SA 4.0", "for": "food"}  # 음식의 출처 문서를 더한다
+    assert "스페인어 위키백과" in out["attribution"]
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD], sections=SECTIONS)  # 영문 가이드에서 뽑은 음식은 출처 목록과 표기가 예전과 같다
+    assert len(out["items"]["Q8810"]["sources"]) == 1 and "위키백과" not in out["attribution"]
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD_ES])  # 받아 둔 절이 없으면 내보내지 않는다
+    assert "food" not in out["items"]["Q8810"] and rep["food_invalid"]["Q8810"] == ["출처 문서 없음"]
+    changed = {("Q8810", "eswiki"): {**SECTIONS[("Q8810", "eswiki")], "text": SEC_TEXT + " Y la tortilla del Sacromonte."}}
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD_ES], sections=changed)  # 절이 바뀌면 그 줄만 빠진다
+    assert "food" not in out["items"]["Q8810"] and rep["food_stale"] == ["Q8810"] and rep["count"] == 1
+    out, rep = e5.build([good], CITIES, pages, food=[FOOD, FOOD_ES], sections=SECTIONS)  # 한 여행지에 두 줄이면 먼저 나온 줄만 쓴다
+    assert out["items"]["Q8810"]["food"] == FOOD["food_ko"] and rep["food_invalid"]["Q8810"] == ["한 여행지에 대표 음식이 두 줄"]

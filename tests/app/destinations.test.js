@@ -62,7 +62,7 @@ test("E5 여행지 한국어 소개 붙이기: 요약, 생성 이름, 입력 불
   assert.deepEqual(applyDestinationKo(cities, null), cities); assert.deepEqual(applyDestinationKo(cities, {}), cities);
 });
 
-import { tasteMatch, destViews, tasteRanking, sortDestinations, onlyDestinations, isPopular, POPULAR_N, TASTE_TOP_N } from "../../app/src/util/destinations.js";
+import { tasteMatch, destViews, tasteRanking, tasteReasons, sortDestinations, onlyDestinations, isPopular, POPULAR_N, TASTE_TOP_N } from "../../app/src/util/destinations.js";
 test("tasteMatch: 고른 취향이 여행지의 중심 범주인지(카드의 칩 강조용)", () => {
   const L = [{ id: "A", focus: ["heritage", "museum"] }, { id: "C", focus: ["museum", "beach"] }, { id: "D" }];
   assert.deepEqual(tasteMatch(L[0], ["museum"]), { matched: ["museum"], weight: 1 });
@@ -89,6 +89,15 @@ test("여행지의 인기와 취향 추천: 조회수의 크기와 비중으로 
   assert.deepEqual(L.filter((c) => R.get(c.id).top).map((c) => c.id), ["big", "mus"]);
   assert.deepEqual([...tasteRanking(L, V, ["beach"], 3).entries()].filter(([, v]) => v.top).map(([k]) => k), ["isl"]); // 맞는 곳이 없으면(크기 0) 추천을 붙이지 않는다
   assert.equal(tasteRanking(L, V, []).size, 0); assert.equal(tasteRanking([], V, ["museum"]).size, 0);
+  // 취향 추천의 이유(D-059): 조회수 합이 큰 범주부터 둘, 범주마다 조회수가 큰 장소 둘. 두 범주에 든 장소는 앞 범주에만
+  const np = (name, cat, v) => ({ n: { ko: name }, city: "big", cat, pop: { pv: { en: v, es: 0 } } });
+  const W = destViews([{ id: "big", dest: { tier: 1, rank: 1 } }], [np("궁전", ["heritage", "park"], 900), np("성벽", ["heritage"], 500), np("탑", ["heritage"], 300), np("정원", ["park"], 200), np("미술관", ["museum"], 100), np("해변", ["beach"], 50)]).get("big");
+  const names = (r) => r.map((x) => [x.cat, x.places.map((p) => p.n.ko)]);
+  assert.deepEqual(names(tasteReasons(W, ["park", "heritage", "museum"])), [["heritage", ["궁전", "성벽"]], ["park", ["정원"]]]); // heritage 1,700 > park 1,100 > museum 100. 궁전은 heritage에만
+  assert.deepEqual(names(tasteReasons(W, ["museum", "beach", "market"])), [["museum", ["미술관"]], ["beach", ["해변"]]]); // 맞는 장소가 없는 범주(market)는 건너뛴다
+  assert.deepEqual(names(tasteReasons(W, ["heritage"], { maxPlaces: 3 })), [["heritage", ["궁전", "성벽", "탑"]]]);
+  assert.deepEqual(names(tasteReasons(W, ["park"])), [["park", ["궁전", "정원"]]]); // 한 범주만 고르면 두 범주에 든 장소도 그 범주에 나온다
+  assert.deepEqual(tasteReasons(W, []), []); assert.deepEqual(tasteReasons(undefined, ["park"]), []); assert.deepEqual(tasteReasons(W, ["market"]), []);
   // 정렬과 거르기. 인기순은 받은 순서 그대로, 취향순은 순위순
   assert.equal(sortDestinations(L, "pop", R), L); assert.equal(sortDestinations(L, "taste", new Map()), L);
   assert.deepEqual(sortDestinations(L, "taste", R).map((c) => c.id), ["mus", "big", "isl", "her", "none"]);

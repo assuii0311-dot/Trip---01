@@ -4,7 +4,7 @@ import { html, Chip, Empty } from "../components/ui.js";
 import { ESTIMATE_NOTE } from "../components/trip_alts.js";
 import { placeName } from "../../data/places.js";
 import { toHHMM, toMin, dwellOf } from "../../engines/e4.js";
-import { modeKo, perDayKo, gmapsTransit, TRAIN_NOTE, TIMETABLE_LINK_LABEL } from "../../engines/e3.js";
+import { modeKo, perDayKo, gmapsTransitCities, TRAIN_NOTE, TIMETABLE_LINK_LABEL } from "../../engines/e3.js";
 import { CAT_ICON, fmtDistance } from "../../util/format.js";
 
 const FLAG = { no_hours: "영업시간 확인 필요(정보 없음)", closed_or_short: "영업시간 확인 필요(참고값과 불일치)" };
@@ -16,8 +16,8 @@ export function S5Itinerary({ plan, result, getPlace, cities, onGenerate, onRege
   const days = result?.days || [];
   const day = days[di];
   const cityName = (id) => { const c = cities.find((x) => x.id === id); return c ? c.n.ko || c.n.en || c.n.es : id; };
-  // 실제 시간표 확인 링크(D-058). 예전에 만든 일정에는 leg.link가 없으므로 도시 좌표로 만든다
-  const legLink = (ic) => { if (ic.leg.link) return ic.leg.link; const a = cities.find((x) => x.id === ic.from), b = cities.find((x) => x.id === ic.to); return a && b ? gmapsTransit(a, b) : ic.leg.best.link || null; };
+  // 실제 시간표 확인 링크(D-058, D-060). 저장된 일정에는 링크가 없거나 좌표 링크가 들어 있으므로, 도시를 찾으면 늘 이름 링크로 다시 만든다
+  const legLink = (ic) => { const a = cities.find((x) => x.id === ic.from), b = cities.find((x) => x.id === ic.to); return a && b ? gmapsTransitCities(a, b) : ic.leg.link || ic.leg.best.link || null; };
   if (!result) return html`<div class="section"><${Empty}>선택한 장소 ${plan.selection.length}곳으로 일정을 만듭니다. 숙박 일수가 기간과 맞아야 합니다.</${Empty}>${canEdit ? html`<div class="row" style="justify-content:center"><button class="btn" disabled=${busy || plan.selection.length === 0} onClick=${onGenerate}>${busy ? "생성 중…" : "일정 생성 ▶"}</button></div>` : html`<p class="note" style="text-align:center">메인 수립자가 일정을 생성해 저장하면 여기에 보입니다.</p>`}</div>`;
   const nDrift = drift.missing.length + drift.removed.length;
   return html`<div>
