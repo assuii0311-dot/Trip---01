@@ -18,7 +18,9 @@ import osmium
 
 KEYS = ["tourism", "historic", "natural", "leisure", "amenity", "shop", "place", "aeroway", "railway", "public_transport"]
 FIELDS = ["name", "name:es", "name:en", "name:ko", "name:ca", "name:eu", "name:gl", "wikidata", "wikipedia", "opening_hours",
-          "fee", "charge", "reservation", "website", "phone", "cuisine", "description", "addr:city", "addr:postcode", "population", "image"]
+          "fee", "charge", "reservation", "website", "phone", "cuisine", "description", "addr:city", "addr:postcode", "population", "image",
+          # 가 볼 수 있는 곳인지 가리는 재료(T-069, D-066의 범위 ③). 파이프라인은 아직 읽지 않는다(sources.OSM_KEEP_FIELDS에 없음)
+          "access", "office", "building", "disused", "abandoned", "ruins"]
 AMENITY_TRAVEL = {"restaurant", "cafe", "bar", "pub", "fast_food", "ice_cream", "food_court", "biergarten", "marketplace", "theatre",
                   "cinema", "arts_centre", "place_of_worship", "fountain", "nightclub", "library", "townhall", "university", "casino",
                   "bus_station", "ferry_terminal", "taxi"}
