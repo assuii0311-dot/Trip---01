@@ -2,5 +2,9 @@
  {
   "id": "wv:en:Calpe:21",
   "reason": "출처가 '대부분 잡동사니지만 싸게 살 만한 물건이 한두 개 있다'(Mostly tat but there are one or two bargains to be found)는 평가 한 문장뿐이고, 무엇인지 알 수 있는 사실이 없다."
+ },
+ {
+  "id": "Q19257127",
+  "reason": "출처 글이 장소와 다른 대상을 설명한다. 장소는 기념물(이름 'Monumento a Nicolau Font', 위키데이터 'monument in Lloret de Mar')인데, 위키백과 es 글은 제목만 기념물이고 본문은 인물 니콜라우 폰트 이 마이그(Nicolau Font i Maig, 1830~1908)의 생애와 재산만 적는다. 기념물 자체에 대한 출처는 위키데이터의 한 구절뿐이라 이름을 되풀이하는 것 말고 쓸 수 있는 사실이 없다. 독립 검증에서 결과 파일에서 빼고 건너뛰기로 옮겼다."
  }
 ]
