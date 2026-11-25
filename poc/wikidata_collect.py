@@ -132,16 +132,19 @@ def main():
                    "seconds": round(time.time() - t0)}, open(outdir / "counts.json", "w"), ensure_ascii=False, indent=1)
     elif mode in ("collect", "collect-one"):
         summary = {}
-        targets = [c_ for c_ in CLASSES if mode == "collect" or c_[0] == sys.argv[3]]
+        # 문화유산 지정(P1435)은 한 번에 묶는 질의가 시간 초과가 나므로 collect에서는 받지 않는다(wikidata_heritage.py가 쪼개어 받는다)
+        targets = [c_ for c_ in CLASSES if (mode == "collect" and c_[2] != "heritage") or (mode == "collect-one" and c_[0] == sys.argv[3])]
+        failed = []
         for qid, desc, m in targets:
-            out = outdir / f"{qid}.jsonl"
-            n_total, offset, limit = 0, 0, 5000
-            with open(out, "w", encoding="utf-8") as f:
+            out, tmp = outdir / f"{qid}.jsonl", outdir / f"{qid}.jsonl.part"
+            n_total, offset, limit, ok = 0, 0, 5000, True
+            with open(tmp, "w", encoding="utf-8") as f:
                 while True:
                     try:
                         rows = c.query(collect_query(qid, m, limit, offset))
                     except Exception as e:
                         print(f"  {qid} {desc}: 실패 {type(e).__name__} (offset {offset})", file=sys.stderr)
+                        ok = False
                         break
                     for b in rows:
                         rec = {"qid": val(b, "x").rsplit("/", 1)[-1], "cls": qid, "coord": val(b, "coord"),
@@ -154,10 +157,17 @@ def main():
                     if len(rows) < limit:
                         break
                     offset += limit
-            summary[qid] = {"desc": desc, "rows": n_total}
+            if ok:
+                tmp.replace(out)  # 끝까지 받은 클래스만 파일로 남긴다. 중간에 끊긴 클래스가 빈 파일이나 일부만 든 파일로 남지 않게 한다
+            else:
+                tmp.unlink(); failed.append(qid)
+            summary[qid] = {"desc": desc, "rows": n_total, "ok": ok}
             print(f"  {qid:10} {desc:14} {n_total}건 ({round(time.time()-t0)}초, 호출 {c.calls}, 429 {c.r429})")
         json.dump({"collected_at": time.strftime("%Y-%m-%d %H:%M"), "classes": summary, "calls": c.calls, "r429": c.r429,
                    "seconds": round(time.time() - t0)}, open(outdir / "collect_summary.json", "w"), ensure_ascii=False, indent=1)
+        if failed:
+            print(f"  받지 못한 클래스: {failed}. 하나씩 다시 받는다: collect-one <데이터디렉터리> <QID>", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

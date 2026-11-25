@@ -19,7 +19,8 @@ from . import islands as island_mod
 from . import config as C
 from . import sources
 from .geo import Boundaries, Nearest, assign_admin, assign_city
-from .match import Grid, build_groups, hav
+from . import fixes as fixes_mod
+from .match import ALL_RULES, Grid, build_groups, hav
 from .merge import place_from_group, parse_price
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -28,7 +29,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 def dump_gz(path, obj):
     path.parent.mkdir(parents=True, exist_ok=True)
     raw = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    with gzip.open(path, "wb", compresslevel=9) as f:
+    with open(path, "wb") as fh, gzip.GzipFile(filename="", fileobj=fh, mode="wb", compresslevel=9, mtime=0) as f:  # 머리말의 시각과 파일 이름을 고정한다: 같은 내용이면 같은 바이트
         f.write(raw)
     return len(raw), path.stat().st_size
 
@@ -42,13 +43,18 @@ def main():
     ap.add_argument("root"); ap.add_argument("out")
     ap.add_argument("--labels"); ap.add_argument("--boundaries", nargs="*", default=[]); ap.add_argument("--osm-extra", nargs="*", default=[]); ap.add_argument("--views"); ap.add_argument("--airports"); ap.add_argument("--islands", nargs="*", default=[]); ap.add_argument("--islands-wd"); ap.add_argument("--bbox")
     ap.add_argument("--gtfs-catalog", default=str(ROOT / "poc/results/gtfs_catalog.json"))
+    ap.add_argument("--mul", help="공통 라벨 파일(e1.wikidata_mul의 출력). 스페인어·영어 라벨의 빈칸을 채운다")
+    ap.add_argument("--fixes", default=str(ROOT / "pipeline/e1/fixes.json"), help="보정 표(E1 4절 17항)")
+    ap.add_argument("--rules", help="켤 묶기 규칙(쉼표로 구분, 예: M1,M3). all(기본) 또는 none. 시험과 진단용")
     a = ap.parse_args()
     root, out = pathlib.Path(a.root), pathlib.Path(a.out)
     bbox = [float(x) for x in a.bbox.split(",")] if a.bbox else None
     t0 = time.time()
     log = lambda m: print(f"  [{time.time() - t0:6.0f}s] {m}", flush=True)
 
-    wd = sources.load_wikidata(root / "wikidata", a.labels)
+    rules = ALL_RULES if a.rules in (None, "all") else frozenset(r for r in a.rules.split(",") if r and r != "none")
+    assert rules <= ALL_RULES, f"모르는 규칙: {sorted(rules - ALL_RULES)}"
+    wd = sources.load_wikidata(root / "wikidata", a.labels, a.mul)
     log(f"Wikidata {len(wd):,}건")
     osm_places, settlements, districts, transit, airports = sources.load_osm([root / "osm/out/pois.jsonl", *a.osm_extra])  # 스페인 추출본 + 추가 추출본(카나리아, D-031)
     log(f"OSM 장소 {len(osm_places):,}, 정착지 {len(settlements):,}, 구역 {len(districts):,}, 교통 {len(transit):,}, 공항 {len(airports):,}")
@@ -65,7 +71,7 @@ def main():
         log(f"bbox 적용: Wikidata {len(wd):,}, OSM {len(osm_places):,}, wv {len(list_en) + len(list_es):,}")
 
     # 지자체(도시) 기준: Wikidata 스페인 지자체 클래스
-    munis = {q: it for q, it in wd.items() if "Q2074737" in it["classes"] and it["coord"]} if not bbox else {q: it for q, it in sources.load_wikidata(root / "wikidata", a.labels).items() if "Q2074737" in it["classes"] and it["coord"]}
+    munis = {q: it for q, it in wd.items() if "Q2074737" in it["classes"] and it["coord"]} if not bbox else {q: it for q, it in sources.load_wikidata(root / "wikidata", a.labels, a.mul).items() if "Q2074737" in it["classes"] and it["coord"]}
     nearest = Nearest([{"qid": q, "lat": it["coord"][0], "lon": it["coord"][1]} for q, it in munis.items()])
     bpaths = [p for p in a.boundaries if pathlib.Path(p).exists()]
     boundaries = Boundaries(bpaths) if bpaths else None
@@ -78,18 +84,24 @@ def main():
                 qid_by_name.setdefault(it["labels"][l], q)
     qid_by_ine = {}
 
-    groups, mstats = build_groups(wd, osm_places, list_en + list_es)
+    groups, mstats = build_groups(wd, osm_places, list_en + list_es, rules=rules)
     log(f"매칭 그룹 {len(groups):,}건 {mstats}")
-    places, dropped = [], collections.Counter()
+    merged, dropped = [], collections.Counter()
     for g in groups.values():
         p = place_from_group(g, views)
         if not p:
             dropped["no_place"] += 1; continue
+        merged.append(p)
+    # 보정 표(4절 17항): 도시 귀속 전에 적용한다(좌표를 바로잡은 장소가 맞는 도시에 들어가게)
+    fix_doc = json.loads(pathlib.Path(a.fixes).read_text(encoding="utf-8")) if a.fixes and pathlib.Path(a.fixes).exists() else {}
+    merged, fix_report = fixes_mod.apply(merged, fix_doc.get("fixes") or [])
+    places = []
+    for p in merged:
         city, how = assign_city(boundaries, nearest, p["lat"], p["lon"], qid_by_ine, qid_by_name, known)
         p["city"] = city
         dropped[f"city_{how}"] += 1
         places.append(p)
-    log(f"장소 {len(places):,}건 (제외·귀속 통계 {dict(dropped)})")
+    log(f"장소 {len(places):,}건 (제외·귀속 통계 {dict(dropped)}, 보정 표 {fix_report})")
 
     # 도시 레코드
     wv_city_by_qid = {}
@@ -263,7 +275,7 @@ def main():
     cv = collections.Counter(p["cv"] for p in places); ver = collections.Counter(p["ver"] for p in places); cs = collections.Counter(p["cs"] for p in places); cityhow = {k: v for k, v in dropped.items() if k.startswith("city_")}
     report = {"generated": time.strftime("%Y-%m-%d %H:%M"), "inputs": {"wikidata": len(wd), "osm_places": len(osm_places), "wv_en": len(list_en), "wv_es": len(list_es), "pageviews": len(views), "boundaries": boundaries.count if boundaries else 0, "airports_wd": len(wd_air), "islands_osm": len(osm_isl), "islands_wd": len(isl_wd)},
               "destinations": dest_report,
-              "match": mstats, "places": {"total": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "crossval": dict(cv), "verified": {str(k): v for k, v in ver.items()}, "coord_source": dict(cs), "city_assignment": cityhow},
+              "match": mstats, "rules": sorted(rules), "fixes": fix_report, "places": {"total": len(places), "tier1": len(tier1), "tier2": len(places) - len(tier1), "crossval": dict(cv), "verified": {str(k): v for k, v in ver.items()}, "coord_source": dict(cs), "city_assignment": cityhow},
               "categories_tier1": dict(cat_counts), "names": {"ko": sum(1 for p in tier1 if p["n"].get("ko")), "en": sum(1 for p in tier1 if p["n"].get("en")), "es": sum(1 for p in tier1 if p["n"].get("es"))},
               "fields_tier1": {"hours": sum(1 for p in tier1 if p["hrs"]), "price": sum(1 for p in tier1 if p["price"]), "desc_wv": sum(1 for p in tier1 if any(d["src"] == "wikivoyage" for d in p["desc"])), "pageviews": sum(1 for p in tier1 if p["pop"]["pv"])},
               "files": {k: {"raw_bytes": v[0], "gz_bytes": v[1]} for k, v in sizes.items()}, "tier2_gz_bytes": t2_total, "elapsed_s": round(time.time() - t0)}

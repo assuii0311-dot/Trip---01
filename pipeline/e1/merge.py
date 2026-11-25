@@ -28,11 +28,12 @@ def place_from_group(g, pageviews, foreign_cfg=None):
     # 대표 OSM 객체: Wikidata 라벨과 이름이 가장 비슷한 것(없으면 첫 번째). 좌표 우선순위: OSM > Wikidata > Wikivoyage
     o0 = None
     if osm:
+        pool = [o for o in osm if o.get("_by_qid")] or osm  # 태그로 묶인 요소가 있으면 그 가운데에서 고른다(M2). 좌표·이름으로 붙은 요소는 대표가 되지 못한다
         if wd and wd["labels"]:
             from .match import sim
-            o0 = max(osm, key=lambda o: max((sim(o.get(k), l) for k in ("name", "name:es", "name:en", "name:ca", "name:eu", "name:gl") for l in wd["labels"].values() if o.get(k)), default=0.0))
+            o0 = max(pool, key=lambda o: max((sim(o.get(k), l) for k in ("name", "name:es", "name:en", "name:ca", "name:eu", "name:gl") for l in wd["labels"].values() if o.get(k)), default=0.0))
         else:
-            o0 = osm[0]
+            o0 = pool[0]
     wdname = bool(o0 and o0.get("_wdname"))  # 대표 요소의 이름이 이 항목과 다른 종류를 가리킨다(D-043): 이름과 좌표는 Wikidata 것을 쓴다
     if wdname and wd and wd["coord"]:
         lat, lon, cs = wd["coord"][0], wd["coord"][1], "wikidata"

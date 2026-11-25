@@ -23,8 +23,9 @@ def parse_point(s):
     return (round(float(m.group(2)), 6), round(float(m.group(1)), 6)) if m else None
 
 
-def load_wikidata(wd_dir, labels_path=None):
-    """클래스 파일 + 유산 지정 + 사이트링크·라벨 조회 결과를 QID별 하나로 합친다."""
+def load_wikidata(wd_dir, labels_path=None, mul_path=None):
+    """클래스 파일 + 유산 지정 + 사이트링크·라벨 조회 결과를 QID별 하나로 합친다.
+    mul_path(e1.wikidata_mul의 출력)를 주면 스페인어·영어 라벨이 없는 항목을 공통 라벨(mul)로 채운다(E1 4절 1항, D-066)."""
     items = {}
     for f in sorted(glob.glob(f"{wd_dir}/Q*.jsonl")):
         cls = pathlib.Path(f).stem
@@ -68,7 +69,22 @@ def load_wikidata(wd_dir, labels_path=None):
                 it["sitelinks"] = max(it["sitelinks"], int(r["sitelinks"]))
             if r.get("wv_en"):
                 it["wv_en"] = r["wv_en"]
+    if mul_path and pathlib.Path(mul_path).exists():
+        for line in open(mul_path, encoding="utf-8"):
+            r = json.loads(line); it = items.get(r["qid"])
+            fill_mul(it["labels"] if it else None, r.get("label_mul"))
     return items
+
+
+def fill_mul(labels, mul):
+    """라벨 사전의 스페인어·영어 빈칸을 공통 라벨로 채운다. 이미 있는 라벨은 건드리지 않는다. Wikidata는 언어마다 같은 라벨을 공통 라벨(mul) 하나로 합치고 있다."""
+    mul = norm_text(mul)
+    if labels is None or not mul:
+        return labels
+    for l in ("es", "en"):
+        if not labels.get(l):
+            labels[l] = mul
+    return labels
 
 
 OSM_KEEP_FIELDS = ("name", "name:es", "name:en", "name:ko", "name:ca", "name:eu", "name:gl", "wikidata", "wikipedia", "opening_hours", "fee", "charge", "website", "phone", "cuisine", "description", "population", "reservation", "addr:city")
