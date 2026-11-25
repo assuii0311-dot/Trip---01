@@ -1,13 +1,13 @@
 {
- "generated": "2026-11-16 05:54",
+ "generated": "2026-11-25 12:41",
  "inputs": {
-  "wikidata": 133363,
-  "osm_places": 498578,
+  "wikidata": 133579,
+  "osm_places": 501356,
   "wv_en": 11613,
   "wv_es": 3999,
-  "pageviews": 29827,
+  "pageviews": 29802,
   "boundaries": 8545,
-  "airports_wd": 67,
+  "airports_wd": 66,
   "islands_osm": 121,
   "islands_wd": 56
  },
@@ -27,92 +27,112 @@
   "destinations": 111
  },
  "match": {
-  "osm_by_qid": 24277,
-  "osm_by_geo": 9293,
-  "osm_alone": 412675,
-  "wv_by_qid": 2455,
-  "wv_by_geo": 3163,
-  "wv_alone": 3781,
-  "wv_nocoord": 3290,
-  "mismatch": 990,
-  "osm_qid_detached": 126,
-  "osm_qid_wdname": 23,
-  "osm_other_qid": 12814,
-  "wv_other_qid": 548,
-  "osm_noise": 52333
+  "osm_by_qid": 24444,
+  "osm_by_geo": 9035,
+  "osm_alone": 415200,
+  "wv_by_qid": 2269,
+  "wv_by_geo": 3078,
+  "wv_alone": 3958,
+  "wv_nocoord": 3291,
+  "mismatch": 972,
+  "osm_qid_detached": 134,
+  "osm_qid_wdname": 63,
+  "osm_other_qid": 13029,
+  "wv_other_qid": 640,
+  "osm_qid_moved": 8,
+  "osm_acc_wdname": 371,
+  "osm_noise": 52669
+ },
+ "rules": [
+  "M1",
+  "M2",
+  "M3",
+  "M4",
+  "M5",
+  "M6",
+  "M7",
+  "M8"
+ ],
+ "fixes": {
+  "drop": 2,
+  "detach": 4,
+  "name": 1,
+  "coord": 1,
+  "unknown": [],
+  "invalid": []
  },
  "places": {
-  "total": 520818,
-  "tier1": 101581,
-  "tier2": 419237,
+  "total": 523578,
+  "tier1": 101622,
+  "tier2": 421956,
   "crossval": {
-   "match": 34740,
-   "single": 485140,
-   "mismatch": 938
+   "match": 34656,
+   "single": 487999,
+   "mismatch": 923
   },
   "verified": {
-   "True": 80062,
-   "False": 440756
+   "True": 80055,
+   "False": 443523
   },
   "coord_source": {
-   "osm": 445082,
-   "wikidata": 72459,
-   "wikivoyage": 3277
+   "osm": 447215,
+   "wikidata": 73037,
+   "wikivoyage": 3326
   },
   "city_assignment": {
-   "city_polygon": 512147,
-   "city_none": 281,
-   "city_nearest": 8348,
+   "city_polygon": 514874,
+   "city_none": 282,
+   "city_nearest": 8380,
    "city_polygon_name": 42
   }
  },
  "categories_tier1": {
-  "heritage": 68727,
-  "park": 1121,
-  "square": 1553,
-  "activity": 1458,
-  "nature": 10957,
-  "market": 476,
-  "restaurant": 1545,
-  "cafe": 305,
-  "museum": 1612,
-  "lodging": 1405,
-  "religious": 14365,
+  "heritage": 68783,
+  "park": 1097,
+  "square": 1561,
+  "activity": 1456,
+  "nature": 10986,
+  "market": 470,
+  "restaurant": 1528,
+  "cafe": 293,
+  "museum": 1623,
+  "lodging": 1394,
+  "religious": 14367,
   "beach": 2087
  },
  "names": {
-  "ko": 238,
-  "en": 80786,
-  "es": 58082
+  "ko": 236,
+  "en": 81291,
+  "es": 58295
  },
  "fields_tier1": {
-  "hours": 2631,
+  "hours": 2629,
   "price": 3350,
-  "desc_wv": 5157,
-  "pageviews": 17820
+  "desc_wv": 5148,
+  "pageviews": 17714
  },
  "files": {
   "cities": {
-   "raw_bytes": 7393147,
-   "gz_bytes": 1201756
+   "raw_bytes": 7404484,
+   "gz_bytes": 1204335
   },
   "regions": {
-   "raw_bytes": 96803,
-   "gz_bytes": 35024
+   "raw_bytes": 96606,
+   "gz_bytes": 34969
   },
   "categories": {
-   "raw_bytes": 6865,
-   "gz_bytes": 2704
+   "raw_bytes": 6862,
+   "gz_bytes": 2682
   },
   "places_tier1": {
-   "raw_bytes": 60638319,
-   "gz_bytes": 6241858
+   "raw_bytes": 60669234,
+   "gz_bytes": 6243590
   },
   "airports": {
-   "raw_bytes": 18380,
-   "gz_bytes": 4909
+   "raw_bytes": 18415,
+   "gz_bytes": 4901
   }
  },
- "tier2_gz_bytes": 18342297,
- "elapsed_s": 147
+ "tier2_gz_bytes": 18341282,
+ "elapsed_s": 105
 }

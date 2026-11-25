@@ -1,6 +1,15 @@
 {
  "format": "trip01-e1-fixes",
  "version": 1,
- "about": "E1 보정 표(E1 4절 17항, D-066). 규칙으로 가릴 수 없는 개별 오류를 장소 ID별로 적는다. 줄마다 근거(why)와 확인한 날짜(date)를 적는다.",
- "fixes": []
+ "about": "E1 보정 표(E1 4절 17항, D-066, D-067). 규칙으로 가릴 수 없는 개별 오류를 장소 ID별로 적는다. 줄마다 근거(why)와 확인한 날짜(date)를 적는다.",
+ "fixes": [
+  {"id": "Q5848186", "action": "drop", "why": "1998년에 철거되어 지금은 없는 경기장(Estadio Municipal La Puentecilla, 레온). 스페인어·영어 위키백과 글이 철거를 적고 있다(설명 작업 묶음 149~152의 검증 보고). Wikidata에는 철거 표시(P576 등)가 없어 규칙으로 가릴 수 없다", "date": "2026-11-25"},
+  {"id": "Q8960976", "action": "drop", "why": "2009년에 쓰러져 지금은 없는 나무(Fayona de Eiros, 티네오). 출처 글이 쓰러진 해를 적고 있다(설명 작업의 검증 보고, T-066)", "date": "2026-11-25"},
+  {"id": "Q9275787", "action": "name", "set": {"ko": null}, "why": "Wikidata의 한국어 라벨 '스페인-영국 국경'이 이 항목(18세기 요새 체계 Línea de Contravalación de Gibraltar)과 다른 대상의 이름이다. 한국어 이름을 지우고 설명 생성이 이름을 붙이게 한다", "date": "2026-11-25"},
+  {"id": "Q2893081", "action": "coord", "lat": 40.076042, "lon": -2.130931, "cs": "wikidata", "why": "Wikidata 항목은 쿠엥카의 Casa del Corregidor인데 OSM에서는 464km 떨어진 마르베야의 같은 이름 건물(w932652975)에 이 식별자가 붙어 있다. Wikidata 좌표(쿠엥카)를 쓴다", "date": "2026-11-25"},
+  {"id": "Q6078591", "action": "detach", "src": "wikipedia", "why": "Wikidata 항목(Playa de Bajamar)에 이어진 스페인어 위키백과 글이 다른 지방의 같은 이름 해변을 설명한다(설명 작업의 보고, T-066)", "date": "2026-11-25"},
+  {"id": "Q6078585", "action": "detach", "src": "wikipedia", "why": "Wikidata 항목(Playa de Atlanterra)에 이어진 스페인어 위키백과 글이 해변이 아니라 주택 단지를 설명한다(설명 작업의 보고, T-066)", "date": "2026-11-25"},
+  {"id": "Q19858867", "action": "detach", "src": "wikipedia", "why": "Wikidata 항목은 가라프 해안 보호 구역인데 이어진 스페인어 위키백과 글(Costa del Garraf)은 관광용 해안 구간의 이름을 설명한다. 보호 구역의 내용이 글에 없다(설명 작업의 보고)", "date": "2026-11-25"},
+  {"id": "Q6058002", "action": "detach", "src": "wikipedia", "why": "Wikidata 항목(우베다의 Palacio de Francisco de los Cobos)에 이어진 스페인어 위키백과 글이 같은 이름의 궁전 여러 곳을 가리키는 글이다(설명 작업의 보고, T-066)", "date": "2026-11-25"}
+ ]
 }
