@@ -1,0 +1,10 @@
+[
+ {
+  "id": "Q58467255",
+  "reason": "출처 글이 다른 장소를 설명한다. 묶음의 도시는 산탄데르이고 위키데이터 설명도 '산탄데르에 있는 기념물'인데, 위키백과 글(es 'Monumento Homenaje a las Víctimas del Terrorismo')은 로그로뇨 중심부 에스폴론(Paseo del Príncipe de Vergara)에 있는 아구스틴 이바롤라(Agustín Ibarrola)의 작품을 설명한다. 위키데이터 한 줄만으로는 이름을 되풀이하는 것밖에 쓸 수 없다."
+ },
+ {
+  "id": "osm:n1607461726",
+  "reason": "이름과 출처가 서로 다른 것을 가리킨다. 장소의 현지 이름은 'Ayuntamiento de Vallehermoso'(바예에르모소 시청)인데, 출처(영문 위키보야지 La Gomera 한 건)는 마을 바예에르모소 전체(북쪽 노선의 마지막 마을, 상징인 카노 바위, 농업에서 트레킹 관광으로의 변화)를 설명하고 시청 건물에 대한 내용은 없다."
+ }
+]
